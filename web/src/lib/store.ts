@@ -48,44 +48,58 @@ if (typeof window !== 'undefined') {
   })
 }
 
+let firestoreOk: boolean | null = null
+
+/** Firestore when configured AND signed in; null means use browser storage. */
+async function remote() {
+  const fb = firebase()
+  if (!fb) return null
+  firestoreOk = await fb.ready
+  return firestoreOk ? fb : null
+}
+
+function localSubscribe<C extends CollectionName>(c: C, cb: (rows: DocOf<C>[]) => void) {
+  const fire = () => cb(lsRead(c))
+  if (!listeners.has(c)) listeners.set(c, new Set())
+  listeners.get(c)!.add(fire)
+  fire()
+  return () => {
+    listeners.get(c)!.delete(fire)
+  }
+}
+
 /** Firestore rejects undefined fields; strip them. */
 const clean = <T extends object>(o: T) =>
   Object.fromEntries(Object.entries(o).filter(([, v]) => v !== undefined)) as T
 
 export const store = {
   get mode(): 'firebase' | 'local' {
-    return firebase() ? 'firebase' : 'local'
+    return firebase() && firestoreOk !== false ? 'firebase' : 'local'
   },
 
   subscribe<C extends CollectionName>(c: C, cb: (rows: DocOf<C>[]) => void): () => void {
-    const fb = firebase()
-    if (fb) {
-      let unsub = () => {}
-      let cancelled = false
-      fb.ready.then(() => {
-        if (cancelled) return
-        unsub = onSnapshot(
-          collection(fb.db, c),
-          (snap) => cb(snap.docs.map((d) => ({ ...(d.data() as DocOf<C>), id: d.id }))),
-          (err) => console.warn(`Firestore ${c}`, err),
-        )
-      })
-      return () => {
-        cancelled = true
-        unsub()
-      }
+    if (!firebase()) return localSubscribe(c, cb)
+    let unsub = () => {}
+    let cancelled = false
+    remote().then((fb) => {
+      if (cancelled) return
+      unsub = fb
+        ? onSnapshot(
+            collection(fb.db, c),
+            (snap) => cb(snap.docs.map((d) => ({ ...(d.data() as DocOf<C>), id: d.id }))),
+            (err) => console.warn(`Firestore ${c}`, err),
+          )
+        : localSubscribe(c, cb)
+    })
+    return () => {
+      cancelled = true
+      unsub()
     }
-    const fire = () => cb(lsRead(c))
-    if (!listeners.has(c)) listeners.set(c, new Set())
-    listeners.get(c)!.add(fire)
-    fire()
-    return () => listeners.get(c)!.delete(fire)
   },
 
   async add<C extends CollectionName>(c: C, row: Omit<DocOf<C>, 'id'>): Promise<DocOf<C>> {
-    const fb = firebase()
+    const fb = await remote()
     if (fb) {
-      await fb.ready
       const ref = await addDoc(collection(fb.db, c), clean(row as object))
       return { ...(row as object), id: ref.id } as DocOf<C>
     }
@@ -95,9 +109,8 @@ export const store = {
   },
 
   async addMany<C extends CollectionName>(c: C, rows: Omit<DocOf<C>, 'id'>[]): Promise<void> {
-    const fb = firebase()
+    const fb = await remote()
     if (fb) {
-      await fb.ready
       for (let i = 0; i < rows.length; i += 400) {
         const batch = writeBatch(fb.db)
         for (const r of rows.slice(i, i + 400)) batch.set(doc(collection(fb.db, c)), clean(r as object))
@@ -109,9 +122,8 @@ export const store = {
   },
 
   async update<C extends CollectionName>(c: C, id: string, patch: Partial<DocOf<C>>): Promise<void> {
-    const fb = firebase()
+    const fb = await remote()
     if (fb) {
-      await fb.ready
       await updateDoc(doc(fb.db, c, id), clean(patch as object))
       return
     }
@@ -120,10 +132,9 @@ export const store = {
 
   /** Remove everything seeded by the demo button, leaving real submissions alone. */
   async clearDemo(): Promise<void> {
-    const fb = firebase()
+    const fb = await remote()
     for (const c of ['reports', 'deliveries', 'pulses'] as CollectionName[]) {
       if (fb) {
-        await fb.ready
         const snap = await getDocs(query(collection(fb.db, c), where('demo', '==', true)))
         await Promise.all(snap.docs.map((d) => deleteDoc(d.ref)))
       } else {

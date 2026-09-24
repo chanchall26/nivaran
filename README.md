@@ -36,15 +36,15 @@ npm run dev          # http://localhost:5173
 npm test             # scoring, allocation, policy and ledger tests on the real Gwalior data
 ```
 
-With no configuration the app runs in **demo mode**: data is kept in the browser, AI falls back to transparent rules, and the basemap is OpenFreeMap. On the Impact page, **Demo season load karo** fills in a simulated winter and summer. It uses the real Match engine plus simulated Pulse answers, every row is flagged `demo`, and one click removes them.
+With no configuration, or if anonymous sign-in fails, the app runs in **demo mode**: data is kept in the browser, AI falls back to transparent rules, and the basemap is OpenFreeMap. On the Impact page, **Demo season load karo** fills in a simulated winter and summer. It uses the real Match engine plus simulated Pulse answers, every row is flagged `demo`, and one click removes them.
 
 ### Turning on Firebase and Gemini
 
 1. Create a Firebase project (the free Spark plan is enough) and add a **Web app**.
 2. **Authentication → Sign-in method →** enable **Anonymous**.
 3. **Firestore Database →** create (production mode, region `asia-south1`).
-4. **AI Logic →** get started with the **Gemini Developer API**.
-5. `cp web/.env.example web/.env.local` and fill in the `VITE_FIREBASE_*` values. Optionally set `VITE_GOOGLE_MAPS_API_KEY`.
+4. **AI Logic →** get started with the **Gemini Developer API**. AI Logic now requires **App Check**: create a reCAPTCHA Enterprise key for your domains, register it under App Check for the web app, and enforce App Check for AI Logic. For `npm run dev`, register a debug token and put it in `web/.env.development.local` as `VITE_APPCHECK_DEBUG_TOKEN` (never in `.env.local`, which is also used by production builds).
+5. `cp web/.env.example web/.env.local` and fill in the `VITE_FIREBASE_*` values and `VITE_RECAPTCHA_SITE_KEY`. Optionally set `VITE_GOOGLE_MAPS_API_KEY`.
 6. Deploy:
 
 ```bash

@@ -8,24 +8,39 @@ import { firebase } from './firebase'
 import { actionFor, parsePulseRules, routeFor } from './policy'
 import type { ItemType, PulseReason, ReportCategory, Route, Season } from './types'
 
-export const GEMINI_MODEL = import.meta.env.VITE_GEMINI_MODEL || 'gemini-2.5-flash'
+export const GEMINI_MODEL = import.meta.env.VITE_GEMINI_MODEL || 'gemini-3-flash-preview'
+/** tried when the main model is overloaded or retired */
+const FALLBACK_MODEL = 'gemini-flash-lite-latest'
 
-const models = new Map<string, GenerativeModel>()
-function model(key: string, schema: Schema, system: string): GenerativeModel | null {
+const models = new Map<string, GenerativeModel[]>()
+function modelChain(key: string, schema: Schema, system: string): GenerativeModel[] | null {
   const fb = firebase()
   if (!fb) return null
   if (!models.has(key)) {
     const ai = getAI(fb.app, { backend: new GoogleAIBackend() })
-    models.set(
-      key,
+    const make = (name: string) =>
       getGenerativeModel(ai, {
-        model: GEMINI_MODEL,
+        model: name,
         systemInstruction: system,
         generationConfig: { responseMimeType: 'application/json', responseSchema: schema, temperature: 0.2 },
-      }),
-    )
+      })
+    models.set(key, [make(GEMINI_MODEL), make(FALLBACK_MODEL)])
   }
   return models.get(key)!
+}
+
+/** Generate JSON with the main model, falling back once if it errors (overload, retirement). */
+async function generateJson(chain: GenerativeModel[], request: Parameters<GenerativeModel['generateContent']>[0]) {
+  let last: unknown
+  for (const m of chain) {
+    try {
+      const res = await m.generateContent(request)
+      return JSON.parse(res.response.text())
+    } catch (e) {
+      last = e
+    }
+  }
+  throw last
 }
 
 // ---- report photo -----------------------------------------------------------------------
@@ -57,6 +72,9 @@ and classify the situation. Rules:
 - heat_exposed: people working in direct sun with no shade. no_shade_spot: a street/market/bus stop
   with no shade (even without people).
 - plantable: could a street tree be planted here (open soil or footpath edge, no overhead wires, not on road)?
+- Describe ONLY what is visible in the photo. The reporter's note is context, not evidence: if the photo
+  does not show what the note claims (or is not a street photo at all), say so in the summary and set
+  confidence to low.
 - Write "summary" in simple Hinglish (Roman script), max 20 words.`
 
 export interface ReportAnalysis {
@@ -86,18 +104,17 @@ export async function analyseReport(opts: {
     ai: 'rules',
     error,
   })
-  const m = model('report', reportSchema, REPORT_SYSTEM)
+  const m = modelChain('report', reportSchema, REPORT_SYSTEM)
   if (!m || !opts.imageDataUrl) return fallback()
   try {
     const [, mime, b64] = opts.imageDataUrl.match(/^data:(.+?);base64,(.*)$/) ?? []
-    const res = await m.generateContent([
+    const j = await generateJson(m, [
       { inlineData: { mimeType: mime, data: b64 } },
       {
         text: `Season: ${opts.season}. Reporter chose: ${opts.userCategory}; says people present: ${opts.userPeoplePresent}. ` +
           `Reporter note: ${opts.note || '(none)'}. Classify.`,
       },
     ])
-    const j = JSON.parse(res.response.text())
     // Safety rule wins over the model: if either the reporter or the model saw people,
     // it is a people case and can never be routed to enforcement/cleanup.
     const people = Boolean(j.peoplePresent) || opts.userPeoplePresent
@@ -155,11 +172,10 @@ export async function analysePulse(answer: string, item: ItemType): Promise<Puls
       ai: 'rules',
     }
   }
-  const m = model('pulse', pulseSchema, PULSE_SYSTEM)
+  const m = modelChain('pulse', pulseSchema, PULSE_SYSTEM)
   if (!m || !answer.trim()) return rules()
   try {
-    const res = await m.generateContent(`Item: ${item}\nAnswer: """${answer}"""`)
-    const j = JSON.parse(res.response.text())
+    const j = await generateJson(m, `Item: ${item}\nAnswer: """${answer}"""`)
     const reason: PulseReason = REASONS.includes(j.reason) ? j.reason : 'other'
     const ok = Boolean(j.ok) && reason === 'none'
     return { ok, reason: ok ? 'none' : reason, action: actionFor(item, ok ? 'none' : reason), followUp: j.followUp ?? '', ai: 'gemini' }
