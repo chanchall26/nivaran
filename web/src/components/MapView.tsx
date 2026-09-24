@@ -7,10 +7,15 @@ import { GoogleMapsOverlay } from '@deck.gl/google-maps'
 import { MapboxOverlay } from '@deck.gl/mapbox'
 import { importLibrary, setOptions } from '@googlemaps/js-api-loader'
 import * as maplibregl from 'maplibre-gl'
+// MapLibre v6 looks for its worker next to its own module, which does not survive bundling;
+// let Vite bundle the worker and hand MapLibre the URL.
+import maplibreWorkerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url'
 import { useEffect, useRef, useState } from 'react'
 
 const GOOGLE_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY as string | undefined
 const GOOGLE_MAP_ID = (import.meta.env.VITE_GOOGLE_MAPS_MAP_ID as string | undefined) || 'DEMO_MAP_ID'
+maplibregl.setWorkerUrl(maplibreWorkerUrl)
+
 const OSM_STYLE = 'https://tiles.openfreemap.org/styles/positron'
 
 type Tooltip = ((info: PickingInfo) => string | { html: string } | null) | undefined
