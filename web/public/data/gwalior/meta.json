@@ -1,0 +1,23 @@
+{
+ "city": "Gwalior",
+ "cityHi": "ग्वालियर",
+ "center": [
+  26.2124,
+  78.1772
+ ],
+ "h3Resolution": 9,
+ "cells": 1376,
+ "population": 941928,
+ "layers": {
+  "population": "Meta High Resolution Settlement Layer (HRSL), ~30 m, CC-BY 4.0",
+  "canopy": "ESA WorldCover 2021 v200, 10 m, tree-cover class, CC-BY 4.0",
+  "lst": "Landsat 8/9 C2 L2 surface temperature, median of 10/18/25/26 May 2026 (USGS via Microsoft Planetary Computer)",
+  "osm": "OpenStreetMap contributors, ODbL (bus stops, markets, guarded sites, roads, boundary)",
+  "localities": "Hand-placed approximate locality labels",
+  "synthetic": "Guard posts, rehri zones, worksites, homeless spots and labour chowks marked 'synthetic' are sampled in proportion to population for the demo; shelters marked 'demo' are placeholders"
+ },
+ "lstRange": [
+  44.3,
+  51.6
+ ]
+}

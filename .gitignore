@@ -1,0 +1,18 @@
+node_modules/
+dist/
+.env
+.env.*
+!.env.example
+*.local
+.firebase/
+firebase-debug.log*
+firestore-debug.log*
+
+# pipeline: reproducible intermediates (run the scripts to regenerate)
+pipeline/out/
+pipeline/.cache/
+__pycache__/
+*.pyc
+
+# self-hosted MediaPipe wasm is copied from node_modules at dev/build time
+web/public/mediapipe/

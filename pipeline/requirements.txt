@@ -1,0 +1,7 @@
+h3>=4.5
+numpy>=2
+rasterio>=1.4
+shapely>=2
+requests>=2.31
+pystac-client>=0.8
+planetary-computer>=1.0

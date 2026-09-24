@@ -1,0 +1,172 @@
+/**
+ * Gemini through Firebase AI Logic (client SDK, Gemini Developer API backend).
+ * Every call has a rule-based fallback so the product still works offline or
+ * without a Firebase project; results say which path produced them.
+ */
+import { getAI, getGenerativeModel, GoogleAIBackend, Schema, type GenerativeModel } from 'firebase/ai'
+import { firebase } from './firebase'
+import { actionFor, parsePulseRules, routeFor } from './policy'
+import type { ItemType, PulseReason, ReportCategory, Route, Season } from './types'
+
+export const GEMINI_MODEL = import.meta.env.VITE_GEMINI_MODEL || 'gemini-2.5-flash'
+
+const models = new Map<string, GenerativeModel>()
+function model(key: string, schema: Schema, system: string): GenerativeModel | null {
+  const fb = firebase()
+  if (!fb) return null
+  if (!models.has(key)) {
+    const ai = getAI(fb.app, { backend: new GoogleAIBackend() })
+    models.set(
+      key,
+      getGenerativeModel(ai, {
+        model: GEMINI_MODEL,
+        systemInstruction: system,
+        generationConfig: { responseMimeType: 'application/json', responseSchema: schema, temperature: 0.2 },
+      }),
+    )
+  }
+  return models.get(key)!
+}
+
+// ---- report photo -----------------------------------------------------------------------
+
+const CATEGORIES: ReportCategory[] = [
+  'guard_fire', 'homeless', 'labour_camp', 'waste_only', 'heat_exposed', 'no_shade_spot', 'other',
+]
+
+const reportSchema = Schema.object({
+  properties: {
+    category: Schema.enumString({ enum: CATEGORIES }),
+    peoplePresent: Schema.boolean(),
+    fireVisible: Schema.boolean(),
+    summary: Schema.string({ description: 'One short Hinglish sentence describing the situation, never the people' }),
+    plantable: Schema.enumString({ enum: ['yes', 'maybe', 'no', 'not_applicable'] }),
+    plantableWhy: Schema.string(),
+    confidence: Schema.enumString({ enum: ['high', 'medium', 'low'] }),
+  },
+})
+
+const REPORT_SYSTEM = `You help "Barahmasa", a service in Gwalior, India that sends HELP (heaters, blankets,
+shade, water, trees) to people who work or live outdoors. You look at a photo (faces already blurred)
+and classify the situation. Rules:
+- NEVER describe, identify or speculate about who a person is, their caste, religion, or appearance.
+- Describe the situation and the place only.
+- A fire with a person sitting near it for warmth is guard_fire (if it looks like a gate/guard post/booth)
+  or homeless (pavement, under a bridge, bedding) or labour_camp (tents, worksite huts).
+- waste_only means a burning or smouldering pile with nobody around.
+- heat_exposed: people working in direct sun with no shade. no_shade_spot: a street/market/bus stop
+  with no shade (even without people).
+- plantable: could a street tree be planted here (open soil or footpath edge, no overhead wires, not on road)?
+- Write "summary" in simple Hinglish (Roman script), max 20 words.`
+
+export interface ReportAnalysis {
+  category: ReportCategory
+  peoplePresent: boolean
+  summary: string
+  plantable?: string
+  confidence: 'high' | 'medium' | 'low'
+  route: Route
+  ai: 'gemini' | 'rules'
+  error?: string
+}
+
+export async function analyseReport(opts: {
+  imageDataUrl?: string
+  season: Season
+  userCategory: ReportCategory
+  userPeoplePresent: boolean
+  note?: string
+}): Promise<ReportAnalysis> {
+  const fallback = (error?: string): ReportAnalysis => ({
+    category: opts.userCategory,
+    peoplePresent: opts.userPeoplePresent,
+    summary: opts.note?.trim() || 'Report reporter ke chune gaye category ke hisaab se darj hui.',
+    confidence: 'medium',
+    route: routeFor(opts.userCategory, opts.userPeoplePresent),
+    ai: 'rules',
+    error,
+  })
+  const m = model('report', reportSchema, REPORT_SYSTEM)
+  if (!m || !opts.imageDataUrl) return fallback()
+  try {
+    const [, mime, b64] = opts.imageDataUrl.match(/^data:(.+?);base64,(.*)$/) ?? []
+    const res = await m.generateContent([
+      { inlineData: { mimeType: mime, data: b64 } },
+      {
+        text: `Season: ${opts.season}. Reporter chose: ${opts.userCategory}; says people present: ${opts.userPeoplePresent}. ` +
+          `Reporter note: ${opts.note || '(none)'}. Classify.`,
+      },
+    ])
+    const j = JSON.parse(res.response.text())
+    // Safety rule wins over the model: if either the reporter or the model saw people,
+    // it is a people case and can never be routed to enforcement/cleanup.
+    const people = Boolean(j.peoplePresent) || opts.userPeoplePresent
+    const category: ReportCategory = CATEGORIES.includes(j.category) ? j.category : opts.userCategory
+    return {
+      category,
+      peoplePresent: people,
+      summary: String(j.summary ?? '').slice(0, 200),
+      plantable: j.plantable !== 'not_applicable' ? `${j.plantable}: ${j.plantableWhy ?? ''}` : undefined,
+      confidence: j.confidence ?? 'medium',
+      route: routeFor(category, people),
+      ai: 'gemini',
+    }
+  } catch (e) {
+    console.warn('Gemini report analysis failed, using rules', e)
+    return fallback(String(e))
+  }
+}
+
+// ---- pulse answer ---------------------------------------------------------------------
+
+const REASONS: PulseReason[] = [
+  'none', 'electricity_bill', 'rwa_refused', 'broken', 'stolen', 'no_water', 'plant_died', 'not_received', 'other',
+]
+const pulseSchema = Schema.object({
+  properties: {
+    ok: Schema.boolean({ description: 'true if the help is being used / working / alive' }),
+    reason: Schema.enumString({ enum: REASONS }),
+    followUp: Schema.string({ description: 'One short polite Hindi (Devanagari) sentence to say back to the caller' }),
+  },
+})
+const PULSE_SYSTEM = `You understand short answers from security guards, vendors and volunteers in Gwalior
+to a check-in call about help they received (heater, blanket kit, cabin, shade net, water pot, sapling).
+Answers may be Hindi, Hinglish, Bundeli or broken English, often via speech-to-text with errors.
+Decide whether the help is working/being used (ok) and, if not, the main reason:
+electricity_bill (fear of bill / owner says bill too high), rwa_refused (RWA, society, owner or secretary
+does not allow), broken, stolen (or removed), no_water, plant_died, not_received, other.
+followUp: one warm, respectful Hindi sentence (Devanagari) acknowledging the answer and saying help will follow.`
+
+export interface PulseAnalysis {
+  ok: boolean
+  reason: PulseReason
+  action: string
+  followUp: string
+  ai: 'gemini' | 'rules'
+}
+
+export async function analysePulse(answer: string, item: ItemType): Promise<PulseAnalysis> {
+  const rules = (): PulseAnalysis => {
+    const r = parsePulseRules(answer, item)
+    return {
+      ...r,
+      action: actionFor(item, r.reason),
+      followUp: r.ok ? 'बहुत अच्छा, धन्यवाद! हम अगले हफ़्ते फिर पूछेंगे।' : 'समझ गए, धन्यवाद। हमारी टीम जल्दी मदद भेजेगी।',
+      ai: 'rules',
+    }
+  }
+  const m = model('pulse', pulseSchema, PULSE_SYSTEM)
+  if (!m || !answer.trim()) return rules()
+  try {
+    const res = await m.generateContent(`Item: ${item}\nAnswer: """${answer}"""`)
+    const j = JSON.parse(res.response.text())
+    const reason: PulseReason = REASONS.includes(j.reason) ? j.reason : 'other'
+    const ok = Boolean(j.ok) && reason === 'none'
+    return { ok, reason: ok ? 'none' : reason, action: actionFor(item, ok ? 'none' : reason), followUp: j.followUp ?? '', ai: 'gemini' }
+  } catch (e) {
+    console.warn('Gemini pulse analysis failed, using rules', e)
+    return rules()
+  }
+}
+
+export const aiMode = () => (firebase() ? `Gemini (${GEMINI_MODEL}) via Firebase AI Logic` : 'Rules (demo mode, Gemini off)')

@@ -1,0 +1,72 @@
+@import 'tailwindcss';
+@import 'maplibre-gl/dist/maplibre-gl.css';
+
+@theme {
+  --font-sans: 'Mukta', ui-sans-serif, system-ui, 'Segoe UI', 'Noto Sans Devanagari', sans-serif;
+
+  --color-paper: #faf8f4;
+  --color-card: #ffffff;
+  --color-ink: #1d1b18;
+  --color-ink-2: #52504b;
+  --color-ink-3: #8a877f;
+  --color-line: #e7e3da;
+
+  /* Garmi (heat) - orange ramp; Sardi (cold) - blue ramp. Dark = more need. */
+  --color-garmi-50: #fff4ec;
+  --color-garmi-100: #fde0cf;
+  --color-garmi-300: #f39b70;
+  --color-garmi-500: #eb6834;
+  --color-garmi-600: #c9501f;
+  --color-garmi-700: #a03d15;
+  --color-garmi-900: #5c2208;
+
+  --color-sardi-50: #eef5fd;
+  --color-sardi-100: #cde2fb;
+  --color-sardi-300: #6da7ec;
+  --color-sardi-500: #2a78d6;
+  --color-sardi-600: #1c5cab;
+  --color-sardi-700: #104281;
+  --color-sardi-900: #0a2548;
+
+  --color-good: #0ca30c;
+  --color-warning: #fab219;
+  --color-serious: #ec835a;
+  --color-critical: #d03b3b;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  background: var(--color-paper);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+.tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+/* The season is a page-wide theme: components read --accent-* instead of branching. */
+.season-garmi {
+  --accent-50: var(--color-garmi-50);
+  --accent-100: var(--color-garmi-100);
+  --accent-500: var(--color-garmi-500);
+  --accent-600: var(--color-garmi-600);
+  --accent-700: var(--color-garmi-700);
+}
+.season-sardi {
+  --accent-50: var(--color-sardi-50);
+  --accent-100: var(--color-sardi-100);
+  --accent-500: var(--color-sardi-500);
+  --accent-600: var(--color-sardi-600);
+  --accent-700: var(--color-sardi-700);
+}
+
+.maplibregl-ctrl-attrib {
+  font-size: 10px;
+}
