@@ -24,6 +24,7 @@ Theme: **Clean Air & Climate Resilience** (GDG hackathon).
 
 - **Gemini** through **Firebase AI Logic** (client SDK, Gemini Developer API): photo understanding with structured JSON output, and understanding Hindi/Hinglish Pulse answers
 - **Firebase**: Hosting, Firestore (real-time: a report sent from a phone appears on the coordinator's map immediately), Anonymous Auth, security rules that enforce the no-enforcement policy
+- **Google Earth Engine** (noncommercial Community tier, no billing): per-cell summer land-surface temperature from 8 QA-masked Landsat 8/9 scenes and tree canopy from ESA WorldCover, reduced over all 1,376 H3 cells
 - **MediaPipe Tasks** (face detector + object detector): on-device privacy blurring
 - **Google Maps Platform** basemap when a key is configured (falls back to MapLibre + OpenFreeMap)
 
@@ -60,14 +61,15 @@ Static city data is built once and committed under `web/public/data/gwalior/`.
 
 ```bash
 pip install -r pipeline/requirements.txt
+earthengine authenticate      # once; the project must be registered for Earth Engine
 sh pipeline/run_all.sh
 ```
 
 | Layer | Source | Notes |
 |---|---|---|
 | City boundary, bus stops, markets, guarded sites (banks, ATMs, hospitals, schools), roads, localities | OpenStreetMap (Overpass) | Gwalior is thinly mapped: only 3 bus stops |
-| Tree canopy | ESA WorldCover 2021, 10 m | tree-cover class share per cell |
-| Surface temperature | Landsat 8/9 C2 L2, median of 10, 18, 25 and 26 May 2026 | via Microsoft Planetary Computer |
+| Tree canopy | ESA WorldCover 2021, 10 m | tree-cover share per cell, computed on Google Earth Engine |
+| Surface temperature | Landsat 8/9 C2 L2, QA-masked median of 8 May 2026 scenes | computed on Google Earth Engine (`fetch_ee.py`); `fetch_rasters.py` reproduces it via Planetary Computer as a fallback (r = 0.92 against Earth Engine) |
 | Population | Meta High Resolution Settlement Layer, ~30 m | 9.4 lakh inside city limits |
 | Weather | Open-Meteo forecast, historical forecast, CAMS PM2.5 | one point for the whole city |
 

@@ -105,12 +105,22 @@ def main():
     index = {c: i for i, c in enumerate(cells)}
     print("cells", len(cells))
 
-    canopy, ct = load_npz("canopy.npz")
-    lst, lt = load_npz("lst.npz")
     pop, pt = load_npz("population.npz")
-    canopy_c = cell_stats(cells, canopy, ct, "mean")
-    lst_c = cell_stats(cells, lst, lt, "mean")
     pop_c = cell_stats(cells, pop, pt, "sum")
+    ee_file = OUT / "ee_cells.json"
+    if ee_file.exists():
+        # preferred: computed on Google Earth Engine (fetch_ee.py)
+        ee_data = json.loads(ee_file.read_text(encoding="utf-8"))
+        ee_cells, ee_meta = ee_data["cells"], ee_data["meta"]
+        pick = lambda k: np.array([np.nan if ee_cells.get(c, {}).get(k) is None else ee_cells[c][k] for c in cells])
+        canopy_c, lst_c = pick("canopy"), pick("lst")
+        print(f"using Earth Engine layers ({ee_meta['scenes']} Landsat scenes)")
+    else:
+        ee_meta = None
+        canopy, ct = load_npz("canopy.npz")
+        lst, lt = load_npz("lst.npz")
+        canopy_c = cell_stats(cells, canopy, ct, "mean")
+        lst_c = cell_stats(cells, lst, lt, "mean")
 
     counts = {c: np.zeros(len(cells)) for c in osm}
     for cat, block in osm.items():
@@ -228,8 +238,11 @@ def main():
         "cells": len(cells), "population": int(pop_c.sum()),
         "layers": {
             "population": "Meta High Resolution Settlement Layer (HRSL), ~30 m, CC-BY 4.0",
-            "canopy": "ESA WorldCover 2021 v200, 10 m, tree-cover class, CC-BY 4.0",
-            "lst": "Landsat 8/9 C2 L2 surface temperature, median of 10/18/25/26 May 2026 (USGS via Microsoft Planetary Computer)",
+            "canopy": "ESA WorldCover 2021 v200, 10 m, tree-cover class, CC-BY 4.0"
+                      + (" (computed on Google Earth Engine)" if ee_meta else ""),
+            "lst": (f"Landsat 8/9 C2 L2 surface temperature, QA-masked median of {ee_meta['scenes']} May 2026 scenes, "
+                    "computed on Google Earth Engine") if ee_meta else
+                   "Landsat 8/9 C2 L2 surface temperature, median of 10/18/25/26 May 2026 (USGS via Microsoft Planetary Computer)",
             "osm": "OpenStreetMap contributors, ODbL (bus stops, markets, guarded sites, roads, boundary)",
             "localities": "Hand-placed approximate locality labels",
             "synthetic": "Guard posts, rehri zones, worksites, homeless spots and labour chowks marked 'synthetic' are "
