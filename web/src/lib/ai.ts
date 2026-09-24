@@ -5,7 +5,7 @@
  */
 import { getAI, getGenerativeModel, GoogleAIBackend, Schema, type GenerativeModel } from 'firebase/ai'
 import { firebase } from './firebase'
-import { actionFor, parsePulseRules, routeFor } from './policy'
+import { parsePulseRules, routeFor } from './policy'
 import type { ItemType, PulseReason, ReportCategory, Route, Season } from './types'
 
 export const GEMINI_MODEL = import.meta.env.VITE_GEMINI_MODEL || 'gemini-3-flash-preview'
@@ -54,7 +54,8 @@ const reportSchema = Schema.object({
     category: Schema.enumString({ enum: CATEGORIES }),
     peoplePresent: Schema.boolean(),
     fireVisible: Schema.boolean(),
-    summary: Schema.string({ description: 'One short Hinglish sentence describing the situation, never the people' }),
+    summaryEn: Schema.string({ description: 'One short, simple English sentence describing the situation, never the people' }),
+    summaryHi: Schema.string({ description: 'The same sentence in simple Hindi (Devanagari)' }),
     plantable: Schema.enumString({ enum: ['yes', 'maybe', 'no', 'not_applicable'] }),
     plantableWhy: Schema.string(),
     confidence: Schema.enumString({ enum: ['high', 'medium', 'low'] }),
@@ -75,12 +76,13 @@ and classify the situation. Rules:
 - Describe ONLY what is visible in the photo. The reporter's note is context, not evidence: if the photo
   does not show what the note claims (or is not a street photo at all), say so in the summary and set
   confidence to low.
-- Write "summary" in simple Hinglish (Roman script), max 20 words.`
+- Write summaryEn in simple English and summaryHi in simple Hindi (Devanagari), max 20 words each.`
 
 export interface ReportAnalysis {
   category: ReportCategory
   peoplePresent: boolean
   summary: string
+  summaryHi?: string
   plantable?: string
   confidence: 'high' | 'medium' | 'low'
   route: Route
@@ -98,7 +100,7 @@ export async function analyseReport(opts: {
   const fallback = (error?: string): ReportAnalysis => ({
     category: opts.userCategory,
     peoplePresent: opts.userPeoplePresent,
-    summary: opts.note?.trim() || 'Report reporter ke chune gaye category ke hisaab se darj hui.',
+    summary: opts.note?.trim() ?? '',
     confidence: 'medium',
     route: routeFor(opts.userCategory, opts.userPeoplePresent),
     ai: 'rules',
@@ -122,7 +124,8 @@ export async function analyseReport(opts: {
     return {
       category,
       peoplePresent: people,
-      summary: String(j.summary ?? '').slice(0, 200),
+      summary: String(j.summaryEn ?? '').slice(0, 200),
+      summaryHi: String(j.summaryHi ?? '').slice(0, 200),
       plantable: j.plantable !== 'not_applicable' ? `${j.plantable}: ${j.plantableWhy ?? ''}` : undefined,
       confidence: j.confidence ?? 'medium',
       route: routeFor(category, people),
@@ -143,7 +146,8 @@ const pulseSchema = Schema.object({
   properties: {
     ok: Schema.boolean({ description: 'true if the help is being used / working / alive' }),
     reason: Schema.enumString({ enum: REASONS }),
-    followUp: Schema.string({ description: 'One short polite Hindi (Devanagari) sentence to say back to the caller' }),
+    followUpHi: Schema.string({ description: 'One short, warm Hindi (Devanagari) sentence to say back to the caller' }),
+    followUpEn: Schema.string({ description: 'The same sentence in simple English' }),
   },
 })
 const PULSE_SYSTEM = `You understand short answers from security guards, vendors and volunteers in Gwalior
@@ -152,13 +156,13 @@ Answers may be Hindi, Hinglish, Bundeli or broken English, often via speech-to-t
 Decide whether the help is working/being used (ok) and, if not, the main reason:
 electricity_bill (fear of bill / owner says bill too high), rwa_refused (RWA, society, owner or secretary
 does not allow), broken, stolen (or removed), no_water, plant_died, not_received, other.
-followUp: one warm, respectful Hindi sentence (Devanagari) acknowledging the answer and saying help will follow.`
+followUpHi / followUpEn: one warm, respectful sentence acknowledging the answer (and, if not ok, saying help will follow).`
 
 export interface PulseAnalysis {
   ok: boolean
   reason: PulseReason
-  action: string
-  followUp: string
+  followUpHi: string
+  followUpEn: string
   ai: 'gemini' | 'rules'
 }
 
@@ -167,8 +171,8 @@ export async function analysePulse(answer: string, item: ItemType): Promise<Puls
     const r = parsePulseRules(answer, item)
     return {
       ...r,
-      action: actionFor(item, r.reason),
-      followUp: r.ok ? 'बहुत अच्छा, धन्यवाद! हम अगले हफ़्ते फिर पूछेंगे।' : 'समझ गए, धन्यवाद। हमारी टीम जल्दी मदद भेजेगी।',
+      followUpHi: r.ok ? 'बहुत अच्छा, धन्यवाद! हम अगले हफ़्ते फिर पूछेंगे।' : 'समझ गए, धन्यवाद। हमारी टीम जल्दी मदद भेजेगी।',
+      followUpEn: r.ok ? 'Very good, thank you! We will ask again next week.' : 'Understood, thank you. Our team will send help soon.',
       ai: 'rules',
     }
   }
@@ -178,11 +182,11 @@ export async function analysePulse(answer: string, item: ItemType): Promise<Puls
     const j = await generateJson(m, `Item: ${item}\nAnswer: """${answer}"""`)
     const reason: PulseReason = REASONS.includes(j.reason) ? j.reason : 'other'
     const ok = Boolean(j.ok) && reason === 'none'
-    return { ok, reason: ok ? 'none' : reason, action: actionFor(item, ok ? 'none' : reason), followUp: j.followUp ?? '', ai: 'gemini' }
+    return { ok, reason: ok ? 'none' : reason, followUpHi: j.followUpHi ?? '', followUpEn: j.followUpEn ?? '', ai: 'gemini' }
   } catch (e) {
     console.warn('Gemini pulse analysis failed, using rules', e)
     return rules()
   }
 }
 
-export const aiMode = () => (firebase() ? `Gemini (${GEMINI_MODEL}) via Firebase AI Logic` : 'Rules (demo mode, Gemini off)')
+export const aiMode = () => (firebase() ? `Gemini (${GEMINI_MODEL}) · Firebase AI Logic` : 'Rules (Gemini off)')

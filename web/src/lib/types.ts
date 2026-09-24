@@ -120,7 +120,9 @@ export interface Report {
   thumb?: string
   facesBlurred: number
   peoplePresent: boolean
+  /** Gemini's one-line description in English; summaryHi in Hindi. Empty for rule-based reports. */
   summary: string
+  summaryHi?: string
   note?: string
   status: 'open' | 'assigned' | 'resolved'
   createdAt: number

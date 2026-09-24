@@ -1,7 +1,9 @@
-import { BookOpen, Camera, LayoutDashboard, Map, Menu, PhoneCall, Shuffle, X } from 'lucide-react'
-import { lazy, Suspense, useState } from 'react'
+import { BarChart3, BookOpen, Camera, HandHeart, Home as HomeIcon, Map, Menu, PhoneCall, X } from 'lucide-react'
+import { lazy, Suspense, useEffect, useState } from 'react'
 import { NavLink, Route, Routes, useLocation } from 'react-router-dom'
-import { SeasonSwitch } from './components/ui'
+import { Brand } from './components/Brand'
+import { LangToggle, SeasonToggle } from './components/kit'
+import { useI18n } from './i18n'
 import { store } from './lib/store'
 import Home from './pages/Home'
 import { useApp } from './state'
@@ -13,38 +15,49 @@ const Match = lazy(() => import('./pages/Match'))
 const Ledger = lazy(() => import('./pages/Ledger'))
 const Method = lazy(() => import('./pages/Method'))
 
-const NAV = [
-  { to: '/map', label: 'Bahar-Log Map', Icon: Map },
-  { to: '/report', label: 'Report', Icon: Camera },
-  { to: '/match', label: 'Match', Icon: Shuffle },
-  { to: '/pulse', label: 'Pulse', Icon: PhoneCall },
-  { to: '/ledger', label: 'Impact', Icon: LayoutDashboard },
-  { to: '/method', label: 'Method', Icon: BookOpen },
-]
-
 export default function App() {
   const { season, cityError } = useApp()
-  const [open, setOpen] = useState(false)
+  const { s } = useI18n()
+  const [menu, setMenu] = useState(false)
   const { pathname } = useLocation()
   const fullBleed = pathname === '/map'
 
+  useEffect(() => {
+    document.querySelector('meta[name="theme-color"]')?.setAttribute('content', season === 'sardi' ? '#0a1230' : '#fff6ea')
+  }, [season])
+  useEffect(() => {
+    setMenu(false)
+    window.scrollTo(0, 0)
+  }, [pathname])
+
+  const NAV = [
+    { to: '/', label: s.nav.home, Icon: HomeIcon },
+    { to: '/map', label: s.nav.map, Icon: Map },
+    { to: '/report', label: s.nav.report, Icon: Camera },
+    { to: '/match', label: s.nav.help, Icon: HandHeart },
+    { to: '/pulse', label: s.nav.check, Icon: PhoneCall },
+    { to: '/ledger', label: s.nav.results, Icon: BarChart3 },
+    { to: '/method', label: s.nav.how, Icon: BookOpen },
+  ]
+  const TABS = [NAV[0], NAV[1], NAV[2], NAV[3], NAV[4]]
+
   return (
-    <div className={`season-${season} flex min-h-full flex-col`}>
-      <header className="sticky top-0 z-30 border-b border-line bg-paper/95 backdrop-blur">
-        <div className="mx-auto flex max-w-7xl items-center gap-4 px-4 py-2.5">
-          <NavLink to="/" className="flex items-center gap-2" onClick={() => setOpen(false)}>
-            <img src="/favicon.svg" alt="" className="size-7" />
-            <span className="text-xl font-extrabold tracking-tight">Barahmasa</span>
-            <span className="hidden text-sm text-ink-3 sm:inline">· Gwalior</span>
+    <div className={`theme-${season} app-bg relative flex min-h-dvh flex-col`}>
+      <div className="sky" aria-hidden />
+
+      <header className="sticky top-0 z-40 border-b border-line/60 bg-glass backdrop-blur-xl" style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}>
+        <div className="mx-auto flex max-w-7xl items-center gap-2 px-3 py-2.5 sm:gap-3 sm:px-4">
+          <NavLink to="/" aria-label={s.nav.home}>
+            <Brand />
           </NavLink>
-          <nav className="ml-4 hidden items-center gap-1 lg:flex" aria-label="Main">
-            {NAV.map(({ to, label, Icon }) => (
+          <nav className="ml-4 hidden items-center gap-1 xl:flex" aria-label="Main">
+            {NAV.slice(1).map(({ to, label, Icon }) => (
               <NavLink
                 key={to}
                 to={to}
                 className={({ isActive }) =>
-                  `flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium ${
-                    isActive ? 'bg-[var(--accent-100)] text-[var(--accent-700)]' : 'text-ink-2 hover:bg-black/5'
+                  `flex items-center gap-1.5 rounded-xl px-3 py-2 text-sm font-bold transition-colors ${
+                    isActive ? 'bg-accent-soft text-accent' : 'text-ink-2 hover:bg-surface-2 hover:text-ink'
                   }`
                 }
               >
@@ -54,45 +67,54 @@ export default function App() {
             ))}
           </nav>
           <div className="ml-auto flex items-center gap-2">
-            <SeasonSwitch />
+            <div className="hidden sm:block">
+              <LangToggle />
+            </div>
+            <div className="sm:hidden">
+              <LangToggle single />
+            </div>
+            <SeasonToggle compact />
             <button
               type="button"
-              className="rounded-lg p-2 hover:bg-black/5 lg:hidden"
-              aria-label={open ? 'Menu band karo' : 'Menu kholo'}
-              aria-expanded={open}
-              onClick={() => setOpen(!open)}
+              className="rounded-xl p-2 text-ink-2 hover:bg-surface-2 xl:hidden"
+              aria-label={menu ? s.app.close : 'Menu'}
+              aria-expanded={menu}
+              onClick={() => setMenu(!menu)}
             >
-              {open ? <X className="size-5" /> : <Menu className="size-5" />}
+              {menu ? <X className="size-6" /> : <Menu className="size-6" />}
             </button>
           </div>
         </div>
-        {open && (
-          <nav className="grid grid-cols-2 gap-1 border-t border-line px-4 py-2 lg:hidden" aria-label="Main mobile">
-            {NAV.map(({ to, label, Icon }) => (
-              <NavLink
-                key={to}
-                to={to}
-                onClick={() => setOpen(false)}
-                className={({ isActive }) =>
-                  `flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium ${
-                    isActive ? 'bg-[var(--accent-100)] text-[var(--accent-700)]' : 'text-ink-2'
-                  }`
-                }
-              >
-                <Icon className="size-4" aria-hidden />
-                {label}
-              </NavLink>
-            ))}
-          </nav>
+        {menu && (
+          <div className="border-t border-line/60 px-4 pb-4 xl:hidden">
+            <nav className="grid grid-cols-2 gap-2 pt-3 sm:grid-cols-3" aria-label="Menu">
+              {NAV.map(({ to, label, Icon }) => (
+                <NavLink
+                  key={to}
+                  to={to}
+                  className={({ isActive }) =>
+                    `flex items-center gap-2 rounded-2xl border px-3 py-3 font-bold ${
+                      isActive ? 'border-accent bg-accent-soft text-accent' : 'border-line bg-surface text-ink'
+                    }`
+                  }
+                >
+                  <Icon className="size-5" aria-hidden />
+                  {label}
+                </NavLink>
+              ))}
+            </nav>
+          </div>
         )}
       </header>
 
       {cityError && (
-        <div className="bg-critical px-4 py-2 text-center text-sm text-white">City data load nahi hua: {cityError}</div>
+        <div className="relative z-10 bg-critical px-4 py-2 text-center text-sm font-semibold text-white">
+          {s.app.cityError}: {cityError}
+        </div>
       )}
 
-      <main className={fullBleed ? 'flex-1' : 'mx-auto w-full max-w-7xl flex-1 px-4 py-6'}>
-        <Suspense fallback={<div className="p-10 text-center text-ink-3">Load ho raha hai…</div>}>
+      <main className={`relative z-10 flex-1 ${fullBleed ? '' : 'mx-auto w-full max-w-7xl px-4 pt-6 pb-28 sm:pt-8 xl:pb-12'}`}>
+        <Suspense fallback={<div className="p-16 text-center text-ink-3">{s.app.loading}</div>}>
           <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/map" element={<MapPage />} />
@@ -101,17 +123,53 @@ export default function App() {
             <Route path="/pulse" element={<Pulse />} />
             <Route path="/ledger" element={<Ledger />} />
             <Route path="/method" element={<Method />} />
-            <Route path="*" element={<div className="p-10 text-center">Ye page nahi mila.</div>} />
+            <Route path="*" element={<div className="p-16 text-center">{s.app.notFound}</div>} />
           </Routes>
         </Suspense>
       </main>
 
       {!fullBleed && (
-        <footer className="border-t border-line px-4 py-4 text-center text-xs text-ink-3">
-          Barahmasa · Garmi mein chhaya, sardi mein garmahat · Data: OSM, ESA WorldCover, Landsat, Meta HRSL, Open-Meteo ·{' '}
-          Storage: {store.mode === 'firebase' ? 'Firebase' : 'is browser mein (demo mode)'}
+        <footer className="relative z-10 hidden px-4 pb-6 text-center text-xs text-ink-3 xl:block">
+          {s.app.name} · {s.app.tagline} · {store.mode === 'firebase' ? s.app.liveMode : s.app.demoMode}
         </footer>
       )}
+
+      {/* phone tab bar with a raised 3D report button */}
+      <nav
+        className="fixed inset-x-0 bottom-0 z-40 border-t border-line/60 bg-glass backdrop-blur-xl xl:hidden pb-safe"
+        aria-label="Tabs"
+      >
+        <div className="mx-auto grid max-w-lg grid-cols-5 items-end px-2 pt-1.5">
+          {TABS.map(({ to, label, Icon }, i) =>
+            i === 2 ? (
+              <NavLink key={to} to={to} className="flex flex-col items-center gap-1" aria-label={label}>
+                <span className="btn-3d btn-primary -mt-7 flex size-16 items-center justify-center rounded-[1.4rem]">
+                  <Icon className="size-7" aria-hidden />
+                </span>
+                <span className="text-[11px] font-bold text-accent">{label}</span>
+              </NavLink>
+            ) : (
+              <NavLink
+                key={to}
+                to={to}
+                end={to === '/'}
+                className={({ isActive }) =>
+                  `flex flex-col items-center gap-1 rounded-xl py-1.5 text-[11px] font-bold ${isActive ? 'text-accent' : 'text-ink-3'}`
+                }
+              >
+                {({ isActive }) => (
+                  <>
+                    <span className={`flex h-8 w-12 items-center justify-center rounded-full transition-colors ${isActive ? 'bg-accent-soft' : ''}`}>
+                      <Icon className="size-5" aria-hidden />
+                    </span>
+                    {label}
+                  </>
+                )}
+              </NavLink>
+            ),
+          )}
+        </div>
+      </nav>
     </div>
   )
 }

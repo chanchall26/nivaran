@@ -4,10 +4,13 @@ type RGB = [number, number, number]
 
 const hex = (h: string): RGB => [parseInt(h.slice(1, 3), 16), parseInt(h.slice(3, 5), 16), parseInt(h.slice(5, 7), 16)]
 
-/** One-hue sequential ramps, light -> dark = low need -> high need. */
+/**
+ * One-hue sequential ramps from low need to high need. Summer sits on a light map, so
+ * more need = darker orange; winter sits on a night map, so more need = brighter ice-blue.
+ */
 export const RAMPS: Record<Season, string[]> = {
   garmi: ['#fde0cf', '#f9bfa0', '#f39b70', '#eb6834', '#c9501f', '#a03d15', '#772c0e'],
-  sardi: ['#cde2fb', '#9ec5f4', '#6da7ec', '#3987e5', '#256abf', '#184f95', '#0d366b'],
+  sardi: ['#1d3a86', '#2a55b4', '#3f78dc', '#64a0f2', '#94c2ff', '#c4ddff', '#eef6ff'],
 }
 
 const RGB_RAMPS = { garmi: RAMPS.garmi.map(hex), sardi: RAMPS.sardi.map(hex) }

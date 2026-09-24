@@ -1,31 +1,20 @@
 import { CheckCircle2, Loader2, Mic, MicOff, PhoneCall, PhoneOff, Send, Volume2, XCircle } from 'lucide-react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Card } from '../components/ui'
-import { aiMode, analysePulse, type PulseAnalysis } from '../lib/ai'
+import { Btn, Panel, SectionTitle } from '../components/kit'
+import { useI18n } from '../i18n'
+import { STRINGS } from '../i18n/strings'
+import { analysePulse, type PulseAnalysis } from '../lib/ai'
+import { allocName } from '../lib/format'
 import { ITEMS } from '../lib/match'
-import { PULSE_QUESTION, REASON_LABEL } from '../lib/policy'
+import { actionKey, heaterMonthlyCost } from '../lib/policy'
 import { store } from '../lib/store'
 import type { Delivery, DeliveryStatus, ItemType } from '../lib/types'
 import { useApp } from '../state'
 
-/** Devanagari versions for text-to-speech (hi-IN voices read Roman Hindi badly). */
-const SPOKEN: Record<ItemType, string> = {
-  heater: 'नमस्ते! बारहमासा से बात कर रहे हैं। कल रात आपका हीटर चला था?',
-  warm_kit: 'नमस्ते! बारहमासा से। क्या आपको कंबल और गर्म किट मिल गई, और आप उसे इस्तेमाल कर रहे हैं?',
-  cabin: 'नमस्ते! बारहमासा से। क्या नया केबिन आपको गर्मी और ठंड से बचा रहा है?',
-  shade_net: 'नमस्ते! बारहमासा से। क्या छाया जाल अभी भी लगा है और छाया दे रहा है?',
-  water_pot: 'नमस्ते! बारहमासा से। क्या प्याऊ में आज पानी भरा हुआ था?',
-  sapling: 'नमस्ते! बारहमासा से। क्या आपके पास लगा पौधा ज़िंदा है और उसे पानी मिल रहा है?',
-}
-
-const QUICK: Record<ItemType, string[]> = {
-  heater: ['Haan ji, poori raat chala', 'Nahi, RWA bolti hai bijli ka bill zyada aayega', 'Secretary ne mana kar diya', 'Heater kharab ho gaya'],
-  warm_kit: ['Haan mil gaya, pehen rahe hain', 'Nahi mila abhi tak', 'Kambal chori ho gaya'],
-  cabin: ['Haan, bahut aaram hai', 'Chhat se paani tapakta hai, toot gaya'],
-  shade_net: ['Haan laga hai', 'Nagar nigam wale hata le gaye'],
-  water_pot: ['Haan bhara tha', 'Khaali pada tha, koi bharta nahi'],
-  sapling: ['Haan zinda hai, roz paani dete hain', 'Paani nahi mila, sookh raha hai', 'Paudha sookh gaya'],
+/** The call is always spoken in Hindi: that is what guards and vendors in Gwalior speak. */
+function spokenQuestion(item: ItemType) {
+  return `नमस्ते! बारहमासा से बात कर रहे हैं। ${STRINGS.hi.question[item]}`
 }
 
 function speak(text: string) {
@@ -43,37 +32,54 @@ function speak(text: string) {
   })
 }
 
-type SR = { start: () => void; stop: () => void; lang: string; interimResults: boolean; onresult: (e: { results: ArrayLike<ArrayLike<{ transcript: string }> & { isFinal: boolean }> }) => void; onend: () => void; onerror: (e: { error: string }) => void }
-const SpeechRecognitionCtor = (window as unknown as { SpeechRecognition?: new () => SR; webkitSpeechRecognition?: new () => SR })
-  .SpeechRecognition ?? (window as unknown as { webkitSpeechRecognition?: new () => SR }).webkitSpeechRecognition
-
-const priority = (d: Delivery) => (d.status === 'delivered' ? 0 : d.status === 'not_working' || d.status === 'dead' ? 1 : 2)
+type SR = {
+  start: () => void; stop: () => void; lang: string; interimResults: boolean
+  onresult: (e: { results: ArrayLike<ArrayLike<{ transcript: string }>> }) => void
+  onend: () => void; onerror: () => void
+}
+const SpeechRecognitionCtor =
+  (window as unknown as { SpeechRecognition?: new () => SR }).SpeechRecognition ??
+  (window as unknown as { webkitSpeechRecognition?: new () => SR }).webkitSpeechRecognition
 
 function nextStatus(item: ItemType, a: PulseAnalysis): DeliveryStatus {
   if (item === 'sapling') return a.reason === 'plant_died' || a.reason === 'stolen' ? 'dead' : 'alive'
   return a.ok ? 'working' : 'not_working'
 }
+const priority = (d: Delivery) => (d.status === 'delivered' ? 0 : d.status === 'not_working' || d.status === 'dead' ? 1 : 2)
+
+const STATUS_DOT: Record<DeliveryStatus, string> = {
+  planned: 'bg-line', delivered: 'bg-warning', working: 'bg-good', alive: 'bg-good', not_working: 'bg-critical', dead: 'bg-critical',
+}
 
 export default function Pulse() {
-  const { deliveries, pulses, season } = useApp()
+  const { city, deliveries, pulses, season } = useApp()
+  const { s, f, lang } = useI18n()
   const [activeId, setActiveId] = useState<string | null>(null)
   const [phase, setPhase] = useState<'idle' | 'asking' | 'listening' | 'thinking' | 'done'>('idle')
   const [answer, setAnswer] = useState('')
   const [result, setResult] = useState<PulseAnalysis | null>(null)
-  const rec = useRef<SR | null>(null)
   const [micOn, setMicOn] = useState(false)
+  const rec = useRef<SR | null>(null)
+  const byH3 = useMemo(() => new Map((city?.cells ?? []).map((c) => [c.h3, c])), [city])
+  const placeById = useMemo(() => new Map((city?.places ?? []).map((p) => [p.id, p])), [city])
 
   const due = useMemo(
     () =>
       deliveries
         .filter((d) => d.status !== 'planned')
         .filter((d) => ITEMS[d.item].season === season || ITEMS[d.item].season === 'both')
-        // never-checked first, then failing ones, then the longest since last call
         .sort((a, b) => priority(a) - priority(b) || (a.lastPulseAt ?? 0) - (b.lastPulseAt ?? 0)),
     [deliveries, season],
   )
   const active = deliveries.find((d) => d.id === activeId) ?? null
   const history = pulses.filter((p) => p.deliveryId === activeId).sort((a, b) => b.createdAt - a.createdAt)
+
+  const nameOf = (d: Delivery) => {
+    const cell = byH3.get(d.h3)
+    const place = d.placeId ? placeById.get(d.placeId) : undefined
+    if (!cell) return d.placeName
+    return allocName(place ? { kind: 'place', place } : { kind: 'cell' }, cell, s, lang)
+  }
 
   useEffect(() => () => speechSynthesis?.cancel(), [])
 
@@ -82,7 +88,7 @@ export default function Pulse() {
     setAnswer('')
     setResult(null)
     setPhase('asking')
-    await speak(SPOKEN[d.item])
+    await speak(spokenQuestion(d.item))
     setPhase('listening')
   }
 
@@ -113,147 +119,179 @@ export default function Pulse() {
     setPhase('done')
     const now = Date.now()
     await store.add('pulses', {
-      deliveryId: active.id, question: PULSE_QUESTION[active.item], answer: text, ok: a.ok, reason: a.reason,
-      action: a.action, createdAt: now, ai: a.ai,
+      deliveryId: active.id, question: STRINGS.hi.question[active.item], answer: text, ok: a.ok, reason: a.reason,
+      action: actionKey(active.item, a.reason), createdAt: now, ai: a.ai,
     })
     await store.update('deliveries', active.id, { status: nextStatus(active.item, a), lastPulseAt: now, lastReason: a.reason })
-    if (a.followUp) speak(a.followUp)
+    if (a.followUpHi) speak(a.followUpHi)
   }
 
-  if (!deliveries.length) {
+  if (!due.length && !active) {
     return (
-      <div className="mx-auto max-w-xl space-y-3 text-center">
-        <h1 className="text-2xl font-bold">Pulse Check</h1>
-        <p className="text-ink-2">
-          Abhi koi madad deliver nahi hui. Pehle <Link className="font-semibold underline" to="/match">Match</Link> se plan
-          banao, ya <Link className="font-semibold underline" to="/ledger">Impact</Link> page pe demo data load karo.
-        </p>
+      <div className="mx-auto max-w-xl space-y-4 text-center">
+        <SectionTitle>{s.check.title}</SectionTitle>
+        <Panel>
+          <PhoneCall className="mx-auto size-12 text-ink-3" aria-hidden />
+          <p className="mt-3 text-lg text-ink-2">{s.check.empty}</p>
+          <div className="mt-5 flex justify-center gap-3">
+            <Link to="/match" className="btn-3d btn-primary px-5 py-3">{s.nav.help}</Link>
+            <Link to="/ledger" className="btn-3d btn-soft px-5 py-3">{s.nav.results}</Link>
+          </div>
+        </Panel>
       </div>
     )
   }
 
+  const actionText = (item: ItemType, reason: PulseAnalysis['reason']) =>
+    f(s.action[actionKey(item, reason) as keyof typeof s.action], { cost: heaterMonthlyCost() })
+
   return (
-    <div className="space-y-5">
-      <div>
-        <h1 className="text-2xl font-bold">Pulse Check</h1>
-        <p className="mt-1 max-w-3xl text-ink-2">
-          Baantna success nahi, <b className="text-ink">chalna aur bachna</b> success hai. Guard ya volunteer ko unki bhasha
-          mein chhota sa sawaal; "nahi" aaye toh wajah, aur har wajah ka alag hal. Asli deployment mein ye IVR / missed-call se
-          hoga; yahan browser mein wahi flow.
-        </p>
-      </div>
+    <div className="space-y-6">
+      <SectionTitle sub={s.check.intro}>{s.check.title}</SectionTitle>
       <div className="grid gap-5 lg:grid-cols-[380px_1fr]">
-        <Card title={`Check karne hain (${due.length})`}>
-          <ul className="max-h-[560px] space-y-1 overflow-y-auto">
+        <Panel className="!p-3">
+          <h2 className="px-2 pt-1 pb-2 font-display text-lg font-extrabold">{f(s.check.toCheck, { n: due.length })}</h2>
+          <ul className="max-h-[60dvh] space-y-1.5 overflow-y-auto">
             {due.map((d) => (
               <li key={d.id}>
                 <button
                   type="button"
                   onClick={() => start(d)}
-                  className={`flex w-full items-center gap-3 rounded-lg px-2 py-2 text-left text-sm hover:bg-black/5 ${
-                    d.id === activeId ? 'bg-[var(--accent-50)]' : ''
+                  className={`flex w-full items-center gap-3 rounded-2xl px-3 py-2.5 text-left transition-colors ${
+                    d.id === activeId ? 'bg-accent-soft' : 'hover:bg-surface-2'
                   }`}
                 >
-                  <PhoneCall className="size-4 shrink-0 text-ink-3" aria-hidden />
-                  <span className="min-w-0 flex-1">
-                    <span className="block truncate font-medium">{d.placeName}</span>
-                    <span className="text-xs text-ink-3">
-                      {d.qty}× {ITEMS[d.item].label}
-                    </span>
+                  <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-surface-2">
+                    <PhoneCall className="size-4 text-accent" aria-hidden />
                   </span>
-                  <StatusDot status={d.status} />
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate font-bold">{nameOf(d)}</span>
+                    <span className="text-xs text-ink-3">{d.qty} × {s.item[d.item]}</span>
+                  </span>
+                  <span className="flex items-center gap-1.5 text-xs font-semibold text-ink-2">
+                    <span className={`size-2.5 rounded-full ${STATUS_DOT[d.status]}`} aria-hidden />
+                    <span className="hidden sm:inline">{s.status[d.status]}</span>
+                  </span>
                 </button>
               </li>
             ))}
           </ul>
-        </Card>
+        </Panel>
 
-        <Card title={active ? `Call: ${active.placeName}` : 'Call'}>
+        {/* the call screen */}
+        <div className="surface-3d relative overflow-hidden !rounded-[2rem] p-5 sm:p-7">
+          <div aria-hidden className="pointer-events-none absolute -top-24 -right-24 size-72 rounded-full bg-accent opacity-15 blur-3xl" />
           {!active ? (
-            <p className="text-ink-3">Baayein list se kisi pe click karo; call shuru hogi.</p>
+            <div className="flex min-h-[360px] flex-col items-center justify-center text-center">
+              <span className="flex size-24 items-center justify-center rounded-full bg-surface-2 shadow-[var(--shadow-3d)]">
+                <PhoneCall className="size-10 text-ink-3" aria-hidden />
+              </span>
+              <p className="mt-4 max-w-sm text-lg text-ink-2">{s.check.pick}</p>
+              <p className="mt-2 text-xs text-ink-3">{s.check.ivrNote}</p>
+            </div>
           ) : (
-            <div className="space-y-4">
-              <div className="flex items-start gap-3 rounded-xl bg-paper p-4">
-                <Volume2 className="mt-0.5 size-5 shrink-0 text-[var(--accent-600)]" aria-hidden />
-                <div>
-                  <div className="text-xs text-ink-3">Barahmasa poochh raha hai</div>
-                  <p className="text-lg font-semibold">{SPOKEN[active.item]}</p>
-                  <p className="text-sm text-ink-2">{PULSE_QUESTION[active.item]}</p>
-                  <button type="button" onClick={() => speak(SPOKEN[active.item])} className="mt-1 text-xs font-semibold underline">
-                    Dobara suno
-                  </button>
+            <div className="relative space-y-5">
+              <div className="flex items-center gap-4">
+                <span className="relative flex size-16 shrink-0 items-center justify-center rounded-full bg-accent text-accent-ink shadow-[0_5px_0_var(--accent-edge)]">
+                  <PhoneCall className="size-7" aria-hidden />
+                  {(phase === 'asking' || phase === 'listening') && (
+                    <span className="absolute inset-0 animate-ping rounded-full bg-accent opacity-30" aria-hidden />
+                  )}
+                </span>
+                <div className="min-w-0">
+                  <div className="text-xs font-bold uppercase tracking-wide text-ink-3">{s.check.onCall}</div>
+                  <div className="truncate font-display text-xl font-extrabold">{nameOf(active)}</div>
+                  <div className="text-sm text-ink-2">{active.qty} × {s.item[active.item]}</div>
                 </div>
               </div>
 
-              {phase === 'asking' && <p className="flex items-center gap-2 text-ink-2"><Loader2 className="size-4 animate-spin" /> Bol rahe hain…</p>}
+              <div className="rounded-3xl rounded-tl-md bg-surface-2 p-4 shadow-[inset_0_1px_0_var(--hl)]">
+                <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wide text-ink-3">
+                  <Volume2 className="size-4 text-accent" aria-hidden /> {s.check.asking}
+                </div>
+                <p className="mt-1 font-display text-xl font-bold">{STRINGS.hi.question[active.item]}</p>
+                {lang === 'en' && <p className="text-ink-2">{s.question[active.item]}</p>}
+                <button type="button" onClick={() => speak(spokenQuestion(active.item))} className="mt-2 text-sm font-bold text-accent underline">
+                  {s.check.playAgain}
+                </button>
+              </div>
+
+              {phase === 'asking' && (
+                <p className="flex items-center gap-2 text-ink-2">
+                  <Loader2 className="size-4 animate-spin" /> {s.check.speaking}
+                </p>
+              )}
 
               {(phase === 'listening' || phase === 'thinking') && (
                 <div className="space-y-3">
                   <div className="flex flex-wrap gap-2">
-                    {QUICK[active.item].map((q) => (
-                      <button key={q} type="button" onClick={() => submit(q)} disabled={phase === 'thinking'}
-                        className="rounded-full border border-line px-3 py-1.5 text-sm hover:bg-black/5">
+                    {s.quick[active.item].map((q) => (
+                      <button
+                        key={q}
+                        type="button"
+                        disabled={phase === 'thinking'}
+                        onClick={() => submit(q)}
+                        className="rounded-2xl border border-line bg-surface px-3.5 py-2 text-left text-sm font-semibold shadow-[0_3px_0_var(--line)] transition-transform active:translate-y-0.5"
+                      >
                         “{q}”
                       </button>
                     ))}
                   </div>
                   <div className="flex gap-2">
                     {SpeechRecognitionCtor && (
-                      <button
-                        type="button"
+                      <Btn
+                        variant={micOn ? 'primary' : 'soft'}
                         onClick={() => (micOn ? rec.current?.stop() : listen())}
-                        className={`rounded-lg px-3 ${micOn ? 'bg-critical text-white' : 'border border-line'}`}
-                        aria-label={micOn ? 'Mic band karo' : 'Bol ke jawab do'}
+                        aria-label={micOn ? s.check.micStop : s.check.mic}
                       >
                         {micOn ? <MicOff className="size-5" /> : <Mic className="size-5" />}
-                      </button>
+                      </Btn>
                     )}
                     <input
                       value={answer}
                       onChange={(e) => setAnswer(e.target.value)}
                       onKeyDown={(e) => e.key === 'Enter' && submit()}
-                      placeholder="Jawab bolo ya likho (Hindi / Hinglish)"
-                      className="flex-1 rounded-lg border border-line px-3 py-2"
+                      placeholder={s.check.answerHint}
+                      className="min-w-0 flex-1 rounded-2xl border border-line bg-surface-2 px-4 py-3"
                     />
-                    <button type="button" onClick={() => submit()} disabled={!answer.trim() || phase === 'thinking'}
-                      className="rounded-lg bg-ink px-3 text-white disabled:opacity-40" aria-label="Bhejo">
+                    <Btn onClick={() => submit()} disabled={!answer.trim() || phase === 'thinking'} aria-label={s.check.answer}>
                       {phase === 'thinking' ? <Loader2 className="size-5 animate-spin" /> : <Send className="size-5" />}
-                    </button>
+                    </Btn>
                   </div>
                 </div>
               )}
 
               {phase === 'done' && result && (
-                <div className="space-y-3">
-                  <div className="rounded-xl border border-line p-4">
-                    <div className="text-xs text-ink-3">Jawab</div>
-                    <p className="font-medium">“{answer}”</p>
-                    <div className="mt-3 flex items-center gap-2">
-                      {result.ok ? <CheckCircle2 className="size-5 text-good" /> : <XCircle className="size-5 text-critical" />}
-                      <b>{result.ok ? 'Chal raha hai' : `Nahi chal raha · ${REASON_LABEL[result.reason]}`}</b>
-                    </div>
-                    <div className="mt-3 rounded-lg bg-paper p-3 text-sm">
-                      <div className="text-xs font-semibold uppercase tracking-wide text-ink-3">Solution route</div>
-                      {result.action}
-                    </div>
-                    {result.followUp && <p className="mt-2 text-sm text-ink-2">Barahmasa: {result.followUp}</p>}
-                    <p className="mt-2 text-xs text-ink-3">{result.ai === 'gemini' ? 'Gemini ne samjha' : 'Rules se samjha'} · {aiMode()}</p>
+                <div className="anim-rise space-y-3">
+                  <div className="ml-auto max-w-[85%] rounded-3xl rounded-tr-md bg-ink px-4 py-3 text-bg">“{answer}”</div>
+                  <div className={`flex items-center gap-2 rounded-2xl px-4 py-3 font-display text-lg font-extrabold ${result.ok ? 'bg-good/15 text-good' : 'bg-critical/15 text-critical'}`}>
+                    {result.ok ? <CheckCircle2 className="size-6" /> : <XCircle className="size-6" />}
+                    {result.ok ? s.check.working : f(s.check.notWorking, { reason: s.reason[result.reason] })}
                   </div>
-                  <button type="button" onClick={() => { setPhase('idle'); setActiveId(null) }}
-                    className="flex items-center gap-2 rounded-lg border border-line px-3 py-2 text-sm font-semibold">
-                    <PhoneOff className="size-4" /> Call khatam
-                  </button>
+                  <div className="rounded-2xl border border-line bg-surface p-4">
+                    <div className="text-xs font-bold uppercase tracking-wide text-ink-3">{s.check.nextStep}</div>
+                    <p className="mt-1 font-semibold">{actionText(active.item, result.reason)}</p>
+                  </div>
+                  {(lang === 'hi' ? result.followUpHi : result.followUpEn) && (
+                    <p className="text-sm text-ink-2">
+                      {s.app.name}: {lang === 'hi' ? result.followUpHi : result.followUpEn}
+                    </p>
+                  )}
+                  <p className="text-xs text-ink-3">{result.ai === 'gemini' ? s.check.byGemini : s.check.byRules}</p>
+                  <Btn variant="soft" onClick={() => { setPhase('idle'); setActiveId(null) }}>
+                    <PhoneOff className="size-4" /> {s.check.endCall}
+                  </Btn>
                 </div>
               )}
 
               {history.length > 0 && (
                 <div>
-                  <div className="mb-1 text-sm font-semibold">Pichhli calls</div>
+                  <div className="mb-1.5 text-sm font-bold">{s.check.history}</div>
                   <ul className="space-y-1 text-sm">
-                    {history.slice(0, 5).map((p) => (
+                    {history.slice(0, 4).map((p) => (
                       <li key={p.id} className="flex gap-2">
-                        <span className="text-ink-3 tabular">{new Date(p.createdAt).toLocaleDateString('en-IN')}</span>
-                        <span className={p.ok ? 'text-good' : 'text-critical'}>{p.ok ? 'OK' : REASON_LABEL[p.reason]}</span>
+                        <span className="text-ink-3 tabular">{new Date(p.createdAt).toLocaleDateString(lang === 'hi' ? 'hi-IN' : 'en-IN')}</span>
+                        <span className={`font-semibold ${p.ok ? 'text-good' : 'text-critical'}`}>{s.reason[p.reason]}</span>
                         <span className="truncate text-ink-2">“{p.answer}”</span>
                       </li>
                     ))}
@@ -262,26 +300,8 @@ export default function Pulse() {
               )}
             </div>
           )}
-        </Card>
+        </div>
       </div>
     </div>
-  )
-}
-
-function StatusDot({ status }: { status: DeliveryStatus }) {
-  const map: Record<DeliveryStatus, [string, string]> = {
-    planned: ['bg-line', 'planned'],
-    delivered: ['bg-warning', 'check baaki'],
-    working: ['bg-good', 'chal raha'],
-    alive: ['bg-good', 'zinda'],
-    not_working: ['bg-critical', 'nahi chal raha'],
-    dead: ['bg-critical', 'sookh gaya'],
-  }
-  const [c, l] = map[status]
-  return (
-    <span className="flex items-center gap-1 text-xs text-ink-2">
-      <span className={`size-2 rounded-full ${c}`} aria-hidden />
-      {l}
-    </span>
   )
 }

@@ -80,10 +80,13 @@ export const dayHeat = (w: WeatherSummary) => ramp(w.dayMaxFeels, 32, 46)
 
 // ---- per-cell scores ---------------------------------------------------------------------
 
+export type FactorKey = 'canopy' | 'lst' | 'exposure' | 'day' | 'shelter' | 'cold' | 'trap'
+
 export interface Breakdown {
   score: number
   need: number
-  factors: { key: string; label: string; value: number; weight: number; detail: string }[]
+  /** weight 0 = multiplier (scales everything) rather than an added part */
+  factors: { key: FactorKey; value: number; weight: number }[]
 }
 
 export function chhaya(c: Cell, n: Norms, w: WeatherSummary): Breakdown {
@@ -98,14 +101,10 @@ export function chhaya(c: Cell, n: Norms, w: WeatherSummary): Breakdown {
     score: Math.round(100 * (1 - need)),
     need,
     factors: [
-      { key: 'canopy', label: 'Chhaaya ki kami', value: canopyGap, weight: 0.5,
-        detail: c.canopy == null ? 'data nahi' : `${Math.round(c.canopy * 100)}% canopy (lakshya 30%)` },
-      { key: 'lst', label: 'Zameen ki garmi', value: surface, weight: 0.5,
-        detail: c.lst == null ? 'data nahi' : `${c.lst.toFixed(1)}°C surface (May 2026)` },
-      { key: 'exposure', label: 'Bahar kaam karne wale (multiplier)', value: exp, weight: 0,
-        detail: `${c.pop.toLocaleString('en-IN')} aabaadi, ${c.exposed} bahar-log` },
-      { key: 'day', label: 'Aaj ki garmi (multiplier)', value: day, weight: 0,
-        detail: `feels-like ${Math.round(w.dayMaxFeels)}°C` },
+      { key: 'canopy', value: canopyGap, weight: 0.5 },
+      { key: 'lst', value: surface, weight: 0.5 },
+      { key: 'exposure', value: exp, weight: 0 },
+      { key: 'day', value: day, weight: 0 },
     ],
   }
 }
@@ -121,14 +120,10 @@ export function alaav(c: Cell, n: Norms, w: WeatherSummary): Breakdown {
     score: Math.round(100 * (1 - need)),
     need,
     factors: [
-      { key: 'exposure', label: 'Raat mein bahar log (multiplier)', value: exp, weight: 0,
-        detail: `${c.pop.toLocaleString('en-IN')} aabaadi, ${c.exposed} bahar-log` },
-      { key: 'shelter', label: 'Rain basera se doori', value: shelterGap, weight: 0.35,
-        detail: `${c.shelterKm.toFixed(1)} km` },
-      { key: 'cold', label: 'Raat ki thand (multiplier)', value: cold, weight: 0,
-        detail: `feels-like ${w.nightMinFeels.toFixed(1)}°C` },
-      { key: 'trap', label: 'Smoke-Trap (multiplier)', value: trap, weight: 0,
-        detail: `ventilation ${Math.round(w.ventilation)} m²/s` },
+      { key: 'exposure', value: exp, weight: 0 },
+      { key: 'shelter', value: shelterGap, weight: 0.35 },
+      { key: 'cold', value: cold, weight: 0 },
+      { key: 'trap', value: trap, weight: 0 },
     ],
   }
 }
@@ -156,23 +151,16 @@ export function band(scoreValue: number): Band {
   return 'ok'
 }
 
-export const BAND_LABEL: Record<Band, string> = {
-  critical: 'Bahut zyada zaroorat',
-  serious: 'Zyada zaroorat',
-  warning: 'Kuch zaroorat',
-  ok: 'Theek',
-}
-
-/** City-level alert for the header: IMD-style words, not just a number. */
+/** City-level alert: a level plus the numbers the UI turns into words. */
 export function cityAlert(season: Season, w: WeatherSummary) {
   if (season === 'sardi') {
     const c = nightCold(w)
     const t = smokeTrap(w)
     const level: Band = c > 0.75 ? 'critical' : c > 0.5 ? 'serious' : c > 0.2 ? 'warning' : 'ok'
-    const trapWord = t > 0.8 ? 'Dhuan zameen pe phansega' : t > 0.4 ? 'Dhuan dheere chhantega' : 'Hawa chal rahi hai'
-    return { level, cold: c, trap: t, text: `Raat ${w.nightMinFeels.toFixed(0)}°C feels-like · ${trapWord}` }
+    const trapWord = t > 0.8 ? 'trapStrong' : t > 0.4 ? 'trapSome' : 'trapNone'
+    return { level, feels: w.nightMinFeels, trapWord, humidity: null as number | null }
   }
   const h = dayHeat(w)
   const level: Band = h > 0.8 ? 'critical' : h > 0.55 ? 'serious' : h > 0.25 ? 'warning' : 'ok'
-  return { level, heat: h, text: `Dopahar ${w.dayMaxFeels.toFixed(0)}°C feels-like · humidity ${Math.round(w.dayMeanHumidity)}%` }
+  return { level, feels: w.dayMaxFeels, trapWord: null, humidity: w.dayMeanHumidity }
 }

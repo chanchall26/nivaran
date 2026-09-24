@@ -1,25 +1,25 @@
 import { Database, FileDown, Loader2, Trash2 } from 'lucide-react'
 import { useMemo, useState } from 'react'
-import { Card, inr, Stat } from '../components/ui'
+import { BigStat, Btn, inr, Panel, SectionTitle } from '../components/kit'
+import { useI18n } from '../i18n'
+import { STRINGS } from '../i18n/strings'
 import { seedDemo } from '../lib/demo'
 import { computeLedger, type Range } from '../lib/impact'
 import { ITEMS } from '../lib/match'
-import { CATEGORY_LABEL, REASON_LABEL, ROUTE_INFO } from '../lib/policy'
 import { store } from '../lib/store'
 import type { ItemType, PulseReason } from '../lib/types'
 import { fetchReplay } from '../lib/weather'
 import { useApp } from '../state'
 
-const pct = (x: number | null) => (x == null ? '—' : `${Math.round(x * 100)}%`)
-const fmtRange = (r: Range, digits = 0) =>
-  `${r.low.toLocaleString('en-IN', { maximumFractionDigits: digits })}–${r.high.toLocaleString('en-IN', { maximumFractionDigits: digits })}`
-
 export default function Ledger() {
   const { city, deliveries, pulses, reports, typicalWeather } = useApp()
+  const { s, f, num, lang } = useI18n()
   const [busy, setBusy] = useState<'seed' | 'clear' | 'pdf' | null>(null)
   const [msg, setMsg] = useState<string | null>(null)
   const ledger = useMemo(() => computeLedger(deliveries, pulses, reports), [deliveries, pulses, reports])
   const hasDemo = deliveries.some((d) => d.demo) || reports.some((r) => r.demo)
+  const pct = (x: number | null) => (x == null ? '—' : `${Math.round(x * 100)}%`)
+  const range = (r: Range, d = 0) => `${num(r.low, d)}–${num(r.high, d)}`
 
   const reasons = useMemo(() => {
     const m = new Map<PulseReason, number>()
@@ -33,11 +33,13 @@ export default function Ledger() {
     setBusy('seed')
     setMsg(null)
     try {
+      // a sample season replaces the previous one instead of stacking on top of it
+      await store.clearDemo()
       const coldNight = await fetchReplay('sardi')
       const n = await seedDemo({ cells: city.cells, places: city.places, norms: city.norms, coldNight, typicalWeather })
-      setMsg(`Demo season load hua: ${n.deliveries} deliveries, ${n.pulses} pulse calls, ${n.reports} reports.`)
+      setMsg(f(s.results.demoLoaded, { d: n.deliveries, p: n.pulses, r: n.reports }))
     } catch (e) {
-      setMsg(`Demo load nahi hua: ${e}`)
+      setMsg(f(s.results.demoFailed, { e: String(e) }))
     } finally {
       setBusy(null)
     }
@@ -47,18 +49,20 @@ export default function Ledger() {
     setBusy('clear')
     await store.clearDemo()
     setBusy(null)
-    setMsg('Demo data hata diya. Asli reports aur deliveries bachi hain.')
+    setMsg(s.results.demoCleared)
   }
 
+  // PDF stays in English: it goes to CSR donors, and jsPDF's built-in fonts have no Devanagari.
   const pdf = async () => {
     setBusy('pdf')
+    const E = STRINGS.en
     const { jsPDF } = await import('jspdf')
     const doc = new jsPDF({ unit: 'pt', format: 'a4' })
     let y = 56
     const line = (t: string, size = 11, bold = false, gap = 16) => {
       doc.setFont('helvetica', bold ? 'bold' : 'normal')
       doc.setFontSize(size)
-      for (const l of doc.splitTextToSize(t, 480)) {
+      for (const l of doc.splitTextToSize(t.replace(/₹/g, 'Rs '), 480)) {
         if (y > 790) {
           doc.addPage()
           y = 56
@@ -67,89 +71,89 @@ export default function Ledger() {
         y += gap
       }
     }
-    doc.setFillColor(201, 80, 31)
-    doc.rect(0, 0, 595, 8, 'F')
-    line('Barahmasa Impact Report - Gwalior', 18, true, 24)
-    line(`Generated ${new Date().toLocaleString('en-IN')}${hasDemo ? '  |  CONTAINS DEMO DATA' : ''}`, 9, false, 20)
-    line('Measured (from Pulse check-ins)', 13, true, 20)
-    line(`Heater active rate: ${pct(ledger.heaterActiveRate)} (${ledger.byItem.heater.working} of ${ledger.byItem.heater.checked} checked)`)
-    line(`Sapling survival: ${pct(ledger.saplingSurvival)} (${ledger.byItem.sapling.working} of ${ledger.byItem.sapling.checked} checked)`)
-    line(`People covered by working help: ${ledger.peopleCovered.toLocaleString('en-IN')}`)
-    line(`Reports: ${ledger.reports.total} total, ${ledger.reports.resolved} resolved, median report-to-help ${
+    doc.setFillColor(228, 87, 30)
+    doc.rect(0, 0, 298, 8, 'F')
+    doc.setFillColor(28, 92, 171)
+    doc.rect(298, 0, 298, 8, 'F')
+    line('Barahmasa - Impact Report, Gwalior', 18, true, 24)
+    line(`Generated ${new Date().toLocaleString('en-IN')}${hasDemo ? '  |  CONTAINS SAMPLE DATA' : ''}`, 9, false, 20)
+    line('Measured (from check-in calls)', 13, true, 20)
+    line(`Heaters working: ${pct(ledger.heaterActiveRate)} (${ledger.byItem.heater.working} of ${ledger.byItem.heater.checked} checked)`)
+    line(`Trees alive: ${pct(ledger.saplingSurvival)} (${ledger.byItem.sapling.working} of ${ledger.byItem.sapling.checked} checked)`)
+    line(`People helped by working help: ${ledger.peopleCovered.toLocaleString('en-IN')}`)
+    line(`Reports: ${ledger.reports.total}, solved ${ledger.reports.resolved}, median report-to-help ${
       ledger.reports.medianHoursToHelp == null ? 'n/a' : `${Math.round(ledger.reports.medianHoursToHelp)} h`}`)
-    line(`Pulse calls: ${ledger.pulses}   |   Spend: Rs ${ledger.spendInr.toLocaleString('en-IN')}`, 11, false, 24)
+    line(`Check-in calls: ${ledger.pulses}   |   Spend: ${inr(ledger.spendInr)}`, 11, false, 24)
     line('By item', 13, true, 20)
     for (const t of Object.keys(ITEMS) as ItemType[]) {
       const b = ledger.byItem[t]
-      if (!b.units) continue
-      line(`${ITEMS[t].label}: ${b.units} units, ${b.delivered} delivered, ${b.working}/${b.checked} working, ${b.people} people`)
+      if (b.units) line(`${E.item[t]}: ${b.units} units, ${b.delivered} delivered, ${b.working}/${b.checked} working, ${b.people} people`)
     }
     y += 8
     line('Estimates (ranges, not measurements)', 13, true, 20)
-    line(`PM2.5 avoided: ${fmtRange(ledger.pm25AvoidedKg, 1)} ${ledger.pm25AvoidedKg.unit}`)
-    line(`Assumption: ${ledger.pm25AvoidedKg.assumption}`, 9)
-    line(`Shade delivered: ${fmtRange(ledger.shadeHours)} ${ledger.shadeHours.unit}`)
-    line(`Assumption: ${ledger.shadeHours.assumption}`, 9, false, 24)
-    line('Why help failed (Pulse reasons)', 13, true, 20)
-    for (const [r, n] of reasons) line(`${REASON_LABEL[r]}: ${n} units`)
+    line(`${E.results.pm}: ${range(ledger.pm25AvoidedKg, 1)} ${E.results.pmUnit}`)
+    line(`Why: ${E.results.pmWhy}`, 9)
+    line(`${E.results.shade}: ${range(ledger.shadeHours)} ${E.results.shadeUnit}`)
+    line(`Why: ${E.results.shadeWhy}`, 9, false, 24)
+    line(E.results.whyFail, 13, true, 20)
+    for (const [r, n] of reasons) line(`${E.reason[r]}: ${n} units`)
     y += 8
-    line('Method: scores from ESA WorldCover canopy, Landsat LST (May 2026), Meta HRSL population, OpenStreetMap and Open-Meteo weather. No person is ever routed to enforcement.', 9)
+    line('Method: canopy and summer land-surface temperature computed on Google Earth Engine (ESA WorldCover, Landsat 8/9), Meta HRSL population, OpenStreetMap, Open-Meteo weather. No person is ever routed to enforcement.', 9)
     doc.save('barahmasa-impact-gwalior.pdf')
     setBusy(null)
   }
 
+  const statusLabel = { open: s.results.open, assigned: s.results.assigned, resolved: s.results.resolved }
+
   return (
-    <div className="space-y-5">
-      <div className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-bold">Saal-bhar ka Impact Ledger</h1>
-          <p className="mt-1 max-w-2xl text-ink-2">
-            Jo naapa gaya (Pulse calls se) woh number hai; jo model se nikla woh <b className="text-ink">range</b> hai, apne
-            assumption ke saath.
-          </p>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          <button type="button" onClick={seed} disabled={!!busy || !city}
-            className="flex items-center gap-2 rounded-lg border border-line bg-white px-3 py-2 text-sm font-semibold disabled:opacity-40">
-            {busy === 'seed' ? <Loader2 className="size-4 animate-spin" /> : <Database className="size-4" />} Demo season load karo
-          </button>
+    <div className="space-y-6">
+      <div className="flex flex-wrap items-end justify-between gap-4">
+        <SectionTitle sub={s.results.intro}>{s.results.title}</SectionTitle>
+        <div className="flex flex-wrap gap-2.5">
+          <Btn variant="soft" onClick={seed} disabled={!!busy || !city}>
+            {busy === 'seed' ? <Loader2 className="size-4 animate-spin" /> : <Database className="size-4" />} {s.results.loadDemo}
+          </Btn>
           {hasDemo && (
-            <button type="button" onClick={clear} disabled={!!busy}
-              className="flex items-center gap-2 rounded-lg border border-line bg-white px-3 py-2 text-sm font-semibold">
-              {busy === 'clear' ? <Loader2 className="size-4 animate-spin" /> : <Trash2 className="size-4" />} Demo hatao
-            </button>
+            <Btn variant="soft" onClick={clear} disabled={!!busy}>
+              {busy === 'clear' ? <Loader2 className="size-4 animate-spin" /> : <Trash2 className="size-4" />} {s.results.clearDemo}
+            </Btn>
           )}
-          <button type="button" onClick={pdf} disabled={!!busy}
-            className="flex items-center gap-2 rounded-lg bg-ink px-3 py-2 text-sm font-semibold text-white">
-            {busy === 'pdf' ? <Loader2 className="size-4 animate-spin" /> : <FileDown className="size-4" />} CSR report (PDF)
-          </button>
+          <Btn variant="dark" onClick={pdf} disabled={!!busy}>
+            {busy === 'pdf' ? <Loader2 className="size-4 animate-spin" /> : <FileDown className="size-4" />} {s.results.pdf}
+          </Btn>
         </div>
       </div>
-      {msg && <p className="rounded-lg bg-paper px-3 py-2 text-sm">{msg}</p>}
-      {hasDemo && (
-        <p className="rounded-lg border border-dashed border-ink-3 px-3 py-2 text-sm text-ink-2">
-          Is page pe <b>demo data</b> hai (asli Match engine se allocation, simulated Pulse jawab). Pilot mein ye asli calls se aayega.
-        </p>
-      )}
+      {msg && <p className="rounded-2xl bg-surface-2 px-4 py-3 font-semibold">{msg}</p>}
+      {hasDemo && <p className="rounded-2xl border-2 border-dashed border-ink-3 px-4 py-3 text-sm text-ink-2">{s.results.demoBanner}</p>}
 
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <Stat label="Heater active rate" value={pct(ledger.heaterActiveRate)}
-          sub={`${ledger.byItem.heater.working} / ${ledger.byItem.heater.checked} checked chal rahe`} />
-        <Stat label="Paudhe zinda" value={pct(ledger.saplingSurvival)}
-          sub={`${ledger.byItem.sapling.working} / ${ledger.byItem.sapling.checked} checked`} />
-        <Stat label="Log covered (working help)" value={ledger.peopleCovered.toLocaleString('en-IN')} sub={`kharcha ${inr(ledger.spendInr)}`} />
-        <Stat label="Report se madad tak" value={ledger.reports.medianHoursToHelp == null ? '—' : `${Math.round(ledger.reports.medianHoursToHelp)} h`}
-          sub={`median · ${ledger.reports.resolved}/${ledger.reports.total} resolved`} />
+        <BigStat label={s.results.heaters} value={pct(ledger.heaterActiveRate)} tone="var(--color-good)"
+          sub={f(s.results.heatersSub, { w: ledger.byItem.heater.working, c: ledger.byItem.heater.checked })} />
+        <BigStat label={s.results.trees} value={pct(ledger.saplingSurvival)} tone="var(--color-good)"
+          sub={f(s.results.treesSub, { w: ledger.byItem.sapling.working, c: ledger.byItem.sapling.checked })} />
+        <BigStat label={s.results.helped} value={num(ledger.peopleCovered)} sub={f(s.results.helpedSub, { c: inr(ledger.spendInr) })} />
+        <BigStat
+          label={s.results.speed}
+          value={ledger.reports.medianHoursToHelp == null ? '—' : f(s.results.hours, { h: Math.round(ledger.reports.medianHoursToHelp) })}
+          sub={f(s.results.speedSub, { r: ledger.reports.resolved, t: ledger.reports.total })}
+        />
       </div>
 
       <div className="grid gap-5 lg:grid-cols-2">
-        <Card title="Har item: kitna chal raha hai">
-          <div className="mb-3 flex flex-wrap gap-4 text-xs text-ink-2">
-            <Legend color="bg-good" label="Chal raha / zinda" />
-            <Legend color="bg-critical" label="Nahi chal raha / sookha" />
-            <Legend color="bg-line" label="Check baaki" />
+        <Panel>
+          <h2 className="font-display text-xl font-extrabold">{s.results.byItem}</h2>
+          <div className="mt-3 mb-4 flex flex-wrap gap-4 text-xs font-semibold text-ink-2">
+            {[
+              ['bg-good', s.results.keyWorking],
+              ['bg-critical', s.results.keyFailed],
+              ['bg-line', s.results.keyUnchecked],
+            ].map(([c, l]) => (
+              <span key={l} className="flex items-center gap-1.5">
+                <span className={`inline-block size-3 rounded ${c}`} aria-hidden /> {l}
+              </span>
+            ))}
           </div>
-          <ul className="space-y-3">
+          <ul className="space-y-4">
             {(Object.keys(ITEMS) as ItemType[]).filter((t) => ledger.byItem[t].units).map((t) => {
               const b = ledger.byItem[t]
               const failed = b.checked - b.working
@@ -158,89 +162,93 @@ export default function Ledger() {
               return (
                 <li key={t}>
                   <div className="flex justify-between text-sm">
-                    <span className="font-medium">{ITEMS[t].label}</span>
-                    <span className="text-ink-2 tabular">{b.working} / {b.units}</span>
+                    <span className="font-bold">{s.item[t]}</span>
+                    <span className="font-display font-extrabold tabular">{b.working} / {b.units}</span>
                   </div>
-                  <div className="mt-1 flex h-3 gap-0.5 overflow-hidden rounded" role="img"
-                    aria-label={`${b.working} chal rahe, ${failed} nahi, ${unchecked} check baaki`}>
-                    {b.working > 0 && <div className="bg-good" style={{ width: w(b.working) }} title={`Chal raha: ${b.working}`} />}
-                    {failed > 0 && <div className="bg-critical" style={{ width: w(failed) }} title={`Nahi chal raha: ${failed}`} />}
-                    {unchecked > 0 && <div className="bg-line" style={{ width: w(unchecked) }} title={`Check baaki: ${unchecked}`} />}
+                  <div className="mt-1.5 flex h-4 gap-0.5 overflow-hidden rounded-full shadow-[inset_0_1px_3px_rgb(0_0_0/0.2)]" role="img"
+                    aria-label={`${s.results.keyWorking} ${b.working}, ${s.results.keyFailed} ${failed}, ${s.results.keyUnchecked} ${unchecked}`}>
+                    {b.working > 0 && <div className="bg-good" style={{ width: w(b.working) }} title={`${s.results.keyWorking}: ${b.working}`} />}
+                    {failed > 0 && <div className="bg-critical" style={{ width: w(failed) }} title={`${s.results.keyFailed}: ${failed}`} />}
+                    {unchecked > 0 && <div className="bg-line" style={{ width: w(unchecked) }} title={`${s.results.keyUnchecked}: ${unchecked}`} />}
                   </div>
                 </li>
               )
             })}
-            {!deliveries.length && <li className="text-sm text-ink-3">Abhi koi delivery nahi. Match se plan banao ya demo load karo.</li>}
+            {!deliveries.length && <li className="text-ink-3">{s.results.noDeliveries}</li>}
           </ul>
-        </Card>
+        </Panel>
 
-        <Card title="Madad kyun nahi chali (Pulse se)">
+        <Panel>
+          <h2 className="font-display text-xl font-extrabold">{s.results.whyFail}</h2>
           {reasons.length ? (
-            <ul className="space-y-2">
+            <ul className="mt-4 space-y-3">
               {reasons.map(([r, n]) => (
-                <li key={r} className="grid grid-cols-[150px_1fr_40px] items-center gap-2 text-sm">
-                  <span>{REASON_LABEL[r]}</span>
-                  <div className="h-3 rounded bg-paper">
-                    <div className="h-3 rounded bg-ink-2" style={{ width: `${(n / maxReason) * 100}%` }} title={`${n} units`} />
+                <li key={r}>
+                  <div className="flex justify-between text-sm">
+                    <span className="font-bold">{s.reason[r]}</span>
+                    <span className="font-display font-extrabold tabular">{n}</span>
                   </div>
-                  <span className="text-right tabular">{n}</span>
+                  <div className="mt-1 h-3 rounded-full bg-surface-2">
+                    <div className="h-3 rounded-full bg-ink-2" style={{ width: `${(n / maxReason) * 100}%` }} />
+                  </div>
                 </li>
               ))}
             </ul>
           ) : (
-            <p className="text-sm text-ink-3">Abhi koi "nahi" jawab nahi.</p>
+            <p className="mt-3 text-ink-3">{s.results.noFail}</p>
           )}
-          <p className="mt-3 text-xs text-ink-3">
-            Yahi data batata hai ki agla paisa heater pe nahi, shayad bijli-bill counselling ya insulated cabin pe lagna chahiye.
-          </p>
-        </Card>
+          <p className="mt-4 rounded-2xl bg-accent-soft px-4 py-3 text-sm font-semibold">{s.results.whyFailNote}</p>
+        </Panel>
       </div>
 
       <div className="grid gap-5 lg:grid-cols-2">
-        <Card title="Estimates (range, measurement nahi)">
-          <dl className="space-y-4">
-            {[ledger.pm25AvoidedKg, ledger.shadeHours].map((r, i) => (
-              <div key={i}>
-                <dt className="text-sm text-ink-2">{i === 0 ? 'PM2.5 jo hawa mein nahi gaya' : 'Chhaaya jo logon ko mili'}</dt>
-                <dd className="text-2xl font-bold tabular">
-                  {fmtRange(r, i === 0 ? 1 : 0)} <span className="text-sm font-normal text-ink-2">{r.unit}</span>
+        <Panel>
+          <h2 className="font-display text-xl font-extrabold">{s.results.estimates}</h2>
+          <dl className="mt-4 space-y-5">
+            {[
+              [s.results.pm, range(ledger.pm25AvoidedKg, 1), s.results.pmUnit, s.results.pmWhy],
+              [s.results.shade, range(ledger.shadeHours), s.results.shadeUnit, s.results.shadeWhy],
+            ].map(([label, value, unit, why]) => (
+              <div key={label}>
+                <dt className="text-sm font-semibold text-ink-2">{label}</dt>
+                <dd className="font-display text-3xl font-extrabold tabular">
+                  {value} <span className="text-base font-semibold text-ink-2">{unit}</span>
                 </dd>
-                <dd className="text-xs text-ink-3">Assumption: {r.assumption}</dd>
+                <dd className="text-xs text-ink-3">{why}</dd>
               </div>
             ))}
           </dl>
-        </Card>
+        </Panel>
 
-        <Card title={`Reports (${reports.length})`}>
-          <div className="max-h-[300px] overflow-auto">
+        <Panel>
+          <h2 className="font-display text-xl font-extrabold">{f(s.results.reportsTitle, { n: reports.length })}</h2>
+          <div className="mt-3 max-h-[320px] overflow-auto">
             <table className="w-full text-sm">
-              <thead className="sticky top-0 bg-white text-left text-xs text-ink-3">
-                <tr><th className="py-1">Kya</th><th className="py-1">Raasta</th><th className="py-1">Status</th></tr>
+              <thead className="sticky top-0 bg-surface text-left text-xs text-ink-3">
+                <tr>
+                  <th className="py-1.5 pr-2">{s.results.colWhat}</th>
+                  <th className="py-1.5 pr-2">{s.results.colRoute}</th>
+                  <th className="py-1.5">{s.results.colStatus}</th>
+                </tr>
               </thead>
               <tbody>
                 {[...reports].sort((a, b) => b.createdAt - a.createdAt).slice(0, 60).map((r) => (
                   <tr key={r.id} className="border-t border-line align-top">
-                    <td className="py-1.5 pr-2">{CATEGORY_LABEL[r.category]}</td>
-                    <td className="py-1.5 pr-2 text-ink-2">{ROUTE_INFO[r.route].label}</td>
-                    <td className="py-1.5">{r.status}</td>
+                    <td className="py-2 pr-2">{(lang === 'hi' ? r.summaryHi : r.summary) || s.cat[r.category]}</td>
+                    <td className="py-2 pr-2 text-ink-2">{s.route[r.route]}</td>
+                    <td className="py-2">
+                      <span className={`rounded-full px-2 py-0.5 text-xs font-bold ${r.status === 'resolved' ? 'bg-good/15 text-good' : 'bg-warning/20 text-ink'}`}>
+                        {statusLabel[r.status]}
+                      </span>
+                    </td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
-          <p className="mt-2 text-xs text-ink-3">
-            Ek hi hexagon se dobara report: {ledger.reports.repeatCells} jagah. Ye number ghatna chahiye.
-          </p>
-        </Card>
+          <p className="mt-2 text-xs text-ink-3">{f(s.results.repeat, { n: ledger.reports.repeatCells })}</p>
+        </Panel>
       </div>
     </div>
-  )
-}
-
-function Legend({ color, label }: { color: string; label: string }) {
-  return (
-    <span className="flex items-center gap-1.5">
-      <span className={`inline-block size-3 rounded-sm ${color}`} aria-hidden /> {label}
-    </span>
   )
 }

@@ -3,7 +3,8 @@ import { resolve } from 'node:path'
 import { describe, expect, it } from 'vitest'
 import { computeLedger } from './impact'
 import { allocate, ITEMS } from './match'
-import { actionFor, parsePulseRules, routeFor } from './policy'
+import { STRINGS } from '../i18n/strings'
+import { actionKey, heaterMonthlyCost, parsePulseRules, routeFor } from './policy'
 import { alaav, band, chhaya, computeNorms, exposure, nightCold, smokeTrap } from './scoring'
 import type { Cell, Delivery, HourlyWeather, Place, WeatherSummary } from './types'
 import { summarise, typical } from './weather'
@@ -124,7 +125,11 @@ describe('policy', () => {
     expect(parsePulseRules('नहीं, सेक्रेटरी ने मना कर दिया', 'heater').reason).toBe('rwa_refused')
     expect(parsePulseRules('paudha sookh gaya', 'sapling').reason).toBe('plant_died')
     expect(parsePulseRules('phone pe baat karo', 'heater').ok).toBe(false)
-    expect(actionFor('heater', 'electricity_bill')).toContain('₹')
+    expect(parsePulseRules('Yes, it ran all night', 'heater').ok).toBe(true)
+    expect(parsePulseRules('No, society says the electricity bill will be high', 'heater').reason).toBe('electricity_bill')
+    expect(parsePulseRules('The plant died', 'sapling').reason).toBe('plant_died')
+    expect(heaterMonthlyCost()).toBe(1008)
+    expect(actionKey('heater', 'broken')).toBe('brokenHeater')
   })
 })
 
@@ -149,5 +154,26 @@ describe('people-first scoring', () => {
     expect(chhaya(empty, norms, hotDay).score).toBeGreaterThanOrEqual(60)
     expect(chhaya(busy, norms, hotDay).score).toBeLessThan(10)
     expect(alaav(empty, norms, coldNight).score).toBe(100)
+  })
+})
+
+describe('i18n', () => {
+  const walk = (o: unknown, path = ''): [string, string][] =>
+    typeof o === 'string'
+      ? [[path, o]]
+      : Array.isArray(o)
+        ? o.flatMap((v, i) => walk(v, `${path}[${i}]`))
+        : Object.entries(o as object).flatMap(([k, v]) => walk(v, path ? `${path}.${k}` : k))
+  const en = new Map(walk(STRINGS.en))
+  const hi = new Map(walk(STRINGS.hi))
+
+  it('Hindi has every English string, none empty', () => {
+    expect([...hi.keys()].sort()).toEqual([...en.keys()].sort())
+    for (const [k, v] of hi) expect(v.trim(), k).not.toBe('')
+  })
+
+  it('placeholders match in both languages', () => {
+    const ph = (t: string) => [...t.matchAll(/\{(\w+)\}/g)].map((m) => m[1]).sort()
+    for (const [k, v] of en) expect(ph(hi.get(k)!), k).toEqual(ph(v))
   })
 })

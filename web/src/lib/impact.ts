@@ -8,8 +8,6 @@ import type { Delivery, ItemType, PulseCheck, Report } from './types'
 export interface Range {
   low: number
   high: number
-  unit: string
-  assumption: string
 }
 
 export interface Ledger {
@@ -76,13 +74,7 @@ export function computeLedger(deliveries: Delivery[], pulses: PulseCheck[], repo
     },
     pulses: pulses.length,
     spendInr: deliveries.reduce((s, d) => s + d.qty * ITEMS[d.item].unitCostInr, 0),
-    pm25AvoidedKg: {
-      low: pmLow, high: pmHigh, unit: 'kg PM2.5 / season',
-      assumption: '1 chalti heater = 1 kam aag; 2-5 kg kachra/raat; 8-10 g PM2.5/kg; 40-60% raatein thandi',
-    },
-    shadeHours: {
-      low: shadeLow, high: shadeHigh, unit: 'person-hours chhaaya / garmi',
-      assumption: 'Apr-Jun ke 75-90 din, 6-8 ghante roz, sirf "working" shade/cabin',
-    },
+    pm25AvoidedKg: { low: pmLow, high: pmHigh },
+    shadeHours: { low: shadeLow, high: shadeHigh },
   }
 }

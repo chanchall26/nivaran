@@ -4,7 +4,9 @@
  * and can be removed with one click. Rates are chosen to be plausible, not flattering.
  */
 import { cellToLatLng } from 'h3-js'
-import { actionFor, routeFor } from './policy'
+import { STRINGS } from '../i18n/strings'
+import { cellLabel } from './format'
+import { actionKey, routeFor } from './policy'
 import { allocate, ITEMS, type Allocation } from './match'
 import type { Norms } from './scoring'
 import { store } from './store'
@@ -27,16 +29,25 @@ const PLAN: { item: ItemType; units: number; okRate: number; reasons: [PulseReas
 ]
 
 const ANSWERS: Record<PulseReason, string> = {
-  none: 'Haan ji, sab theek hai',
-  electricity_bill: 'Nahi chala, society wale bolte hain bijli ka bill badh jaayega',
-  rwa_refused: 'Secretary sahab ne mana kar diya',
-  broken: 'Kharab ho gaya, chal nahi raha',
-  stolen: 'Koi le gaya',
-  no_water: 'Paani nahi mil raha',
-  plant_died: 'Paudha sookh gaya',
-  not_received: 'Abhi tak mila hi nahi',
-  other: 'Pata nahi',
+  none: 'हाँ जी, सब ठीक है',
+  electricity_bill: 'नहीं चला, सोसाइटी वाले कहते हैं बिजली का बिल बढ़ जाएगा',
+  rwa_refused: 'सेक्रेटरी साहब ने मना कर दिया',
+  broken: 'ख़राब हो गया, चल नहीं रहा',
+  stolen: 'कोई ले गया',
+  no_water: 'पानी नहीं मिल रहा',
+  plant_died: 'पौधा सूख गया',
+  not_received: 'अभी तक मिला ही नहीं',
+  other: 'पता नहीं',
 }
+
+/** English place name for stored records (the UI re-derives a translated one). */
+function placeName(a: Allocation) {
+  const where = cellLabel(a.target.kind === 'place' ? cellFor(a) : a.target.cell, STRINGS.en, 'en')
+  if (a.target.kind === 'place') return a.target.place.name ?? `${STRINGS.en.place[a.target.place.kind]}, ${where}`
+  return `${STRINGS.en.match.street}, ${where}`
+}
+let cellsByH3 = new Map<string, Cell>()
+const cellFor = (a: Allocation) => cellsByH3.get(a.h3)!
 
 export async function seedDemo(opts: {
   cells: Cell[]
@@ -46,6 +57,7 @@ export async function seedDemo(opts: {
   typicalWeather: WeatherSummary
 }) {
   const r = rng(42)
+  cellsByH3 = new Map(opts.cells.map((c) => [c.h3, c]))
   const now = Date.now()
   const day = 86_400_000
   const deliveries: Omit<Delivery, 'id'>[] = []
@@ -76,7 +88,7 @@ export async function seedDemo(opts: {
         p.item === 'sapling' ? (reason === 'plant_died' || reason === 'stolen' ? 'dead' : 'alive') : ok ? 'working' : 'not_working'
       deliveries.push({
         item: p.item, qty: a.qty, placeId: a.target.kind === 'place' ? a.target.place.id : undefined, h3: a.h3, lat, lon,
-        placeName: a.name, donor: p.item === 'sapling' || p.item === 'cabin' ? 'Demo Green CSR' : 'Demo CSR Foundation',
+        placeName: placeName(a), donor: p.item === 'sapling' || p.item === 'cabin' ? 'Demo Green CSR' : 'Demo CSR Foundation',
         status, createdAt: deliveredAt - 3 * day, deliveredAt, lastPulseAt: deliveredAt + 30 * day,
         lastReason: reason, people: a.people, demo: true,
       })
@@ -98,7 +110,7 @@ export async function seedDemo(opts: {
     const reason = d.lastReason ?? 'none'
     return {
       deliveryId: d.id, question: '', answer: ANSWERS[reason], ok: reason === 'none', reason,
-      action: actionFor(d.item, reason), createdAt: d.lastPulseAt ?? now, ai: 'rules', demo: true,
+      action: actionKey(d.item, reason), createdAt: d.lastPulseAt ?? now, ai: 'rules', demo: true,
     }
   })
   await store.addMany('pulses', pulses)
@@ -110,15 +122,6 @@ export async function seedDemo(opts: {
     ['sardi', 'labour_camp', true], ['sardi', 'waste_only', false], ['garmi', 'heat_exposed', true],
     ['garmi', 'no_shade_spot', false], ['garmi', 'heat_exposed', true],
   ]
-  const summaries: Record<ReportCategory, string> = {
-    guard_fire: 'Gate ke paas guard patte jala ke garmi le raha hai',
-    homeless: 'Footpath pe kuch log bina kambal ke',
-    labour_camp: 'Nirmaan site ke paas jhuggi mein aag',
-    waste_only: 'Khaali plot mein kachre ka dher sulag raha hai',
-    heat_exposed: 'Thele wale dopahar ki dhoop mein, koi chhaaya nahi',
-    no_shade_spot: 'Bus stop pe na shed na ped',
-    other: 'Kuch aur',
-  }
   const reports: Omit<Report, 'id'>[] = Array.from({ length: 48 }, (_, i) => {
     const c = hot[Math.floor(r() * hot.length)]
     const [season, category, people] = cats[i % cats.length]
@@ -126,7 +129,7 @@ export async function seedDemo(opts: {
     const resolved = r() < 0.72
     return {
       season, category, route: routeFor(category, people), lat: c.lat, lon: c.lon, h3: c.h3, facesBlurred: 0,
-      peoplePresent: people, summary: summaries[category], status: resolved ? 'resolved' : 'open', createdAt,
+      peoplePresent: people, summary: '', status: resolved ? 'resolved' : 'open', createdAt,
       resolvedAt: resolved ? createdAt + (6 + r() * 66) * 3_600_000 : undefined, ai: 'rules', demo: true,
     }
   })

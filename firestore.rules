@@ -19,7 +19,10 @@ service cloud.firestore {
              ['rwa_heater', 'shelter_outreach', 'warm_kit', 'municipal_cleanup', 'shade_water', 'plantation', 'review']
         // Madad, challan nahi: cleanup only when nobody is there
         && (request.resource.data.route != 'municipal_cleanup' || request.resource.data.peoplePresent == false)
-        && request.resource.data.status == 'open'
+        // real reports start open; seeded sample seasons (demo == true) may arrive already resolved
+        && (request.resource.data.status == 'open'
+            || (request.resource.data.get('demo', false) == true
+                && request.resource.data.status in ['open', 'assigned', 'resolved']))
         && request.resource.data.lat is number && request.resource.data.lon is number
         && str(request.resource.data.summary, 300)
         && (!('thumb' in request.resource.data) || str(request.resource.data.thumb, 400000))

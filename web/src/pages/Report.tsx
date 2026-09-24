@@ -1,21 +1,32 @@
 import { latLngToCell } from 'h3-js'
-import { Camera, CheckCircle2, Crosshair, EyeOff, Loader2, ShieldCheck, Sparkles } from 'lucide-react'
+import {
+  ArrowLeft, ArrowRight, Camera, Check, Crosshair, EyeOff, Flame, HelpCircle, Loader2, MapPin, ShieldCheck, Sparkles, Sun, Tent,
+  Trash2, Trees, Users,
+} from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
-import { Card } from '../components/ui'
+import { Btn, BtnLink, Panel } from '../components/kit'
+import { useI18n } from '../i18n'
 import { aiMode, analyseReport, type ReportAnalysis } from '../lib/ai'
+import { cellLabel } from '../lib/format'
 import { H3_RES } from '../lib/match'
-import { CATEGORY_LABEL, ROUTE_INFO, SEASON_CATEGORIES } from '../lib/policy'
+import { ROUTE_INFO, SEASON_CATEGORIES } from '../lib/policy'
 import { blurPeople, coarsen, type BlurResult } from '../lib/privacy'
 import { store } from '../lib/store'
 import type { ReportCategory } from '../lib/types'
 import { useApp } from '../state'
 
+const CAT_ICON: Record<ReportCategory, typeof Flame> = {
+  guard_fire: Flame, homeless: Users, labour_camp: Tent, waste_only: Trash2, heat_exposed: Sun, no_shade_spot: Trees, other: HelpCircle,
+}
+
 export default function Report() {
   const { city, season } = useApp()
+  const { s, f, lang } = useI18n()
   const [params] = useSearchParams()
   const presetCell = params.get('h3')
 
+  const [step, setStep] = useState(0)
   const [loc, setLoc] = useState<{ lat: number; lon: number; label: string } | null>(null)
   const [locError, setLocError] = useState<string | null>(null)
   const [locating, setLocating] = useState(false)
@@ -32,298 +43,310 @@ export default function Report() {
 
   const areas = useMemo(() => {
     if (!city) return []
-    const seen = new Map<string, { lat: number; lon: number }>()
-    for (const c of city.cells) if (c.area && !seen.has(c.area)) seen.set(c.area, { lat: c.lat, lon: c.lon })
-    return [...seen.entries()].sort((a, b) => a[0].localeCompare(b[0]))
-  }, [city])
+    const seen = new Map<string, { lat: number; lon: number; label: string }>()
+    for (const c of city.cells) {
+      if (c.area && c.areaKm < 1.2 && !seen.has(c.area)) seen.set(c.area, { lat: c.lat, lon: c.lon, label: lang === 'hi' && c.areaHi ? c.areaHi : c.area })
+    }
+    return [...seen.entries()].sort((a, b) => a[1].label.localeCompare(b[1].label))
+  }, [city, lang])
 
   const effectiveLoc = useMemo(() => {
     if (loc) return loc
     if (presetCell && city) {
       const c = city.cells.find((x) => x.h3 === presetCell)
-      if (c) return { lat: c.lat, lon: c.lon, label: c.area ? `${c.area} ke paas (map se)` : 'Map se chuna' }
+      if (c) return { lat: c.lat, lon: c.lon, label: cellLabel(c, s, lang) }
     }
     return null
-  }, [loc, presetCell, city])
+  }, [loc, presetCell, city, s, lang])
 
   const locate = () => {
     setLocating(true)
     setLocError(null)
     navigator.geolocation.getCurrentPosition(
       (p) => {
-        setLoc({ lat: p.coords.latitude, lon: p.coords.longitude, label: 'Aapki location (GPS)' })
+        setLoc({ lat: p.coords.latitude, lon: p.coords.longitude, label: 'GPS' })
         setLocating(false)
       },
       (e) => {
-        setLocError(`GPS nahi mila (${e.message}). Neeche se ilaaka chuniye.`)
+        setLocError(f(s.report.gpsError, { e: e.message }))
         setLocating(false)
       },
       { enableHighAccuracy: true, timeout: 10000 },
     )
   }
 
-  const onPhoto = async (f: File | null, all = blurAll) => {
-    setPhoto(f)
+  const onPhoto = async (file: File | null, all = blurAll) => {
+    setPhoto(file)
     setBlurred(null)
-    if (!f) return
+    if (!file) return
     setBlurring(true)
     try {
-      setBlurred(await blurPeople(f, { blurAll: all }))
+      setBlurred(await blurPeople(file, { blurAll: all }))
     } finally {
       setBlurring(false)
     }
   }
 
-  const insideCity = effectiveLoc && city ? city.cells.some((c) => c.h3 === latLngToCell(effectiveLoc.lat, effectiveLoc.lon, H3_RES)) : false
-  const canSubmit = effectiveLoc && category && people !== null && !submitting && !blurring
+  const insideCity =
+    effectiveLoc && city ? city.cells.some((c) => c.h3 === latLngToCell(effectiveLoc.lat, effectiveLoc.lon, H3_RES)) : false
+  const canNext = [!!effectiveLoc, !blurring, !!category && people !== null]
 
   const submit = async () => {
     if (!effectiveLoc || !category || people === null) return
     setSubmitting(true)
     setError(null)
     try {
-      const analysis = await analyseReport({
-        imageDataUrl: blurred?.dataUrl,
-        season,
-        userCategory: category,
-        userPeoplePresent: people,
-        note,
-      })
+      const a = await analyseReport({ imageDataUrl: blurred?.dataUrl, season, userCategory: category, userPeoplePresent: people, note })
       const lat = coarsen(effectiveLoc.lat)
       const lon = coarsen(effectiveLoc.lon)
       await store.add('reports', {
-        season,
-        category: analysis.category,
-        route: analysis.route,
-        lat,
-        lon,
-        h3: latLngToCell(lat, lon, H3_RES),
-        thumb: blurred?.dataUrl,
-        facesBlurred: (blurred?.faces ?? 0) + (blurred?.people ?? 0),
-        peoplePresent: analysis.peoplePresent,
-        summary: analysis.summary,
-        note: note || undefined,
-        status: 'open',
-        createdAt: Date.now(),
-        ai: analysis.ai,
+        season, category: a.category, route: a.route, lat, lon, h3: latLngToCell(lat, lon, H3_RES),
+        thumb: blurred?.dataUrl, facesBlurred: (blurred?.faces ?? 0) + (blurred?.people ?? 0), peoplePresent: a.peoplePresent,
+        summary: a.summary, summaryHi: a.summaryHi, note: note || undefined, status: 'open', createdAt: Date.now(), ai: a.ai,
       })
-      setResult(analysis)
+      setResult(a)
     } catch (e) {
-      setError(`Report save nahi hui: ${e instanceof Error ? e.message : e}`)
+      setError(f(s.report.saveError, { e: e instanceof Error ? e.message : String(e) }))
     } finally {
       setSubmitting(false)
     }
   }
 
+  const reset = () => {
+    setResult(null)
+    setStep(0)
+    setPhoto(null)
+    setBlurred(null)
+    setCategory(null)
+    setPeople(null)
+    setNote('')
+  }
+
+  // ---- done ------------------------------------------------------------------------------
   if (result) {
-    const route = ROUTE_INFO[result.route]
+    const who = s.route[ROUTE_INFO[result.route].who as keyof typeof s.route]
+    const summary = lang === 'hi' ? result.summaryHi || result.summary : result.summary
     return (
-      <div className="mx-auto max-w-xl space-y-4">
-        <Card>
-          <div className="flex items-start gap-3">
-            <CheckCircle2 className="size-8 shrink-0 text-good" aria-hidden />
-            <div>
-              <h1 className="text-xl font-bold">Shukriya! Report darj ho gayi.</h1>
-              <p className="mt-1 text-ink-2">{result.summary}</p>
-            </div>
+      <div className="mx-auto max-w-xl space-y-5">
+        <Panel className="text-center">
+          <div className="anim-pop mx-auto flex size-20 items-center justify-center rounded-full bg-good text-white shadow-[0_6px_0_#0b7a3b,0_16px_30px_-8px_#12a150]">
+            <Check className="size-10" strokeWidth={3} aria-hidden />
           </div>
-          <dl className="mt-4 grid grid-cols-[auto_1fr] gap-x-4 gap-y-2 text-sm">
-            <dt className="text-ink-3">Samajh</dt>
-            <dd>{CATEGORY_LABEL[result.category]}</dd>
-            <dt className="text-ink-3">Madad ka raasta</dt>
-            <dd className="font-semibold">{route.label}</dd>
-            <dt className="text-ink-3">Kisko gaya</dt>
-            <dd>{route.who}</dd>
-            {result.plantable && (
-              <>
-                <dt className="text-ink-3">Ped lag sakta hai?</dt>
-                <dd>{result.plantable}</dd>
-              </>
-            )}
-            <dt className="text-ink-3">AI</dt>
-            <dd>
-              {result.ai === 'gemini' ? `Gemini · confidence ${result.confidence}` : 'Rules (Gemini off)'}
-              {result.error && <span className="block text-xs text-critical">Gemini error, rules use hue</span>}
-            </dd>
+          <h1 className="mt-5 font-display text-3xl font-extrabold">{s.report.doneTitle}</h1>
+          {summary && <p className="mt-2 text-lg text-ink-2">{summary}</p>}
+          <dl className="mt-6 space-y-3 text-left">
+            {[
+              [s.report.understood, s.cat[result.category]],
+              [s.report.route, s.route[result.route]],
+              [s.report.to, who],
+              ...(result.plantable ? [[s.report.plantable, result.plantable]] : []),
+              [s.report.ai, result.ai === 'gemini' ? f(s.report.aiGemini, { c: result.confidence }) : s.report.aiRules],
+            ].map(([k, v]) => (
+              <div key={k} className="rounded-2xl bg-surface-2 px-4 py-3">
+                <dt className="text-xs font-bold uppercase tracking-wide text-ink-3">{k}</dt>
+                <dd className="font-semibold">{v}</dd>
+              </div>
+            ))}
           </dl>
-          <p className="mt-4 flex items-center gap-2 rounded-lg bg-good/10 px-3 py-2 text-sm">
-            <ShieldCheck className="size-4 text-good" aria-hidden />
-            Kisi insaan pe challan ya karwai nahi hogi. Sirf madad.
+          <p className="mt-5 flex items-center justify-center gap-2 rounded-2xl bg-good/15 px-4 py-3 font-bold text-good">
+            <ShieldCheck className="size-5" aria-hidden /> {s.report.noFine}
           </p>
-        </Card>
-        <div className="flex gap-2">
-          <Link to="/map" className="flex-1 rounded-lg bg-ink px-4 py-2.5 text-center font-semibold text-white">
-            Map pe dekho
-          </Link>
-          <button
-            type="button"
-            className="flex-1 rounded-lg border border-line bg-white px-4 py-2.5 font-semibold"
-            onClick={() => {
-              setResult(null)
-              setPhoto(null)
-              setBlurred(null)
-              setCategory(null)
-              setPeople(null)
-              setNote('')
-            }}
-          >
-            Ek aur report
-          </button>
+        </Panel>
+        <div className="grid grid-cols-2 gap-3">
+          <BtnLink to="/map" size="lg">{s.report.seeMap}</BtnLink>
+          <Btn size="lg" variant="soft" onClick={reset}>{s.report.another}</Btn>
         </div>
       </div>
     )
   }
 
+  // ---- wizard ------------------------------------------------------------------------------
+  const titles = [s.report.where, s.report.photo, s.report.what]
   return (
-    <div className="mx-auto max-w-xl space-y-4">
+    <div className="mx-auto max-w-xl space-y-5">
       <div>
-        <h1 className="text-2xl font-bold">Madad, Challan Nahi</h1>
-        <p className="mt-1 text-ink-2">
-          {season === 'sardi'
-            ? 'Kisi ko thand mein aag jalate ya bina garmahat ke dekha? Batao, hum madad bhejenge.'
-            : 'Koi dhoop mein bina chhaaya ya paani ke kaam kar raha hai? Ya koi jagah jahan ped/chhaaya chahiye? Batao.'}
-        </p>
+        <h1 className="font-display text-4xl font-extrabold">{s.report.title}</h1>
+        <p className="mt-2 text-lg text-ink-2">{season === 'sardi' ? s.report.introSardi : s.report.introGarmi}</p>
       </div>
 
-      <Card title="1. Jagah">
-        <div className="space-y-2">
-          <button
-            type="button"
-            onClick={locate}
-            disabled={locating}
-            className="flex w-full items-center justify-center gap-2 rounded-lg border border-line bg-paper px-4 py-2.5 font-semibold"
-          >
-            {locating ? <Loader2 className="size-4 animate-spin" /> : <Crosshair className="size-4" />}
-            Meri location lo
-          </button>
-          <select
-            className="w-full rounded-lg border border-line bg-white px-3 py-2"
-            value=""
-            onChange={(e) => {
-              const a = areas.find(([n]) => n === e.target.value)
-              if (a) setLoc({ ...a[1], label: `${a[0]} ke paas` })
-            }}
-          >
-            <option value="">…ya ilaaka chuniye</option>
-            {areas.map(([n]) => (
-              <option key={n} value={n}>
-                {n}
-              </option>
-            ))}
-          </select>
-          {effectiveLoc && (
-            <p className="text-sm">
-              <b>{effectiveLoc.label}</b>{' '}
-              <span className="text-ink-3">
-                · public map pe sirf ~100 m tak ({coarsen(effectiveLoc.lat)}, {coarsen(effectiveLoc.lon)})
-              </span>
-              {!insideCity && <span className="block text-critical">Ye jagah Gwalior city limits ke bahar lag rahi hai.</span>}
-            </p>
-          )}
-          {locError && <p className="text-sm text-critical">{locError}</p>}
+      {/* progress */}
+      <div>
+        <div className="mb-2 flex justify-between text-sm font-bold">
+          <span className="text-accent">{f(s.report.step, { n: step + 1 })}</span>
+          <span className="text-ink-2">{titles[step]}</span>
         </div>
-      </Card>
-
-      <Card title="2. Photo (optional)">
-        <p className="mb-3 flex gap-2 rounded-lg bg-paper px-3 py-2 text-sm text-ink-2">
-          <EyeOff className="mt-0.5 size-4 shrink-0" aria-hidden />
-          Jagah ya aag ki photo lein, logon ki nahi. Chehre aapke phone pe hi blur hote hain; asli photo kahin nahi jaati.
-        </p>
-        <label className="flex cursor-pointer items-center justify-center gap-2 rounded-lg border-2 border-dashed border-line px-4 py-6 font-semibold text-ink-2 hover:border-ink-3">
-          <Camera className="size-5" aria-hidden />
-          {photo ? 'Doosri photo lo' : 'Photo lo / chuno'}
-          <input
-            type="file"
-            accept="image/*"
-            capture="environment"
-            className="sr-only"
-            onChange={(e) => onPhoto(e.target.files?.[0] ?? null)}
-          />
-        </label>
-        {blurring && (
-          <p className="mt-3 flex items-center gap-2 text-sm text-ink-2">
-            <Loader2 className="size-4 animate-spin" /> Chehre dhoondh ke blur kar rahe hain (phone pe hi)…
-          </p>
-        )}
-        {blurred && (
-          <div className="mt-3 space-y-2">
-            <img src={blurred.dataUrl} alt="Blur ki hui photo" className="w-full rounded-lg border border-line" />
-            <p className="text-sm text-ink-2">
-              {blurAll ? 'Poori photo blur ki gayi.' : `${blurred.faces} chehre aur ${blurred.people} logon ka upar ka hissa blur kiya.`}{' '}
-              Sirf yahi blur photo bheji jaayegi.
-            </p>
-            <label className="flex items-center gap-2 text-sm">
-              <input
-                type="checkbox"
-                checked={blurAll}
-                onChange={(e) => {
-                  setBlurAll(e.target.checked)
-                  onPhoto(photo, e.target.checked)
-                }}
-              />
-              Poori photo blur karo (aur zyada privacy)
-            </label>
-          </div>
-        )}
-      </Card>
-
-      <Card title="3. Kya dekha?">
-        <div className="flex flex-wrap gap-2">
-          {SEASON_CATEGORIES[season].map((c) => (
+        <div className="grid grid-cols-3 gap-2">
+          {titles.map((t, i) => (
             <button
-              key={c}
+              key={t}
               type="button"
-              aria-pressed={category === c}
-              onClick={() => setCategory(c)}
-              className={`rounded-lg border px-3 py-2 text-left text-sm ${
-                category === c ? 'border-[var(--accent-600)] bg-[var(--accent-50)] font-semibold' : 'border-line'
-              }`}
-            >
-              {CATEGORY_LABEL[c]}
-            </button>
+              onClick={() => i <= step && setStep(i)}
+              aria-label={t}
+              className={`h-2.5 rounded-full transition-colors ${i <= step ? 'bg-accent' : 'bg-line'}`}
+            />
           ))}
         </div>
-        <fieldset className="mt-4">
-          <legend className="text-sm font-semibold">Wahan log hain?</legend>
-          <div className="mt-1 flex gap-2">
-            {[
-              [true, 'Haan, log hain'],
-              [false, 'Nahi, koi nahi'],
-            ].map(([v, l]) => (
-              <button
-                key={String(v)}
-                type="button"
-                aria-pressed={people === v}
-                onClick={() => setPeople(v as boolean)}
-                className={`flex-1 rounded-lg border px-3 py-2 text-sm ${
-                  people === v ? 'border-ink bg-ink text-white' : 'border-line'
-                }`}
-              >
-                {l as string}
-              </button>
-            ))}
-          </div>
-        </fieldset>
-        <textarea
-          value={note}
-          onChange={(e) => setNote(e.target.value)}
-          placeholder="Kuch aur batana hai? (optional) jaise: 'gate no. 2, raat 11 baje ke baad'"
-          rows={2}
-          className="mt-4 w-full rounded-lg border border-line px-3 py-2 text-sm"
-        />
-      </Card>
+      </div>
 
-      {error && <p className="text-sm text-critical">{error}</p>}
-      <button
-        type="button"
-        onClick={submit}
-        disabled={!canSubmit}
-        className="flex w-full items-center justify-center gap-2 rounded-xl bg-[var(--accent-600)] px-4 py-3 text-lg font-bold text-white disabled:opacity-40"
-      >
-        {submitting ? <Loader2 className="size-5 animate-spin" /> : <Sparkles className="size-5" />}
-        {submitting ? 'Samajh rahe hain…' : 'Report bhejo'}
-      </button>
-      <p className="text-center text-xs text-ink-3">AI: {aiMode()}</p>
+      <Panel className="anim-rise" key={step}>
+        {step === 0 && (
+          <div className="space-y-4">
+            <h2 className="flex items-center gap-2 font-display text-2xl font-extrabold">
+              <MapPin className="size-6 text-accent" aria-hidden /> {s.report.where}
+            </h2>
+            <Btn size="lg" className="w-full" onClick={locate} disabled={locating}>
+              {locating ? <Loader2 className="size-5 animate-spin" /> : <Crosshair className="size-5" />} {s.report.myLocation}
+            </Btn>
+            <label className="block">
+              <span className="mb-1 block text-sm font-bold text-ink-2">{s.report.pickArea}</span>
+              <select
+                className="w-full rounded-2xl border border-line bg-surface-2 px-4 py-3.5 text-base font-semibold"
+                value=""
+                onChange={(e) => {
+                  const a = areas.find(([n]) => n === e.target.value)
+                  if (a) setLoc({ lat: a[1].lat, lon: a[1].lon, label: a[1].label })
+                }}
+              >
+                <option value="">…</option>
+                {areas.map(([n, a]) => (
+                  <option key={n} value={n}>{a.label}</option>
+                ))}
+              </select>
+            </label>
+            {effectiveLoc && (
+              <div className="anim-rise flex items-start gap-3 rounded-2xl bg-accent-soft px-4 py-3">
+                <MapPin className="mt-0.5 size-5 shrink-0 text-accent" aria-hidden />
+                <div>
+                  <b>{effectiveLoc.label}</b>
+                  <p className="text-xs text-ink-2">{s.report.publicPrecision}</p>
+                  {!insideCity && <p className="text-sm font-semibold text-critical">{s.report.outside}</p>}
+                </div>
+              </div>
+            )}
+            {locError && <p className="text-sm text-critical">{locError}</p>}
+          </div>
+        )}
+
+        {step === 1 && (
+          <div className="space-y-4">
+            <h2 className="flex items-center gap-2 font-display text-2xl font-extrabold">
+              <Camera className="size-6 text-accent" aria-hidden /> {s.report.photo}
+            </h2>
+            <p className="flex gap-2.5 rounded-2xl bg-surface-2 px-4 py-3 text-sm text-ink-2">
+              <EyeOff className="mt-0.5 size-5 shrink-0" aria-hidden /> {s.report.photoTip}
+            </p>
+            <label className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-3xl border-2 border-dashed border-line bg-surface-2 px-4 py-10 text-center font-display text-lg font-bold text-ink-2 transition-colors hover:border-accent hover:text-accent">
+              <Camera className="size-10" aria-hidden />
+              {photo ? s.report.changePhoto : s.report.takePhoto}
+              <input type="file" accept="image/*" capture="environment" className="sr-only" onChange={(e) => onPhoto(e.target.files?.[0] ?? null)} />
+            </label>
+            {blurring && (
+              <p className="flex items-center gap-2 text-sm text-ink-2">
+                <Loader2 className="size-4 animate-spin" /> {s.report.blurring}
+              </p>
+            )}
+            {blurred && (
+              <div className="anim-rise space-y-3">
+                <img src={blurred.dataUrl} alt="" className="w-full rounded-2xl border border-line shadow-[var(--shadow-3d)]" />
+                <p className="text-sm text-ink-2">
+                  {blurAll ? s.report.blurredAll : f(s.report.blurred, { f: blurred.faces, p: blurred.people })}
+                </p>
+                <label className="flex items-center gap-2.5 text-sm font-semibold">
+                  <input
+                    type="checkbox"
+                    className="size-5 accent-[var(--accent)]"
+                    checked={blurAll}
+                    onChange={(e) => {
+                      setBlurAll(e.target.checked)
+                      onPhoto(photo, e.target.checked)
+                    }}
+                  />
+                  {s.report.blurAll}
+                </label>
+              </div>
+            )}
+          </div>
+        )}
+
+        {step === 2 && (
+          <div className="space-y-5">
+            <h2 className="font-display text-2xl font-extrabold">{s.report.what}</h2>
+            <div className="grid gap-2.5">
+              {SEASON_CATEGORIES[season].map((c) => {
+                const Icon = CAT_ICON[c]
+                const on = category === c
+                return (
+                  <button
+                    key={c}
+                    type="button"
+                    aria-pressed={on}
+                    onClick={() => setCategory(c)}
+                    className={`flex items-center gap-3 rounded-2xl border-2 px-4 py-3.5 text-left font-semibold transition-all ${
+                      on ? 'border-accent bg-accent-soft shadow-[0_4px_0_var(--accent-edge)]' : 'border-line bg-surface shadow-[0_4px_0_var(--line)]'
+                    }`}
+                  >
+                    <span className={`flex size-10 shrink-0 items-center justify-center rounded-xl ${on ? 'bg-accent text-accent-ink' : 'bg-surface-2 text-ink-2'}`}>
+                      <Icon className="size-5" aria-hidden />
+                    </span>
+                    {s.cat[c]}
+                  </button>
+                )
+              })}
+            </div>
+            <fieldset>
+              <legend className="mb-2 font-display text-lg font-extrabold">{s.report.people}</legend>
+              <div className="grid grid-cols-2 gap-2.5">
+                {([
+                  [true, s.report.peopleYes],
+                  [false, s.report.peopleNo],
+                ] as const).map(([v, label]) => (
+                  <button
+                    key={String(v)}
+                    type="button"
+                    aria-pressed={people === v}
+                    onClick={() => setPeople(v)}
+                    className={`rounded-2xl border-2 px-3 py-3.5 font-bold transition-all ${
+                      people === v ? 'border-ink bg-ink text-bg shadow-[0_4px_0_rgb(0_0_0/0.35)]' : 'border-line bg-surface shadow-[0_4px_0_var(--line)]'
+                    }`}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+            </fieldset>
+            <textarea
+              value={note}
+              onChange={(e) => setNote(e.target.value)}
+              placeholder={s.report.note}
+              rows={2}
+              className="w-full rounded-2xl border border-line bg-surface-2 px-4 py-3"
+            />
+          </div>
+        )}
+      </Panel>
+
+      {error && <p className="text-sm font-semibold text-critical">{error}</p>}
+
+      <div className="flex gap-3">
+        {step > 0 && (
+          <Btn variant="soft" size="lg" onClick={() => setStep(step - 1)} aria-label={s.app.back}>
+            <ArrowLeft className="size-5" />
+          </Btn>
+        )}
+        {step < 2 ? (
+          <Btn size="lg" className="flex-1" disabled={!canNext[step]} onClick={() => setStep(step + 1)}>
+            {s.app.next} <ArrowRight className="size-5" />
+          </Btn>
+        ) : (
+          <Btn size="lg" className="flex-1" disabled={!canNext[2] || submitting} onClick={submit}>
+            {submitting ? <Loader2 className="size-5 animate-spin" /> : <Sparkles className="size-5" />}
+            {submitting ? s.report.sending : s.report.send}
+          </Btn>
+        )}
+      </div>
+      <p className="text-center text-xs text-ink-3">
+        {f(s.report.aiLine, { m: aiMode() })} · <Link to="/method" className="underline">{s.nav.how}</Link>
+      </p>
     </div>
   )
 }

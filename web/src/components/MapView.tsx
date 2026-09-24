@@ -16,7 +16,10 @@ const GOOGLE_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY as string | undefine
 const GOOGLE_MAP_ID = (import.meta.env.VITE_GOOGLE_MAPS_MAP_ID as string | undefined) || 'DEMO_MAP_ID'
 maplibregl.setWorkerUrl(maplibreWorkerUrl)
 
-const OSM_STYLE = 'https://tiles.openfreemap.org/styles/positron'
+const OSM_STYLES = {
+  light: 'https://tiles.openfreemap.org/styles/positron',
+  dark: 'https://tiles.openfreemap.org/styles/fiord',
+}
 
 type Tooltip = ((info: PickingInfo) => string | { html: string } | null) | undefined
 
@@ -28,6 +31,11 @@ interface Props {
   className?: string
   /** register a function the parent can call to fly the camera */
   onFlyTo?: (fly: (lat: number, lon: number, zoom?: number) => void) => void
+  /** dark basemap for night (sardi) */
+  dark?: boolean
+  /** tilt the camera for 3D columns */
+  pitch?: number
+  bearing?: number
 }
 
 interface Overlay {
@@ -36,12 +44,13 @@ interface Overlay {
 
 let googleFailed = false
 
-export function MapView({ layers, center, zoom = 12, getTooltip, className, onFlyTo }: Props) {
+export function MapView({ layers, center, zoom = 12, getTooltip, className, onFlyTo, dark = false, pitch = 0, bearing = 0 }: Props) {
   const el = useRef<HTMLDivElement>(null)
   const overlay = useRef<Overlay | null>(null)
   const [basemap, setBasemap] = useState<'google' | 'osm'>(GOOGLE_KEY && !googleFailed ? 'google' : 'osm')
-  const latest = useRef({ layers, getTooltip })
-  latest.current = { layers, getTooltip }
+  const latest = useRef({ layers, getTooltip, dark, pitch, bearing })
+  latest.current = { layers, getTooltip, dark, pitch, bearing }
+  const mlMap = useRef<maplibregl.Map | null>(null)
 
   useEffect(() => {
     if (!el.current) return
@@ -66,7 +75,7 @@ export function MapView({ layers, center, zoom = 12, getTooltip, className, onFl
             clickableIcons: false,
             gestureHandling: 'greedy',
           })
-          const o = new GoogleMapsOverlay({ interleaved: false, ...latest.current })
+          const o = new GoogleMapsOverlay({ interleaved: false, layers: latest.current.layers, getTooltip: latest.current.getTooltip })
           o.setMap(map)
           overlay.current = o
           onFlyTo?.((lat, lon, z) => {
@@ -84,18 +93,24 @@ export function MapView({ layers, center, zoom = 12, getTooltip, className, onFl
     } else {
       const map = new maplibregl.Map({
         container: el.current,
-        style: OSM_STYLE,
+        style: OSM_STYLES[latest.current.dark ? 'dark' : 'light'],
         center: [center[1], center[0]],
         zoom,
+        pitch: latest.current.pitch,
+        bearing: latest.current.bearing,
+        maxPitch: 70,
         attributionControl: { compact: true },
-        dragRotate: false,
       })
-      map.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'top-right')
-      const o = new MapboxOverlay({ interleaved: false, ...latest.current })
+      mlMap.current = map
+      map.addControl(new maplibregl.NavigationControl({ visualizePitch: true }), 'bottom-right')
+      const o = new MapboxOverlay({ interleaved: false, layers: latest.current.layers, getTooltip: latest.current.getTooltip })
       map.addControl(o)
       overlay.current = o
       onFlyTo?.((lat, lon, z) => map.flyTo({ center: [lon, lat], zoom: z ?? map.getZoom(), duration: 900 }))
-      cleanup = () => map.remove()
+      cleanup = () => {
+        mlMap.current = null
+        map.remove()
+      }
     }
     return () => {
       disposed = true
@@ -110,12 +125,20 @@ export function MapView({ layers, center, zoom = 12, getTooltip, className, onFl
     overlay.current?.setProps({ layers, getTooltip })
   }, [layers, getTooltip])
 
+  // day/night basemap follows the season
+  useEffect(() => {
+    mlMap.current?.setStyle(OSM_STYLES[dark ? 'dark' : 'light'])
+  }, [dark])
+
+  // 3D / 2D camera
+  useEffect(() => {
+    mlMap.current?.easeTo({ pitch, bearing, duration: 900 })
+  }, [pitch, bearing])
+
   return (
     <div className={className ?? 'relative h-full'}>
       <div ref={el} className="h-full w-full" />
-      <span className="pointer-events-none absolute bottom-1 left-2 rounded bg-white/80 px-1.5 text-[10px] text-ink-3">
-        {basemap === 'google' ? 'Google Maps' : 'OpenFreeMap · © OpenStreetMap'}
-      </span>
+
     </div>
   )
 }

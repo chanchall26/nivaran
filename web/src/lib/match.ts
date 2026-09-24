@@ -9,14 +9,11 @@
  */
 import { cellToLatLng, latLngToCell } from 'h3-js'
 import { allSeasonNeed, CANOPY_TARGET, chhaya, alaav, type Norms } from './scoring'
-import { cellLabel } from './format'
 import type { Cell, ItemType, Place, PlaceKind, Report, Season, WeatherSummary } from './types'
 
 export interface ItemSpec {
   type: ItemType
   season: Season | 'both'
-  label: string
-  labelHi: string
   /** people one unit protects */
   covers: number
   /** where it can go */
@@ -25,17 +22,17 @@ export interface ItemSpec {
 }
 
 export const ITEMS: Record<ItemType, ItemSpec> = {
-  heater: { type: 'heater', season: 'sardi', label: 'Heater (ISI, 800 W)', labelHi: 'हीटर', covers: 2,
+  heater: { type: 'heater', season: 'sardi', covers: 2,
     kinds: ['guard_post', 'shelter'], unitCostInr: 1800 },
-  warm_kit: { type: 'warm_kit', season: 'sardi', label: 'Warm kit (kambal, jacket, topi, mask)', labelHi: 'गर्म किट', covers: 1,
+  warm_kit: { type: 'warm_kit', season: 'sardi', covers: 1,
     kinds: ['homeless_spot', 'guard_post', 'labour_chowk', 'shelter'], unitCostInr: 1200 },
-  cabin: { type: 'cabin', season: 'both', label: 'All-Season Guard Cabin', labelHi: 'बारहमासा केबिन', covers: 2,
+  cabin: { type: 'cabin', season: 'both', covers: 2,
     kinds: ['guard_post'], unitCostInr: 45000 },
-  shade_net: { type: 'shade_net', season: 'garmi', label: 'Shade net (6x4 m)', labelHi: 'छाया जाल', covers: 12,
+  shade_net: { type: 'shade_net', season: 'garmi', covers: 12,
     kinds: ['rehri_zone', 'labour_chowk', 'transit', 'worksite'], unitCostInr: 3500 },
-  water_pot: { type: 'water_pot', season: 'garmi', label: 'Matka / pyau point', labelHi: 'प्याऊ', covers: 40,
+  water_pot: { type: 'water_pot', season: 'garmi', covers: 40,
     kinds: ['rehri_zone', 'transit', 'labour_chowk', 'worksite'], unitCostInr: 900 },
-  sapling: { type: 'sapling', season: 'garmi', label: 'Sapling + tree guard', labelHi: 'पौधा', covers: 6,
+  sapling: { type: 'sapling', season: 'garmi', covers: 6,
     kinds: 'cell', unitCostInr: 650 },
 }
 
@@ -46,10 +43,10 @@ export interface Allocation {
   h3: string
   lat: number
   lon: number
-  name: string
   need: number
   people: number
-  reason: string
+  /** open reports in the cell at planning time */
+  reports: number
 }
 
 interface Candidate {
@@ -59,7 +56,6 @@ interface Candidate {
   need: number
   remaining: number
   reports: number
-  base: string
 }
 
 /** must match pipeline/build_grid.py */
@@ -103,7 +99,6 @@ export function allocate(opts: {
       candidates.push({
         key: c.h3, target: { kind: 'cell', cell: c }, cell: c, need: needOf(c), remaining: people,
         reports: reportsByH3.get(c.h3) ?? 0,
-        base: `${Math.round((c.canopy ?? 0) * 100)}% canopy, ${c.lst?.toFixed(0) ?? '?'}°C surface, ${c.roadKm.toFixed(2)} km sadak`,
       })
     }
   } else {
@@ -119,7 +114,6 @@ export function allocate(opts: {
       candidates.push({
         key: p.id, target: { kind: 'place', place: p }, cell: c, need: needOf(c), remaining,
         reports: reportsByH3.get(h) ?? 0,
-        base: `${people} log (${p.who})${p.kind !== 'shelter' ? `, rain basera ${c.shelterKm.toFixed(1)} km` : ''}`,
       })
     }
   }
@@ -147,16 +141,11 @@ export function allocate(opts: {
     if (!qty) continue
     const t = cand.target
     const [lat, lon] = t.kind === 'place' ? [t.place.lat, t.place.lon] : cellToLatLng(t.cell.h3)
-    const name =
-      t.kind === 'place'
-        ? t.place.name ?? `${t.place.who.split('(')[0].trim()}, ${cellLabel(cand.cell)}`
-        : `Sadak, ${cellLabel(cand.cell)}`
-    const reportsTxt = cand.reports ? `, ${cand.reports} khuli report` : ''
     out.push({
-      item: spec.type, qty, target: t, h3: cand.cell.h3, lat, lon, name,
+      item: spec.type, qty, target: t, h3: cand.cell.h3, lat, lon,
       need: cand.need,
       people: Math.min(qty * spec.covers, t.kind === 'place' ? (t.place.staff ?? t.place.capacity ?? qty * spec.covers) : qty * spec.covers),
-      reason: `Zaroorat ${Math.round(cand.need * 100)}/100 · ${cand.base}${reportsTxt}`,
+      reports: cand.reports,
     })
   }
   return out.sort((a, b) => b.need - a.need)
@@ -184,7 +173,7 @@ export function firstComeBaseline(opts: Parameters<typeof allocate>[0]): Allocat
       const need = chhaya(c, opts.norms, opts.weather).need
       return {
         item: spec.type, qty, target: { kind: 'cell', cell: c }, h3: c.h3, lat: c.lat, lon: c.lon,
-        name: `Khaali zameen, ${cellLabel(c)}`, need, people: Math.min(qty * spec.covers, c.exposed), reason: 'Jahan zameen mili',
+        need, people: Math.min(qty * spec.covers, c.exposed), reports: 0,
       } as Allocation
     })
   }
@@ -208,7 +197,7 @@ export function firstComeBaseline(opts: Parameters<typeof allocate>[0]): Allocat
           : alaav(c, opts.norms, opts.weather).need
     out.push({
       item: spec.type, qty, target: { kind: 'place', place: p }, h3: c.h3, lat: p.lat, lon: p.lon,
-      name: p.name ?? p.who, need, people: Math.min(people, qty * spec.covers), reason: 'Jo pehle aaya',
+      need, people: Math.min(people, qty * spec.covers), reports: 0,
     })
   }
   return out

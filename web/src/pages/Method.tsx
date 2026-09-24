@@ -1,73 +1,73 @@
-import { Card } from '../components/ui'
+import { Database, Eye, Lightbulb, Scale, TriangleAlert } from 'lucide-react'
+import type { ReactNode } from 'react'
+import { Panel, SectionTitle } from '../components/kit'
+import { useI18n } from '../i18n'
 import { aiMode } from '../lib/ai'
-import { heaterMonthlyCost } from '../lib/policy'
 import { store } from '../lib/store'
 import { useApp } from '../state'
 
+function Block({ Icon, title, children }: { Icon: typeof Eye; title: string; children: ReactNode }) {
+  return (
+    <Panel>
+      <h2 className="mb-3 flex items-center gap-2.5 font-display text-2xl font-extrabold">
+        <span className="flex size-10 items-center justify-center rounded-xl bg-accent-soft text-accent">
+          <Icon className="size-5" aria-hidden />
+        </span>
+        {title}
+      </h2>
+      {children}
+    </Panel>
+  )
+}
+
+const FORMULAS = [
+  ['Outside-exposure (0-1)', '0.45 × population/p95 + 0.35 × mapped outdoor people/p95 + 0.20 × main-road km/p95'],
+  ['Summer need', '(0.5 × canopy gap + 0.5 × ground heat) × (0.3 + 0.7 × exposure) × (0.4 + 0.6 × day heat)'],
+  ['Winter need', 'exposure × (0.65 + 0.35 × shelter distance) × night cold × (0.75 + 0.25 × smoke-trap)'],
+  ['Smoke-trap', 'night ventilation = boundary-layer height × wind; ≥1500 m²/s → 0, ≤100 m²/s → 1'],
+  ['Night cold / day heat', 'feels-like 16°C → 0 … 4°C → 1   ·   feels-like 32°C → 0 … 46°C → 1'],
+  ['Send help', 'each unit → max[(need + 0.15 × min(1, open reports / 3)) × people newly covered]'],
+  ['Need shown in the app', '100 × need (higher = more need)'],
+]
+
 export default function Method() {
   const { city } = useApp()
+  const { s, f } = useI18n()
   return (
     <div className="mx-auto max-w-3xl space-y-5">
-      <div>
-        <h1 className="text-2xl font-bold">Method, data aur seemayein</h1>
-        <p className="mt-1 text-ink-2">
-          Har number kahan se aaya, kaunsa naapa gaya aur kaunsa andaaza hai. Koi black box nahi.
-        </p>
-      </div>
+      <SectionTitle sub={s.how.intro}>{s.how.title}</SectionTitle>
 
-      <Card title="Scores (0-100, kam = zyada zaroorat)">
-        <div className="space-y-4 text-sm">
-          <div>
-            <h3 className="font-semibold">Bahar-Log exposure (0-1)</h3>
-            <code className="mt-1 block rounded bg-paper p-2 text-xs">
-              0.45 × aabaadi/p95 + 0.35 × mapped bahar-log/p95 + 0.20 × main sadak km/p95
-            </code>
-          </div>
-          <div>
-            <h3 className="font-semibold">Chhaya Score (garmi)</h3>
-            <code className="mt-1 block rounded bg-paper p-2 text-xs">
-              need = (0.5 × canopy gap + 0.5 × surface garmi) × (0.3 + 0.7 × exposure) × (0.4 + 0.6 × aaj ki garmi)
-            </code>
-            <p className="mt-1 text-ink-2">
-              Log multiplier hain, jod nahi: khaali garam maidan plantation ka mauka hai, emergency nahi. Canopy gap 30% lakshya se (3-30-300 rule). Surface garmi city ke 5th-95th percentile LST pe. Aaj ki garmi: feels-like
-              32°C pe 0, 46°C pe 1.
-            </p>
-          </div>
-          <div>
-            <h3 className="font-semibold">Alaav Score (sardi)</h3>
-            <code className="mt-1 block rounded bg-paper p-2 text-xs">
-              need = exposure × (0.65 + 0.35 × rain-basera doori) × raat ki thand × (0.75 + 0.25 × Smoke-Trap)
-            </code>
-            <p className="mt-1 text-ink-2">
-              Raat ki thand: raat ka minimum feels-like 16°C pe 0, 4°C pe 1. Garam raat pe poore shehar ka score 100 ho jaata hai,
-              jaan-boojh ke.
-            </p>
-          </div>
-          <div>
-            <h3 className="font-semibold">Smoke-Trap Index</h3>
-            <code className="mt-1 block rounded bg-paper p-2 text-xs">
-              ventilation coefficient = boundary layer height (m) × hawa (m/s), raat 20:00-07:00 ka median · ≥1500 m²/s → 0,
-              ≤100 m²/s → 1
-            </code>
-            <p className="mt-1 text-ink-2">
-              5-6 Jan 2026 ki raat Gwalior mein ye ~5 m²/s tha (boundary layer 10-20 m, hawa &lt;0.6 m/s): jo bhi aag jali, uska
-              dhuan saans ki oonchaai pe phansa raha.
-            </p>
-          </div>
-          <div>
-            <h3 className="font-semibold">Match priority</h3>
-            <code className="mt-1 block rounded bg-paper p-2 text-xs">
-              har unit → max[(need + 0.15 × min(1, khuli reports/3)) × naye cover hone wale log]
-            </code>
-            <p className="mt-1 text-ink-2">
-              Product nahi, sum: zero reports wali jagah zero nahi hoti. Reports ka weight chhota hai taaki jin ilaakon mein
-              smartphone kam hain, woh peeche na chhootein. All-Season Cabin garmi aur sardi zaroorat ke geometric mean pe jaata hai.
-            </p>
-          </div>
-        </div>
-      </Card>
+      <Block Icon={Lightbulb} title={s.how.simpleTitle}>
+        <ol className="space-y-3">
+          {[s.how.simple1, s.how.simple2, s.how.simple3, s.how.simple4].map((t, i) => (
+            <li key={i} className="flex gap-3 text-lg">
+              <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-ink font-display font-extrabold text-bg">{i + 1}</span>
+              <span className="text-ink-2">{t}</span>
+            </li>
+          ))}
+        </ol>
+      </Block>
 
-      <Card title="Data sources">
+      <Block Icon={Eye} title={s.how.privacy}>
+        <ul className="space-y-2.5">
+          {[s.how.privacy1, s.how.privacy2, s.how.privacy3, s.how.privacy4, s.how.privacy5].map((t) => (
+            <li key={t} className="rounded-2xl bg-surface-2 px-4 py-3 text-ink-2">{t}</li>
+          ))}
+        </ul>
+      </Block>
+
+      <Block Icon={Scale} title={s.how.formulas}>
+        <dl className="space-y-3">
+          {FORMULAS.map(([k, v]) => (
+            <div key={k}>
+              <dt className="text-sm font-bold">{k}</dt>
+              <dd className="mt-1 overflow-x-auto rounded-xl bg-surface-2 px-3 py-2 font-mono text-xs">{v}</dd>
+            </div>
+          ))}
+        </dl>
+      </Block>
+
+      <Block Icon={Database} title={s.how.sources}>
         <ul className="space-y-2 text-sm">
           {city &&
             Object.entries(city.meta.layers).map(([k, v]) => (
@@ -75,38 +75,21 @@ export default function Method() {
                 <b className="capitalize">{k}:</b> <span className="text-ink-2">{v}</span>
               </li>
             ))}
-          <li>
-            <b>Weather:</b> <span className="text-ink-2">Open-Meteo forecast + historical forecast (ERA5-based) + CAMS PM2.5. Ek hi point pura shehar; spatial farq structural layers se aata hai.</span>
-          </li>
-          <li>
-            <b>Grid:</b> <span className="text-ink-2">H3 resolution 9 (~0.1 km²), {city?.meta.cells ?? '…'} cells. Ward boundaries public nahi thin.</span>
-          </li>
+          <li><b>Weather:</b> <span className="text-ink-2">{s.how.weatherSrc}</span></li>
+          <li><b>Grid:</b> <span className="text-ink-2">{f(s.how.grid, { n: city?.meta.cells ?? 0 })}</span></li>
         </ul>
-      </Card>
+      </Block>
 
-      <Card title="Privacy aur dignity">
-        <ul className="list-disc space-y-1 pl-5 text-sm text-ink-2">
-          <li>Chehre aur logon ka upar ka hissa <b className="text-ink">phone pe hi</b> blur (MediaPipe). Asli photo upload nahi hoti; EXIF hat jaata hai.</li>
-          <li>Face model fail ho toh poori photo blur (fail-safe).</li>
-          <li>Public map pe location ~100 m tak round. Beghar logon ki exact jagah kabhi public nahi.</li>
-          <li>Gemini ko instruction: insaan ki pehchaan, jaati, dharm ya roop ke baare mein kuch nahi.</li>
-          <li><b className="text-ink">Madad, challan nahi:</b> jahan log hain, woh report sirf madad ki taraf. Sirf bina insaan wala kachra dher Nagar Nigam ko, woh bhi uthane ke liye.</li>
-          <li>DPDP Act 2023 ki bhavna: data minimisation, purpose limitation.</li>
+      <Block Icon={TriangleAlert} title={s.how.limits}>
+        <ul className="space-y-2.5">
+          {[s.how.limit1, s.how.limit2, s.how.limit3, s.how.limit4].map((t) => (
+            <li key={t} className="rounded-2xl bg-surface-2 px-4 py-3 text-ink-2">{t}</li>
+          ))}
         </ul>
-      </Card>
-
-      <Card title="Seemayein (honestly)">
-        <ul className="list-disc space-y-1 pl-5 text-sm text-ink-2">
-          <li>OSM mein Gwalior kam mapped hai (sirf 3 bus stops). Isliye kuch guard posts, rehri zones aur beghar spots <b className="text-ink">synthetic</b> hain, aabaadi ke hisaab se rakhe gaye. Map pe har point ka source dikhta hai.</li>
-          <li>Rain basera locations demo hain; Nagar Nigam list se badalni hongi.</li>
-          <li>Weather model data hai, station nahi; IMD station pe extremes 2-3°C zyada ho sakte hain.</li>
-          <li>Weights expert judgement hain, abhi field data se calibrate nahi hue. Pilot ke Pulse data se inhe seekhna hai.</li>
-          <li>Heater running cost example: 800 W × 6 h × 30 raat ≈ ₹{heaterMonthlyCost()}/mahina (₹7/kWh).</li>
-        </ul>
-      </Card>
+      </Block>
 
       <p className="text-center text-xs text-ink-3">
-        AI: {aiMode()} · Storage: {store.mode}
+        AI: {aiMode()} · {store.mode === 'firebase' ? s.app.liveMode : s.app.demoMode}
       </p>
     </div>
   )
