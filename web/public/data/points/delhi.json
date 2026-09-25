@@ -1,0 +1,601 @@
+{
+ "meta": {
+  "city": "delhi",
+  "center": [
+   28.6315,
+   77.2167
+  ],
+  "source": "OpenStreetMap (Overpass) anchors; people counts are estimates",
+  "planting": "street / traffic / shadeNow are reviewed estimates from OSM road class and tree tags plus hand review",
+  "built": "2026-09-25"
+ },
+ "points": [
+  {
+   "id": "cp-outer-circle-signal",
+   "name": "Outer Circle - Baba Kharak Singh Marg Signal",
+   "nameHi": "आउटर सर्किल - बाबा खड़क सिंह मार्ग सिग्नल",
+   "lat": 28.631429,
+   "lon": 77.216742,
+   "type": "signal",
+   "ward": "Connaught Place",
+   "wardHi": "कनॉट प्लेस",
+   "people": [
+    {
+     "group": "traffic",
+     "count": 2,
+     "shift": "day"
+    },
+    {
+     "group": "vendor",
+     "count": 80,
+     "shift": "day"
+    },
+    {
+     "group": "guard",
+     "count": 20,
+     "shift": "night"
+    }
+   ],
+   "heater": "unconfirmed",
+   "street": "open",
+   "traffic": "busy",
+   "shadeNow": "none",
+   "osm": "node/249783302"
+  },
+  {
+   "id": "shivaji-stadium-terminal",
+   "name": "Shivaji Stadium Bus Terminal",
+   "nameHi": "शिवाजी स्टेडियम बस टर्मिनल",
+   "lat": 28.632517,
+   "lon": 77.215525,
+   "type": "bus",
+   "ward": "Connaught Place",
+   "wardHi": "कनॉट प्लेस",
+   "people": [
+    {
+     "group": "vendor",
+     "count": 14,
+     "shift": "day"
+    },
+    {
+     "group": "porter",
+     "count": 3,
+     "shift": "day"
+    },
+    {
+     "group": "vendor",
+     "count": 5,
+     "shift": "night"
+    },
+    {
+     "group": "porter",
+     "count": 1,
+     "shift": "night"
+    }
+   ],
+   "offers": [
+    "shade"
+   ],
+   "street": "open",
+   "traffic": "busy",
+   "shadeNow": "good",
+   "osm": "way/284192857"
+  },
+  {
+   "id": "icici-atm-cp",
+   "name": "ICICI Bank ATM, Connaught Place",
+   "nameHi": "आईसीआईसीआई बैंक एटीएम, कनॉट प्लेस",
+   "lat": 28.632533,
+   "lon": 77.217982,
+   "type": "atm",
+   "ward": "Connaught Place",
+   "wardHi": "कनॉट प्लेस",
+   "people": [
+    {
+     "group": "guard",
+     "count": 1,
+     "shift": "night"
+    }
+   ],
+   "heater": "unconfirmed",
+   "street": "open",
+   "traffic": "some",
+   "shadeNow": "good",
+   "osm": "node/5577533598"
+  },
+  {
+   "id": "palika-bazar",
+   "name": "Palika Bazar",
+   "nameHi": "पालिका बाज़ार",
+   "lat": 28.630705,
+   "lon": 77.218839,
+   "type": "market",
+   "ward": "Connaught Place",
+   "wardHi": "कनॉट प्लेस",
+   "people": [
+    {
+     "group": "vendor",
+     "count": 38,
+     "shift": "day"
+    },
+    {
+     "group": "guard",
+     "count": 2,
+     "shift": "night"
+    }
+   ],
+   "heater": "unconfirmed",
+   "street": "open",
+   "traffic": "some",
+   "shadeNow": "good",
+   "osm": "way/1393736849"
+  },
+  {
+   "id": "water-atm-rajiv-chowk",
+   "name": "Water ATM, Rajiv Chowk Gate 6",
+   "nameHi": "वॉटर एटीएम, राजीव चौक गेट 6",
+   "lat": 28.63139,
+   "lon": 77.219489,
+   "type": "water",
+   "ward": "Connaught Place",
+   "wardHi": "कनॉट प्लेस",
+   "people": [
+    {
+     "group": "delivery",
+     "count": 6,
+     "shift": "day"
+    }
+   ],
+   "offers": [
+    "water"
+   ],
+   "street": "open",
+   "traffic": "some",
+   "shadeNow": "good",
+   "osm": "node/11703943158"
+  },
+  {
+   "id": "rajiv-chowk-metro",
+   "name": "Rajiv Chowk Metro Station",
+   "nameHi": "राजीव चौक मेट्रो स्टेशन",
+   "lat": 28.632706,
+   "lon": 77.219312,
+   "type": "rail",
+   "ward": "Connaught Place",
+   "wardHi": "कनॉट प्लेस",
+   "people": [
+    {
+     "group": "vendor",
+     "count": 20,
+     "shift": "day"
+    },
+    {
+     "group": "porter",
+     "count": 4,
+     "shift": "day"
+    },
+    {
+     "group": "vendor",
+     "count": 6,
+     "shift": "night"
+    },
+    {
+     "group": "porter",
+     "count": 2,
+     "shift": "night"
+    }
+   ],
+   "offers": [
+    "shade",
+    "water"
+   ],
+   "street": "open",
+   "traffic": "some",
+   "shadeNow": "none",
+   "osm": "node/6539894851"
+  },
+  {
+   "id": "bob-atm-janpath",
+   "name": "Bank of Baroda ATM, Janpath",
+   "nameHi": "बैंक ऑफ़ बड़ौदा एटीएम, जनपथ",
+   "lat": 28.62898,
+   "lon": 77.21736,
+   "type": "atm",
+   "ward": "Janpath",
+   "wardHi": "जनपथ",
+   "people": [
+    {
+     "group": "guard",
+     "count": 1,
+     "shift": "night"
+    }
+   ],
+   "heater": "working",
+   "street": "open",
+   "traffic": "busy",
+   "shadeNow": "some",
+   "osm": "node/5368454824"
+  },
+  {
+   "id": "lady-hardinge-hospital",
+   "name": "Lady Hardinge Medical College & Associated Hospitals",
+   "nameHi": "लेडी हार्डिंग मेडिकल कॉलेज एवं संबद्ध अस्पताल",
+   "lat": 28.634138,
+   "lon": 77.212909,
+   "type": "hospital",
+   "ward": "Gole Market",
+   "wardHi": "गोल मार्केट",
+   "people": [
+    {
+     "group": "attendant",
+     "count": 24,
+     "shift": "night"
+    },
+    {
+     "group": "guard",
+     "count": 2,
+     "shift": "night"
+    }
+   ],
+   "offers": [
+    "water",
+    "shade"
+   ],
+   "heater": "unconfirmed",
+   "street": "open",
+   "traffic": "quiet",
+   "shadeNow": "some",
+   "osm": "node/7138534287"
+  },
+  {
+   "id": "indian-oil-bks-marg",
+   "name": "Indian Oil Petrol Pump, Baba Kharak Singh Marg",
+   "nameHi": "इंडियन ऑयल पेट्रोल पंप, बाबा खड़क सिंह मार्ग",
+   "lat": 28.629241,
+   "lon": 77.212621,
+   "type": "fuel",
+   "ward": "Baba Kharak Singh Marg",
+   "wardHi": "बाबा खड़क सिंह मार्ग",
+   "people": [
+    {
+     "group": "worker",
+     "count": 4,
+     "shift": "day"
+    },
+    {
+     "group": "worker",
+     "count": 2,
+     "shift": "night"
+    }
+   ],
+   "offers": [
+    "water"
+   ],
+   "street": "open",
+   "traffic": "busy",
+   "shadeNow": "some",
+   "osm": "way/351418890"
+  },
+  {
+   "id": "new-delhi-railway-station",
+   "name": "New Delhi Railway Station",
+   "nameHi": "नई दिल्ली रेलवे स्टेशन",
+   "lat": 28.641926,
+   "lon": 77.22175,
+   "type": "rail",
+   "ward": "Paharganj",
+   "wardHi": "पहाड़गंज",
+   "people": [
+    {
+     "group": "vendor",
+     "count": 40,
+     "shift": "day"
+    },
+    {
+     "group": "porter",
+     "count": 45,
+     "shift": "day"
+    },
+    {
+     "group": "vendor",
+     "count": 15,
+     "shift": "night"
+    },
+    {
+     "group": "porter",
+     "count": 25,
+     "shift": "night"
+    },
+    {
+     "group": "homeless",
+     "count": 30,
+     "shift": "night"
+    }
+   ],
+   "offers": [
+    "water",
+    "shade"
+   ],
+   "heater": "unconfirmed",
+   "street": "open",
+   "traffic": "busy",
+   "shadeNow": "some",
+   "osm": "node/6131069513"
+  },
+  {
+   "id": "ccs-construction-site",
+   "name": "Common Central Secretariat construction site",
+   "nameHi": "सामान्य केंद्रीय सचिवालय निर्माण स्थल",
+   "lat": 28.615438,
+   "lon": 77.221793,
+   "type": "construction",
+   "ward": "Central Vista",
+   "wardHi": "सेंट्रल विस्टा",
+   "people": [
+    {
+     "group": "labour",
+     "count": 45,
+     "shift": "day"
+    },
+    {
+     "group": "guard",
+     "count": 1,
+     "shift": "night"
+    }
+   ],
+   "heater": "unconfirmed",
+   "street": "open",
+   "traffic": "some",
+   "shadeNow": "none",
+   "osm": "way/1218426668"
+  },
+  {
+   "id": "sadar-bazar",
+   "name": "Sadar Bazar",
+   "nameHi": "सदर बाज़ार",
+   "lat": 28.659774,
+   "lon": 77.211633,
+   "type": "market",
+   "ward": "Sadar Bazar",
+   "wardHi": "सदर बाज़ार",
+   "people": [
+    {
+     "group": "vendor",
+     "count": 40,
+     "shift": "day"
+    },
+    {
+     "group": "porter",
+     "count": 25,
+     "shift": "day"
+    }
+   ],
+   "street": "narrow",
+   "traffic": "some",
+   "shadeNow": "none",
+   "osm": "node/943749060"
+  },
+  {
+   "id": "chandni-chowk",
+   "name": "Chandni Chowk",
+   "nameHi": "चांदनी चौक",
+   "lat": 28.655983,
+   "lon": 77.232194,
+   "type": "market",
+   "ward": "Chandni Chowk",
+   "wardHi": "चांदनी चौक",
+   "people": [
+    {
+     "group": "vendor",
+     "count": 36,
+     "shift": "day"
+    }
+   ],
+   "street": "open",
+   "traffic": "some",
+   "shadeNow": "none",
+   "osm": "node/3268564739"
+  },
+  {
+   "id": "kashmere-gate-isbt",
+   "name": "Kashmere Gate ISBT",
+   "nameHi": "कश्मीरी गेट आईएसबीटी",
+   "lat": 28.668689,
+   "lon": 77.230418,
+   "type": "bus",
+   "ward": "Kashmere Gate",
+   "wardHi": "कश्मीरी गेट",
+   "people": [
+    {
+     "group": "vendor",
+     "count": 22,
+     "shift": "day"
+    },
+    {
+     "group": "porter",
+     "count": 15,
+     "shift": "day"
+    },
+    {
+     "group": "vendor",
+     "count": 8,
+     "shift": "night"
+    },
+    {
+     "group": "porter",
+     "count": 6,
+     "shift": "night"
+    },
+    {
+     "group": "homeless",
+     "count": 12,
+     "shift": "night"
+    }
+   ],
+   "offers": [
+    "water",
+    "shade"
+   ],
+   "heater": "none",
+   "street": "open",
+   "traffic": "busy",
+   "shadeNow": "some",
+   "osm": "way/40943545"
+  },
+  {
+   "id": "rain-basera-nigambodh-ghat",
+   "name": "Rain Basera near Nigambodh Ghat",
+   "nameHi": "निगमबोध घाट के पास रैन बसेरा",
+   "lat": 28.66665,
+   "lon": 77.235371,
+   "type": "shelter",
+   "ward": "Yamuna Bazar",
+   "wardHi": "यमुना बाज़ार",
+   "people": [
+    {
+     "group": "homeless",
+     "count": 60,
+     "shift": "night"
+    }
+   ],
+   "offers": [
+    "shelter",
+    "heater"
+   ],
+   "heater": "working",
+   "street": "open",
+   "traffic": "busy",
+   "shadeNow": "none",
+   "osm": "node/6362609788"
+  },
+  {
+   "id": "ito-crossing",
+   "name": "ITO Crossing",
+   "nameHi": "आईटीओ चौराहा",
+   "lat": 28.627716,
+   "lon": 77.241191,
+   "type": "signal",
+   "ward": "ITO",
+   "wardHi": "आईटीओ",
+   "people": [
+    {
+     "group": "traffic",
+     "count": 6,
+     "shift": "day"
+    }
+   ],
+   "street": "open",
+   "traffic": "busy",
+   "shadeNow": "none",
+   "osm": "node/838495921"
+  },
+  {
+   "id": "anand-vihar-isbt",
+   "name": "Anand Vihar ISBT",
+   "nameHi": "आनंद विहार आईएसबीटी",
+   "lat": 28.646757,
+   "lon": 77.31505,
+   "type": "bus",
+   "ward": "Anand Vihar",
+   "wardHi": "आनंद विहार",
+   "people": [
+    {
+     "group": "vendor",
+     "count": 25,
+     "shift": "day"
+    },
+    {
+     "group": "porter",
+     "count": 20,
+     "shift": "day"
+    },
+    {
+     "group": "porter",
+     "count": 10,
+     "shift": "night"
+    },
+    {
+     "group": "driver",
+     "count": 30,
+     "shift": "night"
+    },
+    {
+     "group": "homeless",
+     "count": 25,
+     "shift": "night"
+    }
+   ],
+   "offers": [
+    "water",
+    "shade"
+   ],
+   "heater": "none",
+   "street": "open",
+   "traffic": "busy",
+   "shadeNow": "some",
+   "osm": "way/52081141"
+  },
+  {
+   "id": "aiims-new-delhi",
+   "name": "AIIMS New Delhi",
+   "nameHi": "एम्स नई दिल्ली",
+   "lat": 28.567441,
+   "lon": 77.209633,
+   "type": "hospital",
+   "ward": "Ansari Nagar",
+   "wardHi": "अंसारी नगर",
+   "people": [
+    {
+     "group": "attendant",
+     "count": 150,
+     "shift": "night"
+    },
+    {
+     "group": "guard",
+     "count": 4,
+     "shift": "night"
+    },
+    {
+     "group": "homeless",
+     "count": 40,
+     "shift": "night"
+    }
+   ],
+   "offers": [
+    "water",
+    "shade"
+   ],
+   "heater": "unconfirmed",
+   "street": "open",
+   "traffic": "some",
+   "shadeNow": "some",
+   "osm": "node/7130306819"
+  },
+  {
+   "id": "azadpur-mandi",
+   "name": "Azadpur Mandi",
+   "nameHi": "आज़ादपुर मंडी",
+   "lat": 28.713372,
+   "lon": 77.170375,
+   "type": "market",
+   "ward": "Azadpur",
+   "wardHi": "आज़ादपुर",
+   "people": [
+    {
+     "group": "porter",
+     "count": 200,
+     "shift": "night"
+    },
+    {
+     "group": "vendor",
+     "count": 100,
+     "shift": "day"
+    }
+   ],
+   "street": "open",
+   "traffic": "busy",
+   "shadeNow": "none",
+   "osm": "relation/3888865"
+  }
+ ]
+}

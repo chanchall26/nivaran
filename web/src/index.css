@@ -2,284 +2,220 @@
 @import 'maplibre-gl/dist/maplibre-gl.css';
 
 /*
- * Barahmasa design system. The season IS the theme:
- *   garmi = a hot afternoon (warm paper, saffron sun, terracotta)
- *   sardi = a winter night (deep indigo, stars, ember orange for warmth)
- * Components only use the role tokens below, never raw colours.
+ * "Calm screen, loud meaning." Quiet ink on paper and mist; strong colour appears only when it
+ * means something (danger level, air quality, season). The one exception is the station board.
  */
 @theme inline {
-  --font-sans: 'Mukta', 'Noto Sans Devanagari', ui-sans-serif, system-ui, 'Segoe UI', sans-serif;
-  --font-display: 'Baloo 2', 'Mukta', 'Noto Sans Devanagari', ui-sans-serif, system-ui, sans-serif;
+  --font-sans: 'Mukta', 'Anek Devanagari', ui-sans-serif, system-ui, 'Segoe UI', sans-serif;
+  --font-display: 'Anek Latin', 'Anek Devanagari', 'Mukta', ui-sans-serif, system-ui, sans-serif;
 
-  --color-bg: var(--bg);
-  --color-surface: var(--surface);
-  --color-surface-2: var(--surface-2);
-  --color-glass: var(--glass);
-  --color-ink: var(--ink);
-  --color-ink-2: var(--ink-2);
-  --color-ink-3: var(--ink-3);
-  --color-line: var(--line);
-  --color-accent: var(--accent);
-  --color-accent-edge: var(--accent-edge);
-  --color-accent-soft: var(--accent-soft);
-  --color-accent-ink: var(--accent-ink);
-  --color-cool: var(--cool);
-  --color-cool-soft: var(--cool-soft);
+  --color-ink: #1b2330;
+  --color-paper: #ffffff;
+  --color-mist: #eef2f4;
+  --color-line: #d5dce0;
+  --color-muted: #5b6770;
+  --color-board: #f7c600;
 
-  --color-good: #12a150;
-  --color-warning: #f5a524;
-  --color-serious: #f07335;
-  --color-critical: #e5484d;
+  --color-safe: #1e9e5a;
+  --color-careful: #e0b000;
+  --color-ready: #f07f13;
+  --color-act: #d7263d;
 
-  --shadow-3d: 0 1px 0 var(--hl) inset, 0 2px 4px rgb(var(--shade) / 0.08), 0 12px 28px -10px rgb(var(--shade) / 0.35);
-  --shadow-3d-lg: 0 1px 0 var(--hl) inset, 0 4px 8px rgb(var(--shade) / 0.08), 0 30px 60px -20px rgb(var(--shade) / 0.45);
-  --shadow-float: 0 20px 50px -12px rgb(var(--shade) / 0.5), 0 2px 6px rgb(var(--shade) / 0.12);
+  --color-cold: #3d6fd9;
+  --color-heat: #e8590c;
+  --color-humid: #0ca3a3;
+  --color-rain: #3b4cca;
+  --color-mild: #6c8ead;
+  --color-smoky: #6b6f80;
+
+  --color-focus: #1f6feb;
 }
 
-.theme-garmi {
-  color-scheme: light;
-  --bg: #fff6ea;
-  --sky-top: #ffd9ae;
-  --sky-mid: #ffecd6;
-  --surface: #ffffff;
-  --surface-2: #fff2e2;
-  --glass: rgb(255 250 243 / 0.82);
-  --ink: #2b1608;
-  --ink-2: #6b4a33;
-  --ink-3: #9a7b63;
-  --line: #f0dcc5;
-  --accent: #e4571e;
-  --accent-edge: #a83a0c;
-  --accent-soft: #ffe1cc;
-  --accent-ink: #ffffff;
-  --cool: #2f6fd6;
-  --cool-soft: #dce9ff;
-  --hl: rgb(255 255 255 / 0.9);
-  --shade: 120 55 20;
+html {
+  background: var(--color-mist);
+  -webkit-text-size-adjust: 100%;
 }
-
-.theme-sardi {
-  color-scheme: dark;
-  --bg: #0a1230;
-  --sky-top: #050a1f;
-  --sky-mid: #0d1840;
-  --surface: #17234d;
-  --surface-2: #101a3d;
-  --glass: rgb(19 29 64 / 0.84);
-  --ink: #eef1ff;
-  --ink-2: #b8c2e8;
-  --ink-3: #8390bd;
-  --line: #28366c;
-  --accent: #ff8a3d;
-  --accent-edge: #b8501a;
-  --accent-soft: rgb(255 138 61 / 0.16);
-  --accent-ink: #1b0d03;
-  --cool: #8fbcff;
-  --cool-soft: rgb(143 188 255 / 0.14);
-  --hl: rgb(255 255 255 / 0.08);
-  --shade: 0 0 0;
-}
-
-html,
-body,
-#root {
-  min-height: 100%;
-}
-
 body {
   margin: 0;
+  background: var(--color-mist);
+  color: var(--color-ink);
   font-family: var(--font-sans);
+  font-size: 16px;
+  line-height: 1.5;
   -webkit-font-smoothing: antialiased;
-  -webkit-tap-highlight-color: transparent;
+}
+:lang(hi) body,
+body:lang(hi) {
+  font-family: 'Mukta', 'Anek Devanagari', ui-sans-serif, system-ui, sans-serif;
 }
 
-.app-bg {
-  background: var(--bg);
-  color: var(--ink);
-  transition: background-color 0.6s ease, color 0.6s ease;
+.font-display { font-family: var(--font-display); }
+/* condensed width for big numbers */
+.num {
+  font-family: var(--font-display);
+  font-stretch: 75%;
+  font-variation-settings: 'wdth' 75;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+.tabular { font-variant-numeric: tabular-nums; }
+
+/* panels: flat paper, 1px line, 12px radius, almost no shadow */
+.panel {
+  background: var(--color-paper);
+  border: 1px solid var(--color-line);
+  border-radius: 12px;
 }
 
-/* Fixed sky behind every page: sun glow by day, stars by night. */
-.sky {
-  position: fixed;
-  inset: 0;
-  z-index: 0;
-  pointer-events: none;
-  background: linear-gradient(180deg, var(--sky-top) 0%, var(--sky-mid) 38%, var(--bg) 75%);
-  transition: background 0.8s ease;
-}
-.theme-garmi .sky::after {
-  content: '';
-  position: absolute;
-  width: 60vmax;
-  height: 60vmax;
-  right: -18vmax;
-  top: -26vmax;
-  border-radius: 50%;
-  background: radial-gradient(circle, rgb(255 200 90 / 0.55), rgb(255 170 60 / 0.15) 45%, transparent 70%);
-}
-.theme-sardi .sky::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background-image:
-    radial-gradient(1.5px 1.5px at 12% 18%, #fff 50%, transparent 51%),
-    radial-gradient(1px 1px at 28% 8%, #cfe0ff 50%, transparent 51%),
-    radial-gradient(1.5px 1.5px at 47% 22%, #fff 50%, transparent 51%),
-    radial-gradient(1px 1px at 63% 12%, #fff 50%, transparent 51%),
-    radial-gradient(2px 2px at 78% 26%, #dfe9ff 50%, transparent 51%),
-    radial-gradient(1px 1px at 88% 6%, #fff 50%, transparent 51%),
-    radial-gradient(1px 1px at 36% 34%, #fff 50%, transparent 51%),
-    radial-gradient(1.5px 1.5px at 92% 38%, #fff 50%, transparent 51%),
-    radial-gradient(1px 1px at 6% 40%, #cfe0ff 50%, transparent 51%);
-  opacity: 0.8;
-  animation: twinkle 6s ease-in-out infinite alternate;
-}
-.theme-sardi .sky::after {
-  content: '';
-  position: absolute;
-  width: 34vmax;
-  height: 34vmax;
-  right: -8vmax;
-  top: -12vmax;
-  border-radius: 50%;
-  background: radial-gradient(circle, rgb(170 200 255 / 0.25), transparent 65%);
-}
-@keyframes twinkle {
-  from { opacity: 0.45; }
-  to { opacity: 0.9; }
+/* visible keyboard focus everywhere */
+:focus-visible {
+  outline: 3px solid var(--color-focus);
+  outline-offset: 2px;
+  border-radius: 6px;
 }
 
-/* ---- 3D building blocks ---------------------------------------------------- */
-
-.surface-3d {
-  background: var(--surface);
-  border: 1px solid var(--line);
-  border-radius: 1.5rem;
-  box-shadow: var(--shadow-3d);
-}
-
-.glass {
-  background: var(--glass);
-  -webkit-backdrop-filter: blur(14px) saturate(1.3);
-  backdrop-filter: blur(14px) saturate(1.3);
-  border: 1px solid var(--line);
-  box-shadow: var(--shadow-float);
-}
-
-/* Chunky pressable button: a solid "edge" below that disappears when pressed. */
-.btn-3d {
-  --edge: var(--accent-edge);
-  position: relative;
+/* ---------- buttons ---------- */
+.btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
-  border-radius: 1rem;
+  min-height: 44px;
+  padding: 0.5rem 1rem;
+  border-radius: 10px;
+  font-weight: 600;
+  line-height: 1.2;
+  border: 1px solid transparent;
+  transition: background-color 0.15s, border-color 0.15s;
+  cursor: pointer;
+}
+.btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.btn-ink { background: var(--color-ink); color: #fff; }
+.btn-ink:hover:not(:disabled) { background: #2c3747; }
+.btn-line { background: var(--color-paper); color: var(--color-ink); border-color: var(--color-line); }
+.btn-line:hover:not(:disabled) { border-color: var(--color-muted); }
+.btn-ghost { background: transparent; color: var(--color-ink); }
+.btn-ghost:hover:not(:disabled) { background: var(--color-mist); }
+.btn-sm { min-height: 36px; padding: 0.25rem 0.75rem; font-size: 0.9rem; }
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  border-radius: 999px;
+  border: 1px solid var(--color-line);
+  background: var(--color-paper);
+  padding: 0.125rem 0.625rem;
+  font-size: 0.875rem;
+  line-height: 1.6;
+  white-space: nowrap;
+}
+.chip[aria-pressed='true'],
+.chip[aria-selected='true'] {
+  background: var(--color-ink);
+  border-color: var(--color-ink);
+  color: #fff;
+}
+
+.field {
+  width: 100%;
+  min-height: 44px;
+  border: 1px solid var(--color-line);
+  border-radius: 10px;
+  background: var(--color-paper);
+  padding: 0.5rem 0.75rem;
+  font: inherit;
+  color: inherit;
+}
+.field:focus { border-color: var(--color-ink); outline: none; box-shadow: 0 0 0 3px rgb(31 111 235 / 0.25); }
+.label { display: block; font-size: 0.9rem; font-weight: 600; margin-bottom: 0.25rem; }
+
+/* ---------- the station board (Indian Railways name board) ---------- */
+.board {
+  background: var(--color-board);
+  border: 2px solid #000;
+  border-radius: 4px;
+  color: #000;
   font-family: var(--font-display);
-  font-weight: 700;
+  text-align: center;
+  box-shadow: inset 0 0 0 2px rgb(255 255 255 / 0.25);
+}
+.board-line {
+  display: block;
+  font-weight: 800;
   line-height: 1.1;
-  transform: translateY(0);
-  box-shadow: 0 5px 0 var(--edge), 0 10px 20px -6px rgb(var(--shade) / 0.45);
-  transition: transform 0.12s ease, box-shadow 0.12s ease, filter 0.2s ease;
-  user-select: none;
-}
-.btn-3d:hover { filter: brightness(1.05); }
-.btn-3d:active:not(:disabled) {
-  transform: translateY(4px);
-  box-shadow: 0 1px 0 var(--edge), 0 4px 8px -4px rgb(var(--shade) / 0.4);
-}
-.btn-3d:disabled { opacity: 0.45; cursor: not-allowed; }
-.btn-primary { background: var(--accent); color: var(--accent-ink); }
-.btn-soft { --edge: var(--line); background: var(--surface); color: var(--ink); border: 1px solid var(--line); }
-.btn-dark { --edge: #000; background: var(--ink); color: var(--bg); }
-
-.focus-ring:focus-visible,
-.btn-3d:focus-visible,
-button:focus-visible,
-a:focus-visible,
-select:focus-visible,
-input:focus-visible,
-textarea:focus-visible {
-  outline: 3px solid var(--cool);
-  outline-offset: 2px;
-}
-
-/* Tilt card: JS sets --rx/--ry; children with .pop sit forward in 3D. */
-.tilt {
-  transform-style: preserve-3d;
-  transform: perspective(900px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg));
-  transition: transform 0.25s ease-out;
-  will-change: transform;
-}
-.tilt .pop { transform: translateZ(28px); }
-.tilt .pop-lg { transform: translateZ(55px); }
-
-/* Season flip scene */
-.flip-stage { perspective: 1400px; }
-.flip-card {
-  position: relative;
-  transform-style: preserve-3d;
-  transition: transform 1s cubic-bezier(0.65, 0, 0.35, 1);
-}
-.flip-card.is-sardi { transform: rotateY(180deg); }
-.flip-face {
-  position: absolute;
-  inset: 0;
-  backface-visibility: hidden;
-  -webkit-backface-visibility: hidden;
-  border-radius: 2rem;
+  transform-origin: 50% 50%;
+  white-space: nowrap;
   overflow: hidden;
-  transform-style: preserve-3d;
+  text-overflow: ellipsis;
 }
-.flip-back { transform: rotateY(180deg); }
-.layer { position: absolute; inset: 0; transition: transform 0.3s ease-out; }
+.board-flip { animation: board-flip 500ms cubic-bezier(0.3, 0.7, 0.4, 1) both; }
+@keyframes board-flip {
+  0% { transform: perspective(400px) rotateX(90deg); opacity: 0.2; }
+  60% { transform: perspective(400px) rotateX(-12deg); opacity: 1; }
+  100% { transform: none; }
+}
 
-@keyframes float-y {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-8px); }
+/* ---------- live dot ---------- */
+.live-dot {
+  position: relative;
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: #1e9e5a;
 }
-@keyframes flicker {
-  0%, 100% { transform: scaleY(1) translateY(0); opacity: 1; }
-  30% { transform: scaleY(1.12) translateY(-2px); opacity: 0.92; }
-  60% { transform: scaleY(0.94) translateY(1px); opacity: 1; }
+.live-dot::after {
+  content: '';
+  position: absolute;
+  inset: -4px;
+  border-radius: 999px;
+  border: 2px solid #1e9e5a;
+  animation: live-pulse 1.8s ease-out infinite;
 }
-@keyframes smoke {
-  0% { transform: translateY(0) scale(0.8); opacity: 0.55; }
-  100% { transform: translateY(-60px) scale(1.8); opacity: 0; }
+@keyframes live-pulse {
+  from { transform: scale(0.5); opacity: 0.9; }
+  to { transform: scale(1.6); opacity: 0; }
 }
-@keyframes shimmer {
-  0%, 100% { transform: skewX(0deg); opacity: 0.35; }
-  50% { transform: skewX(6deg); opacity: 0.6; }
-}
-@keyframes rise-in {
-  from { opacity: 0; transform: translateY(14px) scale(0.98); }
-  to { opacity: 1; transform: none; }
-}
-@keyframes pop-in {
-  0% { transform: scale(0.4); opacity: 0; }
-  70% { transform: scale(1.12); opacity: 1; }
-  100% { transform: scale(1); }
-}
-.anim-float { animation: float-y 5s ease-in-out infinite; }
-.anim-flicker { animation: flicker 0.9s ease-in-out infinite; transform-origin: 50% 100%; }
-.anim-rise { animation: rise-in 0.5s ease both; }
-.anim-pop { animation: pop-in 0.5s cubic-bezier(0.2, 0.9, 0.3, 1.3) both; }
 
-.tabular { font-variant-numeric: tabular-nums; }
-.font-display { font-family: var(--font-display); }
+/* skeletons keep the shape of the real content so nothing jumps when data arrives */
+.skel {
+  background: linear-gradient(90deg, #e3e8eb 0%, #eef2f4 50%, #e3e8eb 100%);
+  background-size: 200% 100%;
+  animation: skel 1.4s ease-in-out infinite;
+  border-radius: 8px;
+}
+@keyframes skel {
+  from { background-position: 100% 0; }
+  to { background-position: -100% 0; }
+}
 
-.maplibregl-ctrl-attrib { font-size: 10px; }
-.maplibregl-ctrl-group { border-radius: 12px !important; overflow: hidden; }
+/* sheets */
+.scrim { background: rgb(27 35 48 / 0.45); }
 
-/* Room for the phone's home bar under the bottom tabs */
-.pb-safe { padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 0.5rem); }
+.maplibregl-ctrl-attrib { font-size: 11px; }
+.maplibregl-ctrl-group { border-radius: 10px !important; overflow: hidden; box-shadow: none !important; border: 1px solid var(--color-line); }
+
+.pb-safe { padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 0.25rem); }
+
+.sr-only-focusable:not(:focus) {
+  position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap;
+}
 
 @media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after {
-    animation-duration: 0.001ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.001ms !important;
-  }
-  .tilt { transform: none !important; }
+  .board-flip { animation: board-fade 300ms ease both; }
+  .live-dot::after, .skel { animation: none; }
+  * { scroll-behavior: auto !important; }
+}
+@keyframes board-fade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* reports print on plain paper: no header, menus or buttons */
+@media print {
+  header, nav, .no-print { display: none !important; }
+  body, html, .bg-mist { background: #fff !important; }
+  main { padding: 0 !important; }
+  .panel { break-inside: avoid; border-color: #999; }
 }

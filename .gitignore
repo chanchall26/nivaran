@@ -11,6 +11,7 @@ firestore-debug.log*
 # pipeline: reproducible intermediates (run the scripts to regenerate)
 pipeline/out/
 pipeline/.cache/
+pipeline/cache/
 __pycache__/
 *.pyc
 

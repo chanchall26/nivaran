@@ -146,7 +146,7 @@ export function shadeProfile(scene: Scene, day: string, at: XY = scene.spot, fro
 }
 
 /** Longest stretch during the shift when the spot is mostly in the sun. */
-export function sunWindow(profile: ShadeSlot[], shift: [number, number]) {
+export function sunWindow(profile: ShadeSlot[], shift: [number, number], step = profile.length > 1 ? profile[1].minutes - profile[0].minutes : 30) {
   let best: [number, number] | null = null
   let start: number | null = null
   const inShift = profile.filter((s) => s.minutes >= shift[0] * 60 && s.minutes < shift[1] * 60)
@@ -154,7 +154,7 @@ export function sunWindow(profile: ShadeSlot[], shift: [number, number]) {
     const sunny = s.sunUp && s.shade < 0.5
     if (sunny && start == null) start = s.minutes
     if (!sunny && start != null) {
-      const end = s.minutes === Infinity ? inShift[inShift.length - 1].minutes + 30 : s.minutes
+      const end = s.minutes === Infinity ? inShift[inShift.length - 1].minutes + step : s.minutes
       if (!best || end - start > best[1] - best[0]) best = [start, end]
       start = null
     }

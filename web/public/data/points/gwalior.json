@@ -1,0 +1,619 @@
+{
+ "meta": {
+  "city": "gwalior",
+  "center": [
+   26.178647,
+   78.144908
+  ],
+  "source": "OpenStreetMap (Overpass) anchors; people counts are estimates; points with anchor 'manual' are hand-placed (see PICKS for their origin)",
+  "planting": "street / traffic / shadeNow are reviewed estimates from OSM road class and tree tags plus hand review",
+  "built": "2026-09-25"
+ },
+ "points": [
+  {
+   "id": "upadhyay-hospital",
+   "name": "Upadhyay Hospital and Research Centre",
+   "nameHi": "उपाध्याय हॉस्पिटल एवं रिसर्च सेंटर",
+   "lat": 26.190062,
+   "lon": 78.150146,
+   "type": "hospital",
+   "ward": "Eidgah",
+   "wardHi": "ईदगाह",
+   "people": [
+    {
+     "group": "attendant",
+     "count": 12,
+     "shift": "night"
+    },
+    {
+     "group": "guard",
+     "count": 1,
+     "shift": "night"
+    }
+   ],
+   "offers": [
+    "water",
+    "shade"
+   ],
+   "heater": "unconfirmed",
+   "street": "open",
+   "traffic": "busy",
+   "shadeNow": "none",
+   "osm": "node/7016843265"
+  },
+  {
+   "id": "sbi-atm-eidgah",
+   "name": "SBI ATM, Eidgah",
+   "nameHi": "एसबीआई एटीएम, ईदगाह",
+   "lat": 26.192142,
+   "lon": 78.151396,
+   "type": "atm",
+   "ward": "Eidgah",
+   "wardHi": "ईदगाह",
+   "people": [
+    {
+     "group": "guard",
+     "count": 1,
+     "shift": "night"
+    }
+   ],
+   "heater": "none",
+   "street": "open",
+   "traffic": "busy",
+   "shadeNow": "none",
+   "osm": "node/13418898014"
+  },
+  {
+   "id": "roxy-pul-chauraha",
+   "name": "Roxy Pul Chauraha",
+   "nameHi": "रॉक्सी पुल चौराहा",
+   "lat": 26.194412,
+   "lon": 78.151003,
+   "type": "signal",
+   "ward": "Eidgah",
+   "wardHi": "ईदगाह",
+   "people": [
+    {
+     "group": "traffic",
+     "count": 2,
+     "shift": "day"
+    }
+   ],
+   "street": "open",
+   "traffic": "busy",
+   "shadeNow": "none",
+   "osm": "node/8661402417"
+  },
+  {
+   "id": "jaya-arogya-hospital",
+   "name": "Jaya Arogya Hospital Group",
+   "nameHi": "जया आरोग्य अस्पताल समूह",
+   "lat": 26.191627,
+   "lon": 78.160652,
+   "type": "hospital",
+   "ward": "Kampoo",
+   "wardHi": "कंपू",
+   "people": [
+    {
+     "group": "attendant",
+     "count": 40,
+     "shift": "night"
+    },
+    {
+     "group": "guard",
+     "count": 2,
+     "shift": "night"
+    },
+    {
+     "group": "homeless",
+     "count": 15,
+     "shift": "night"
+    }
+   ],
+   "offers": [
+    "water",
+    "shade",
+    "shelter",
+    "heater"
+   ],
+   "heater": "working",
+   "street": "open",
+   "traffic": "quiet",
+   "shadeNow": "some",
+   "osm": "node/7013200651"
+  },
+  {
+   "id": "civil-hospital-hem-singh-parade",
+   "name": "Civil Hospital, Hem Singh Ki Parade",
+   "nameHi": "सिविल अस्पताल, हेमसिंह की परेड",
+   "lat": 26.192347,
+   "lon": 78.128515,
+   "type": "hospital",
+   "ward": "Hem Singh Ki Parade",
+   "wardHi": "हेमसिंह की परेड",
+   "people": [
+    {
+     "group": "attendant",
+     "count": 14,
+     "shift": "night"
+    },
+    {
+     "group": "guard",
+     "count": 1,
+     "shift": "night"
+    }
+   ],
+   "offers": [
+    "water",
+    "shade"
+   ],
+   "heater": "unconfirmed",
+   "street": "narrow",
+   "traffic": "quiet",
+   "shadeNow": "none",
+   "osm": "node/7107499585"
+  },
+  {
+   "id": "sbi-atm-lala-ka-bazar",
+   "name": "SBI ATM, Lala Ka Bazar",
+   "nameHi": "एसबीआई एटीएम, लाला का बाज़ार",
+   "lat": 26.196314,
+   "lon": 78.144016,
+   "type": "atm",
+   "ward": "Lala Ka Bazar",
+   "wardHi": "लाला का बाज़ार",
+   "people": [
+    {
+     "group": "guard",
+     "count": 1,
+     "shift": "night"
+    }
+   ],
+   "heater": "unconfirmed",
+   "street": "narrow",
+   "traffic": "some",
+   "shadeNow": "none",
+   "osm": "node/13426743111"
+  },
+  {
+   "id": "tempo-stand-maharaj-bada",
+   "name": "Taxi & Tempo Stand, Maharaj Bada",
+   "nameHi": "टैक्सी व टेम्पो स्टैंड, महाराज बाड़ा",
+   "lat": 26.197304,
+   "lon": 78.147857,
+   "type": "bus",
+   "ward": "Maharaj Bada",
+   "wardHi": "महाराज बाड़ा",
+   "people": [
+    {
+     "group": "vendor",
+     "count": 8,
+     "shift": "day"
+    },
+    {
+     "group": "porter",
+     "count": 4,
+     "shift": "day"
+    },
+    {
+     "group": "vendor",
+     "count": 3,
+     "shift": "night"
+    },
+    {
+     "group": "porter",
+     "count": 2,
+     "shift": "night"
+    }
+   ],
+   "street": "open",
+   "traffic": "busy",
+   "shadeNow": "none",
+   "osm": "node/13776491633"
+  },
+  {
+   "id": "parking-site-maharaj-bada",
+   "name": "Parking construction site, Maharaj Bada",
+   "nameHi": "पार्किंग निर्माण स्थल, महाराज बाड़ा",
+   "lat": 26.198182,
+   "lon": 78.147487,
+   "type": "construction",
+   "ward": "Maharaj Bada",
+   "wardHi": "महाराज बाड़ा",
+   "people": [
+    {
+     "group": "labour",
+     "count": 32,
+     "shift": "day"
+    },
+    {
+     "group": "guard",
+     "count": 1,
+     "shift": "night"
+    }
+   ],
+   "heater": "failed",
+   "street": "open",
+   "traffic": "some",
+   "shadeNow": "none",
+   "osm": "way/1551970354"
+  },
+  {
+   "id": "subhash-market",
+   "name": "Subhash Market",
+   "nameHi": "सुभाष मार्केट",
+   "lat": 26.199804,
+   "lon": 78.147667,
+   "type": "market",
+   "ward": "Maharaj Bada",
+   "wardHi": "महाराज बाड़ा",
+   "people": [
+    {
+     "group": "vendor",
+     "count": 34,
+     "shift": "day"
+    }
+   ],
+   "street": "narrow",
+   "traffic": "quiet",
+   "shadeNow": "none",
+   "osm": "way/1551970374"
+  },
+  {
+   "id": "pyaau-mote-ganesh-mandir",
+   "name": "Pyaau near Mote Ganesh Ji Mandir",
+   "nameHi": "मोटे गणेश जी मंदिर के पास प्याऊ",
+   "lat": 26.199633,
+   "lon": 78.146081,
+   "type": "water",
+   "ward": "Maharaj Bada",
+   "wardHi": "महाराज बाड़ा",
+   "people": [
+    {
+     "group": "vendor",
+     "count": 6,
+     "shift": "day"
+    }
+   ],
+   "offers": [
+    "water",
+    "shade"
+   ],
+   "street": "narrow",
+   "traffic": "some",
+   "shadeNow": "some",
+   "osm": "node/12526240310"
+  },
+  {
+   "id": "nayara-hanuman-chauraha",
+   "name": "Nayara Petrol Pump, Hanuman Chauraha",
+   "nameHi": "नायरा पेट्रोल पंप, हनुमान चौराहा",
+   "lat": 26.205583,
+   "lon": 78.145589,
+   "type": "fuel",
+   "ward": "Lashkar",
+   "wardHi": "लश्कर",
+   "people": [
+    {
+     "group": "worker",
+     "count": 3,
+     "shift": "day"
+    },
+    {
+     "group": "worker",
+     "count": 2,
+     "shift": "night"
+    }
+   ],
+   "offers": [
+    "water"
+   ],
+   "street": "open",
+   "traffic": "busy",
+   "shadeNow": "some",
+   "osm": "node/13626830689"
+  },
+  {
+   "id": "gwalior-junction",
+   "name": "Gwalior Junction Railway Station",
+   "nameHi": "ग्वालियर जंक्शन रेलवे स्टेशन",
+   "lat": 26.216244,
+   "lon": 78.182604,
+   "type": "rail",
+   "ward": "Padav",
+   "wardHi": "पड़ाव",
+   "people": [
+    {
+     "group": "vendor",
+     "count": 25,
+     "shift": "day"
+    },
+    {
+     "group": "porter",
+     "count": 30,
+     "shift": "day"
+    },
+    {
+     "group": "vendor",
+     "count": 10,
+     "shift": "night"
+    },
+    {
+     "group": "porter",
+     "count": 18,
+     "shift": "night"
+    },
+    {
+     "group": "homeless",
+     "count": 20,
+     "shift": "night"
+    }
+   ],
+   "offers": [
+    "water",
+    "shade"
+   ],
+   "heater": "unconfirmed",
+   "street": "open",
+   "traffic": "some",
+   "shadeNow": "some",
+   "osm": "node/3871559370"
+  },
+  {
+   "id": "gwalior-isbt",
+   "name": "Gwalior Inter-state Bus Stand",
+   "nameHi": "ग्वालियर अंतरराज्यीय बस स्टैंड",
+   "lat": 26.215022,
+   "lon": 78.186121,
+   "type": "bus",
+   "ward": "Padav",
+   "wardHi": "पड़ाव",
+   "people": [
+    {
+     "group": "vendor",
+     "count": 18,
+     "shift": "day"
+    },
+    {
+     "group": "porter",
+     "count": 10,
+     "shift": "day"
+    },
+    {
+     "group": "vendor",
+     "count": 6,
+     "shift": "night"
+    },
+    {
+     "group": "porter",
+     "count": 4,
+     "shift": "night"
+    }
+   ],
+   "offers": [
+    "water",
+    "shade"
+   ],
+   "street": "open",
+   "traffic": "busy",
+   "shadeNow": "some",
+   "osm": "way/1028161121"
+  },
+  {
+   "id": "padav-chowk",
+   "name": "Padav Chowk",
+   "nameHi": "पड़ाव चौराहा",
+   "lat": 26.212405,
+   "lon": 78.177101,
+   "type": "signal",
+   "ward": "Padav",
+   "wardHi": "पड़ाव",
+   "people": [
+    {
+     "group": "traffic",
+     "count": 2,
+     "shift": "day"
+    }
+   ],
+   "street": "open",
+   "traffic": "busy",
+   "shadeNow": "none",
+   "osm": "way/380922607"
+  },
+  {
+   "id": "hazira-labour-chowk",
+   "name": "Hazira Labour Chowk",
+   "nameHi": "हजीरा लेबर चौक",
+   "lat": 26.234271,
+   "lon": 78.180583,
+   "type": "labour",
+   "ward": "Hazira",
+   "wardHi": "हजीरा",
+   "people": [
+    {
+     "group": "labour",
+     "count": 70,
+     "shift": "day"
+    }
+   ],
+   "street": "open",
+   "traffic": "busy",
+   "shadeNow": "none",
+   "osm": "node/8720631150"
+  },
+  {
+   "id": "mits-main-gate",
+   "name": "MITS Gwalior Main Gate",
+   "nameHi": "एमआईटीएस ग्वालियर मुख्य द्वार",
+   "lat": 26.230267,
+   "lon": 78.207172,
+   "type": "gate",
+   "ward": "Race Course Road",
+   "wardHi": "रेस कोर्स रोड",
+   "people": [
+    {
+     "group": "guard",
+     "count": 1,
+     "shift": "day"
+    },
+    {
+     "group": "guard",
+     "count": 2,
+     "shift": "night"
+    }
+   ],
+   "heater": "unconfirmed",
+   "street": "open",
+   "traffic": "some",
+   "shadeNow": "some",
+   "osm": "node/6467938110"
+  },
+  {
+   "id": "sarafa-bazar",
+   "name": "Sarafa Bazar",
+   "nameHi": "सराफ़ा बाज़ार",
+   "lat": 26.201601,
+   "lon": 78.151883,
+   "type": "market",
+   "ward": "Sarafa",
+   "wardHi": "सराफ़ा",
+   "people": [
+    {
+     "group": "vendor",
+     "count": 30,
+     "shift": "day"
+    },
+    {
+     "group": "guard",
+     "count": 8,
+     "shift": "night"
+    }
+   ],
+   "heater": "unconfirmed",
+   "street": "narrow",
+   "traffic": "some",
+   "shadeNow": "none",
+   "osm": "way/170106691"
+  },
+  {
+   "id": "maharaj-bada",
+   "name": "Maharaj Bada (Jayaji Chowk)",
+   "nameHi": "महाराज बाड़ा (जयाजी चौक)",
+   "lat": 26.199443,
+   "lon": 78.148716,
+   "type": "market",
+   "ward": "Maharaj Bada",
+   "wardHi": "महाराज बाड़ा",
+   "people": [
+    {
+     "group": "vendor",
+     "count": 60,
+     "shift": "day"
+    },
+    {
+     "group": "traffic",
+     "count": 4,
+     "shift": "day"
+    }
+   ],
+   "offers": [
+    "shade"
+   ],
+   "street": "open",
+   "traffic": "busy",
+   "shadeNow": "some",
+   "osm": "way/1551970381"
+  },
+  {
+   "id": "shyam-gate",
+   "name": "Raksha Vihar colony, Gate 2",
+   "nameHi": "रक्षा विहार कॉलोनी, गेट 2",
+   "lat": 26.209153,
+   "lon": 78.1833,
+   "type": "gate",
+   "ward": "Raksha Vihar",
+   "wardHi": "रक्षा विहार",
+   "people": [
+    {
+     "group": "guard",
+     "count": 1,
+     "shift": "night"
+    },
+    {
+     "group": "guard",
+     "count": 1,
+     "shift": "day"
+    }
+   ],
+   "heater": "unconfirmed",
+   "street": "narrow",
+   "traffic": "quiet",
+   "shadeNow": "some",
+   "anchor": "manual"
+  },
+  {
+   "id": "shinde-chhawani-gates",
+   "name": "Shinde Ki Chhawani colony gates",
+   "nameHi": "शिंदे की छावनी कॉलोनी गेट",
+   "lat": 26.178647,
+   "lon": 78.144908,
+   "type": "gate",
+   "ward": "Shinde Ki Chhawani",
+   "wardHi": "शिंदे की छावनी",
+   "people": [
+    {
+     "group": "guard",
+     "count": 6,
+     "shift": "night"
+    }
+   ],
+   "heater": "unconfirmed",
+   "street": "narrow",
+   "traffic": "quiet",
+   "shadeNow": "none",
+   "anchor": "manual"
+  },
+  {
+   "id": "janakganj-market",
+   "name": "Janakganj market",
+   "nameHi": "जनकगंज बाज़ार",
+   "lat": 26.203929,
+   "lon": 78.147046,
+   "type": "market",
+   "ward": "Janakganj",
+   "wardHi": "जनकगंज",
+   "people": [
+    {
+     "group": "vendor",
+     "count": 40,
+     "shift": "day"
+    }
+   ],
+   "street": "narrow",
+   "traffic": "busy",
+   "shadeNow": "none",
+   "osm": "way/941481584"
+  },
+  {
+   "id": "phool-bagh-crossing",
+   "name": "Phool Bagh crossing",
+   "nameHi": "फूलबाग चौराहा",
+   "lat": 26.212035,
+   "lon": 78.170075,
+   "type": "signal",
+   "ward": "Phool Bagh",
+   "wardHi": "फूलबाग",
+   "people": [
+    {
+     "group": "traffic",
+     "count": 4,
+     "shift": "day"
+    }
+   ],
+   "street": "open",
+   "traffic": "busy",
+   "shadeNow": "some",
+   "osm": "way/1086458307"
+  }
+ ]
+}

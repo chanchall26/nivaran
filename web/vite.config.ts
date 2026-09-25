@@ -12,33 +12,32 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.svg', 'apple-touch-icon.png', 'icon.svg'],
       manifest: {
-        name: 'Barahmasa · Gwalior',
+        name: 'Barahmasa · Safe work outside',
         short_name: 'Barahmasa',
-        description: 'Shade in summer, warmth in winter: thermal safety for people who work outside.',
-        lang: 'hi',
+        description: 'Shade in summer, warmth in winter. Who faces heat, cold, rain or bad air today, and whether the help worked.',
+        lang: 'en',
         start_url: '/',
         display: 'standalone',
-        background_color: '#fff6ea',
-        theme_color: '#e4571e',
+        background_color: '#eef2f4',
+        theme_color: '#1b2330',
         icons: [
           { src: '/icon-192.png', sizes: '192x192', type: 'image/png' },
           { src: '/icon-512.png', sizes: '512x512', type: 'image/png' },
           { src: '/icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
         ],
         shortcuts: [
-          { name: 'Report', url: '/report', icons: [{ src: '/icon-192.png', sizes: '192x192' }] },
+          { name: 'Today', url: '/', icons: [{ src: '/icon-192.png', sizes: '192x192' }] },
           { name: 'Map', url: '/map', icons: [{ src: '/icon-192.png', sizes: '192x192' }] },
         ],
       },
       workbox: {
-        // app shell + Gwalior data; big ML assets are cached on first use instead
+        // app shell + pilot data (points, PINs) so the app opens offline
         globPatterns: ['**/*.{js,css,html,svg,png,json}'],
-        globIgnores: ['**/mediapipe/**'],
         maximumFileSizeToCacheInBytes: 4 * 1024 * 1024,
         navigateFallback: '/index.html',
         runtimeCaching: [
           {
-            urlPattern: ({ url }) => url.origin === 'https://tiles.openfreemap.org',
+            urlPattern: ({ url }) => url.hostname.endsWith('cartocdn.com'),
             handler: 'CacheFirst',
             options: { cacheName: 'map-tiles', expiration: { maxEntries: 1500, maxAgeSeconds: 30 * 86400 } },
           },
@@ -52,11 +51,6 @@ export default defineConfig({
             handler: 'NetworkFirst',
             options: { cacheName: 'weather', networkTimeoutSeconds: 6, expiration: { maxEntries: 20, maxAgeSeconds: 2 * 86400 } },
           },
-          {
-            urlPattern: ({ url }) => url.pathname.startsWith('/mediapipe/') || url.pathname.startsWith('/models/'),
-            handler: 'CacheFirst',
-            options: { cacheName: 'ml-models', expiration: { maxEntries: 20 } },
-          },
         ],
       },
     }),
@@ -68,9 +62,8 @@ export default defineConfig({
     rollupOptions: {
       output: {
         manualChunks: (id) => {
-          if (id.includes('@deck.gl') || id.includes('@luma.gl') || id.includes('maplibre')) return 'map'
+          if (id.includes('maplibre')) return 'map'
           if (id.includes('firebase')) return 'firebase'
-          if (id.includes('jspdf')) return 'pdf'
         },
       },
     },

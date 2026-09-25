@@ -1,0 +1,333 @@
+{
+ "meta": {
+  "city": "leh",
+  "center": [
+   34.1526,
+   77.5771
+  ],
+  "source": "OpenStreetMap (Overpass) anchors; people counts are estimates",
+  "planting": "street / traffic / shadeNow are reviewed estimates from OSM road class and tree tags plus hand review",
+  "built": "2026-09-25"
+ },
+ "points": [
+  {
+   "id": "leh-main-bazaar",
+   "name": "Leh Main Bazaar",
+   "nameHi": "लेह मेन बाज़ार",
+   "lat": 34.163504,
+   "lon": 77.584874,
+   "type": "market",
+   "ward": "Main Bazaar",
+   "wardHi": "मेन बाज़ार",
+   "people": [
+    {
+     "group": "vendor",
+     "count": 40,
+     "shift": "day"
+    },
+    {
+     "group": "guard",
+     "count": 6,
+     "shift": "night"
+    }
+   ],
+   "heater": "unconfirmed",
+   "street": "open",
+   "traffic": "some",
+   "shadeNow": "some",
+   "osm": "way/39663140"
+  },
+  {
+   "id": "snm-hospital",
+   "name": "SNM Hospital (Sonam Norboo Memorial)",
+   "nameHi": "एसएनएम अस्पताल (सोनम नोरबू मेमोरियल)",
+   "lat": 34.153945,
+   "lon": 77.580475,
+   "type": "hospital",
+   "ward": "Khardung La Road",
+   "wardHi": "खारदुंग ला रोड",
+   "people": [
+    {
+     "group": "attendant",
+     "count": 20,
+     "shift": "night"
+    },
+    {
+     "group": "guard",
+     "count": 2,
+     "shift": "night"
+    }
+   ],
+   "offers": [
+    "water",
+    "shelter"
+   ],
+   "heater": "working",
+   "street": "open",
+   "traffic": "quiet",
+   "shadeNow": "none",
+   "osm": "way/27761109"
+  },
+  {
+   "id": "leh-bus-stand",
+   "name": "Leh Bus Stand",
+   "nameHi": "लेह बस स्टैंड",
+   "lat": 34.156862,
+   "lon": 77.583114,
+   "type": "bus",
+   "ward": "Bus Stand Road",
+   "wardHi": "बस स्टैंड रोड",
+   "people": [
+    {
+     "group": "vendor",
+     "count": 12,
+     "shift": "day"
+    },
+    {
+     "group": "porter",
+     "count": 4,
+     "shift": "day"
+    },
+    {
+     "group": "driver",
+     "count": 18,
+     "shift": "night"
+    },
+    {
+     "group": "porter",
+     "count": 3,
+     "shift": "night"
+    }
+   ],
+   "offers": [
+    "water"
+   ],
+   "heater": "none",
+   "street": "open",
+   "traffic": "some",
+   "shadeNow": "none",
+   "osm": "way/1086524216"
+  },
+  {
+   "id": "leh-taxi-stand",
+   "name": "New Taxi Stand (All Ladakh Taxi Union)",
+   "nameHi": "न्यू टैक्सी स्टैंड (ऑल लद्दाख टैक्सी यूनियन)",
+   "lat": 34.143225,
+   "lon": 77.586677,
+   "type": "bus",
+   "ward": "Housing Colony",
+   "wardHi": "हाउसिंग कॉलोनी",
+   "people": [
+    {
+     "group": "driver",
+     "count": 30,
+     "shift": "day"
+    },
+    {
+     "group": "driver",
+     "count": 8,
+     "shift": "night"
+    }
+   ],
+   "heater": "none",
+   "street": "open",
+   "traffic": "some",
+   "shadeNow": "none",
+   "osm": "way/924161852"
+  },
+  {
+   "id": "sbi-leh",
+   "name": "State Bank of India, Leh",
+   "nameHi": "भारतीय स्टेट बैंक, लेह",
+   "lat": 34.152774,
+   "lon": 77.575613,
+   "type": "bank",
+   "ward": "Zorawar Fort Road",
+   "wardHi": "ज़ोरावर फ़ोर्ट रोड",
+   "people": [
+    {
+     "group": "guard",
+     "count": 1,
+     "shift": "night"
+    }
+   ],
+   "heater": "working",
+   "street": "open",
+   "traffic": "some",
+   "shadeNow": "none",
+   "osm": "node/1444104284"
+  },
+  {
+   "id": "sbi-atm-old-leh-road",
+   "name": "SBI ATM, Old Leh Road",
+   "nameHi": "एसबीआई एटीएम, ओल्ड लेह रोड",
+   "lat": 34.154387,
+   "lon": 77.577608,
+   "type": "atm",
+   "ward": "Old Leh Road",
+   "wardHi": "ओल्ड लेह रोड",
+   "people": [
+    {
+     "group": "guard",
+     "count": 1,
+     "shift": "night"
+    }
+   ],
+   "heater": "unconfirmed",
+   "street": "open",
+   "traffic": "some",
+   "shadeNow": "none",
+   "osm": "node/11200263286"
+  },
+  {
+   "id": "jk-bank-skalzangling",
+   "name": "J&K Bank, Skalzangling",
+   "nameHi": "जे एंड के बैंक, स्कलज़ांगलिंग",
+   "lat": 34.148066,
+   "lon": 77.5717,
+   "type": "bank",
+   "ward": "Skalzangling",
+   "wardHi": "स्कलज़ांगलिंग",
+   "people": [
+    {
+     "group": "guard",
+     "count": 1,
+     "shift": "night"
+    }
+   ],
+   "heater": "none",
+   "street": "open",
+   "traffic": "busy",
+   "shadeNow": "none",
+   "osm": "node/3253371336"
+  },
+  {
+   "id": "axis-bank-old-fort-road",
+   "name": "Axis Bank, Old Fort Road",
+   "nameHi": "एक्सिस बैंक, ओल्ड फ़ोर्ट रोड",
+   "lat": 34.162562,
+   "lon": 77.58342,
+   "type": "bank",
+   "ward": "Old Fort Road",
+   "wardHi": "ओल्ड फ़ोर्ट रोड",
+   "people": [
+    {
+     "group": "guard",
+     "count": 1,
+     "shift": "night"
+    }
+   ],
+   "heater": "failed",
+   "street": "narrow",
+   "traffic": "some",
+   "shadeNow": "none",
+   "osm": "node/2575504257"
+  },
+  {
+   "id": "indian-oil-leh",
+   "name": "Indian Oil Petrol Pump, Leh",
+   "nameHi": "इंडियन ऑयल पेट्रोल पंप, लेह",
+   "lat": 34.152281,
+   "lon": 77.577034,
+   "type": "fuel",
+   "ward": "Khardung La Road",
+   "wardHi": "खारदुंग ला रोड",
+   "people": [
+    {
+     "group": "worker",
+     "count": 3,
+     "shift": "day"
+    },
+    {
+     "group": "worker",
+     "count": 2,
+     "shift": "night"
+    },
+    {
+     "group": "guard",
+     "count": 1,
+     "shift": "night"
+    }
+   ],
+   "offers": [
+    "water"
+   ],
+   "heater": "unconfirmed",
+   "street": "open",
+   "traffic": "busy",
+   "shadeNow": "some",
+   "osm": "node/299707352"
+  },
+  {
+   "id": "dzomsa-fort-road",
+   "name": "Dzomsa water refill, Fort Road",
+   "nameHi": "ज़ोमसा पानी रिफ़िल, फ़ोर्ट रोड",
+   "lat": 34.163778,
+   "lon": 77.582346,
+   "type": "water",
+   "ward": "Fort Road",
+   "wardHi": "फ़ोर्ट रोड",
+   "people": [
+    {
+     "group": "vendor",
+     "count": 6,
+     "shift": "day"
+    },
+    {
+     "group": "porter",
+     "count": 4,
+     "shift": "day"
+    }
+   ],
+   "offers": [
+    "water"
+   ],
+   "street": "open",
+   "traffic": "some",
+   "shadeNow": "good",
+   "osm": "node/2417355299"
+  },
+  {
+   "id": "leh-veg-fruit-market",
+   "name": "Vegetable & Fruit Market, Leh",
+   "nameHi": "सब्ज़ी व फल मंडी, लेह",
+   "lat": 34.153978,
+   "lon": 77.573246,
+   "type": "market",
+   "ward": "Zorawar Fort Road",
+   "wardHi": "ज़ोरावर फ़ोर्ट रोड",
+   "people": [
+    {
+     "group": "vendor",
+     "count": 20,
+     "shift": "day"
+    }
+   ],
+   "street": "open",
+   "traffic": "some",
+   "shadeNow": "none",
+   "osm": "node/3700290454"
+  },
+  {
+   "id": "choglamsar-market",
+   "name": "Choglamsar market",
+   "nameHi": "चोगलमसर बाज़ार",
+   "lat": 34.099649,
+   "lon": 77.59696,
+   "type": "market",
+   "ward": "Choglamsar",
+   "wardHi": "चोगलमसर",
+   "people": [
+    {
+     "group": "labour",
+     "count": 30,
+     "shift": "day"
+    }
+   ],
+   "street": "open",
+   "traffic": "busy",
+   "shadeNow": "none",
+   "osm": "node/5022305021"
+  }
+ ]
+}

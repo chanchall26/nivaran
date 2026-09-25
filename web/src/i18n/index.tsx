@@ -1,27 +1,27 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react'
-import { STRINGS, type Lang, type Strings } from './strings'
+import { UI, type Dict } from './ui'
 
-export type { Lang }
+export type Lang = 'en' | 'hi'
 
-/** Fill `{name}` placeholders. Numbers are formatted for the current language. */
-export function fmt(template: string, params: Record<string, string | number> = {}, lang: Lang = 'en') {
+/** Fill `{name}` placeholders. Numbers are formatted for the current language (digits stay digits). */
+export function fmt(template: string, params: Record<string, string | number> = {}) {
   return template.replace(/\{(\w+)\}/g, (_, k) => {
     const v = params[k]
     if (v == null) return `{${k}}`
-    return typeof v === 'number' ? v.toLocaleString(lang === 'hi' ? 'hi-IN' : 'en-IN') : v
+    return typeof v === 'number' ? v.toLocaleString('en-IN') : v
   })
 }
 
 interface I18n {
   lang: Lang
   setLang: (l: Lang) => void
-  s: Strings
+  t: Dict
   f: (template: string, params?: Record<string, string | number>) => string
   num: (n: number, digits?: number) => string
 }
 
 const Ctx = createContext<I18n | null>(null)
-const KEY = 'barahmasa:lang'
+const KEY = 'bm:lang'
 
 function initialLang(): Lang {
   try {
@@ -30,7 +30,8 @@ function initialLang(): Lang {
   } catch {
     /* storage blocked */
   }
-  return navigator.language?.startsWith('hi') ? 'hi' : 'en'
+  // English by default; one tap switches to Hindi
+  return 'en'
 }
 
 export function LangProvider({ children }: { children: ReactNode }) {
@@ -48,10 +49,9 @@ export function LangProvider({ children }: { children: ReactNode }) {
         /* not remembered */
       }
     },
-    s: STRINGS[lang],
-    f: (t, p) => fmt(t, p, lang),
-    num: (n, digits = 0) =>
-      n.toLocaleString(lang === 'hi' ? 'hi-IN' : 'en-IN', { maximumFractionDigits: digits, minimumFractionDigits: 0 }),
+    t: UI[lang],
+    f: fmt,
+    num: (n, digits = 0) => n.toLocaleString('en-IN', { maximumFractionDigits: digits, minimumFractionDigits: 0 }),
   }
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>
 }

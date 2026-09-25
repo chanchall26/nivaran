@@ -1,124 +1,85 @@
 # Barahmasa · बारहमासा
 
-**Garmi mein chhaya, sardi mein garmahat.** A year-round (12-month) thermal-safety and clean-air platform for people who work or live outdoors: security guards, street vendors, labourers, delivery workers and homeless people. Pilot city: **Gwalior, Madhya Pradesh**.
+**Shade in summer, warmth in winter. · गर्मी में छाया, सर्दी में गरमाहट**
 
-> Wahi guard jo December mein thand se bachne ke liye kachra jalata hai, wahi May mein 45°C mein bina chhaaya ke khada rehta hai. Log wahi, jagah wahi, bas mausam ulta.
+A year-round safety app for people who work outdoors in Indian cities: night guards, street vendors, construction workers, traffic police, delivery riders and homeless people. It tells a city officer **who will face heat, cold, rain or bad air today, what help they need, and whether the help actually worked.**
 
-Theme: **Clean Air & Climate Resilience** (GDG hackathon).
+Live: **https://barahmasa-gwalior.web.app** · Pilot: Gwalior (Shinde Ki Chhawani, 474001), Delhi (Connaught Place) and Leh. Any other Indian place gets weather, air, season and map points from OpenStreetMap.
 
-## What it does
+## What you can do
 
-| Feature | What you see | Where |
-|---|---|---|
-| **Bahar-Log Map** | 1,376 H3 cells (~0.1 km² each) over Gwalior, scored for heat (Chhaya Score) or cold (Alaav Score), plus the places where people are outdoors for hours | `/map` |
-| **Season switch** | One button flips the whole city between summer and winter; same engine, same people, opposite weather | header |
-| **Live / Replay / Planning weather** | Today's Open-Meteo forecast, the worst night of winter 2025-26 or the worst day of summer 2026, or a typical January night / May afternoon | map panel |
-| **Smoke-Trap Index** | Night ventilation coefficient (boundary-layer height × wind). 5-6 Jan 2026 in Gwalior: ~5 m²/s, so smoke from any warming fire stayed at breathing height | map panel |
-| **Madad, Challan Nahi** | Photo report. Faces and upper bodies are blurred **on the phone** (MediaPipe), then Gemini classifies the situation and routes it to help. A report about people can never be routed to enforcement | `/report` |
-| **Barahmasa Match** | Allocates heaters, warm kits, shade nets, water points, saplings and all-season guard cabins by need × people, with a written reason for each choice and a comparison against "first come, first served" | `/match` |
-| **Pulse Check** | Hindi voice check-in ("Kal raat heater chala?"). A "no" gets a reason (bijli bill, RWA refused, broken…) and each reason gets its own fix | `/pulse` |
-| **Impact Ledger** | Heater active rate, sapling survival, report-to-help time, reasons help failed, and modelled estimates shown as ranges with their assumptions. One-click CSR PDF | `/ledger` |
-| **Team tools** | One hub for NGOs, RWAs, donors and city staff | `/team` |
-| **Reports inbox** | Assign reports to a team and mark them solved (feeds report-to-help time) | `/inbox` |
-| **Alerts** | Next 3 nights (cold + smoke-trap) or days (heat), with a ready WhatsApp message for RWAs, NGOs or markets, in Hindi or English | `/alerts` |
-| **Plant trees** | Photo of a street spot + 4 questions → Gemini says if a tree can grow there and picks from a Gwalior species list; hard rules (wires, space, water) always win. Spots appear on the summer map | `/trees` |
-| **Barahmasa Colony** | An RWA takes a 5-point pledge for its guards and gets a downloadable 3D badge | `/colony` |
-| **All-season guard cabin** | Cool roof + insulation + a tree: one asset for both seasons, and where to put it | `/cabin` |
-| **Method** | Every formula, source and limitation | `/method` |
+| Who | Screens |
+|---|---|
+| **Officer** (Nagar Nigam, Commissioner) | Today (condition banner, 24-hour danger strip, next 5 days, map with a Fire risk tonight layer, who needs help by Resilience Debt, Air panel, Shade Clock on hot days, same place in both seasons), Map, Needs, Schemes (budget → best plan → apply, and what the checks changed), Did the help work?, Protected hours, Where to plant, Reports (monthly and CSR), Alerts |
+| **Partner** (RWA, NGO, CSR, security agency) | My tasks: check before handing over (socket, bill permission, night guard), mark as delivered, call to check (Hindi question "what time did it run?", answers from a call, a night visit or a smart plug, reason from a fixed list), checks due, report a fire; Reports |
+| **Worker or citizen** (no login, no name) | Today's risk in one big panel, your shift, help near me, ask for help, read aloud |
 
-The whole app works in **Hindi and simple English** (switch in the header), follows the season as its theme (a hot afternoon or a winter night), and installs as an **app (PWA)** that opens on a weak network.
+Every role has **Try demo**. Every number carries an honest label: **Live**, **Saved forecast** (with its time), **Estimated**, **Demo data** or **Real past day**.
 
-## Google tech used
+**The screen follows the day.** Mild (green), Hot afternoon (yellow), Very hot (red), Bad air (smoke grey, Air panel first), Cold night (blue, night shift and fire layer first), Double risk (heat + bad air, split banner). Each banner says when it is dangerous and what to do now.
 
-- **Gemini** through **Firebase AI Logic** (client SDK, Gemini Developer API): photo understanding with structured JSON output, and understanding Hindi/Hinglish Pulse answers
-- **Firebase**: Hosting, Firestore (real-time: a report sent from a phone appears on the coordinator's map immediately), Anonymous Auth, security rules that enforce the no-enforcement policy
-- **Google Earth Engine** (noncommercial Community tier, no billing): per-cell summer land-surface temperature from 8 QA-masked Landsat 8/9 scenes and tree canopy from ESA WorldCover, reduced over all 1,376 H3 cells
-- **MediaPipe Tasks** (face detector + object detector): on-device privacy blurring
-- **Google Maps Platform** basemap when a key is configured (falls back to MapLibre + OpenFreeMap)
+**See another day** (sidebar), all real archive weather and air: Delhi 25 Dec 2024 (smoky night), Gwalior's hottest day of 2026, Delhi 19 Jun 2024 (heat and bad air together), Gwalior's coldest night of January 2026.
 
-## Run it locally
+Shareable views: `?pin=474001`, `?lat=..&lon=..`, `?date=YYYY-MM-DD` (any day inside the forecast range), `?replay=smog|summer|double|winter`.
+
+## Simple demo rules
+
+- **Danger per hour** (worse of heat and cold, by feels-like): heat <32 Safe, 32–38 Be careful, 38–43 Get ready, ≥43 Act now; cold ≥15 Safe, 10–15 Be careful, 5–10 Get ready, <5 Act now. Indian AQI 201–300 means at least Get ready; 301+ means Act now. Night hours count double for night-shift points.
+- **Today's mode** from the forecast (at most two): Cold night (lowest feels-like ≤10°), Heat (highest feels-like ≥40° or temperature ≥38°), Humid heat (≥32° and afternoon humidity ≥60%), Rain (chance ≥60% or ≥5 mm), Smoky air (AQI ≥201), else Mild with a 5-day trend.
+- **Screen (condition)**: Double risk when heat and air are both Get ready or worse; otherwise the worst of air (24-hour AQI), cold night (18:00–09:00) and heat, with air winning a tie; heat at Be careful gives Hot afternoon.
+- **Fire risk tonight** (Survival Burning Risk, a priority score 0–100, not a probability): cold (feels-like 16° → 0, 4° → 1) × still air (wind 12 km/h → 0, 2 km/h → 1) × people out at night × no working heater (a handed-out heater counts as the share that really run) + fire reports. 50+ High, 25+ Medium. Every part is shown.
+- **Where to plant**: score = heat need on last summer's hottest day (more where there is no shade now) + air need (traffic) + people who stay. Narrow busy lane → low dense hedge under 2 m; open busy road → hedge by the road and trees behind; open place → shade trees (Neem, Peepal, Jamun, Arjun); Leh → windbreak rows, planted in spring. Before/After as ranges: shade 4–8° cooler in the sunny hours, a hedge 10–25% less PM10 behind it.
+- **Resilience Debt**: today's danger at a point (relative to the worst point) × (1 − 0.8 × protection it has for today's hazards). The "who needs help" list is sorted by it.
+- **Indian AQI** from PM2.5 / PM10 with CPCB breakpoints (the higher sub-index).
+- **Schemes**: greedy by protected person-hours per rupee over 30 days; "Equal share" first gives each ward a slice. Trees are listed but not bought (they help only after ~3 years).
+- **Did the help work?** Beta-Binomial learning on the first answer for each heater: assumed 90% before checks, 63% (51–75%) after 40 calls. Night visits test self-reported yeses (8 of 10 held up, so each counts 0.8): 53%, which the planner uses. Month by month: December 63%, January 48%.
+- **A "yes" expires**: it counts as confirmed for 7 days; checks the day after delivery, a week after the first yes, then every 2 weeks (a random 1 in 4 once help works 9 in 10); before a cold night anything older than 3 days is checked again; after 3 weeks it is unknown; a fire reported at a "working" heater means check now.
+- **Protected hours**: Estimated counts every item handed out every night; Confirmed counts only nights inside a fresh yes. They are never mixed.
+- **Planner follows the checks**: heaters are valued at the learned rate, so a new heater (243 → 142 protected hours per ₹1,000) drops below a socket + bill-permission fix (32 → 153) and a warm kit (225).
+
+## Data (all free, no keys)
+
+| What | Source |
+|---|---|
+| Forecast, 7 days hourly | Open-Meteo forecast API |
+| Air | Open-Meteo air quality (CAMS), shown as Indian AQI, labelled "Model estimate" |
+| Real past days | Open-Meteo historical archive and air-quality archive |
+| Shade Clock | Google Open Buildings footprints and heights, ESA WorldCover trees (`web/public/data/gwalior/nodes.json`), sun position from suncalc |
+| Place names | Open-Meteo geocoding, BigDataCloud reverse geocoding |
+| PIN codes | `web/public/data/pins.json` (India Post directory) with api.postalpincode.in as fallback |
+| Map points | Curated pilot points anchored to real OpenStreetMap places (`web/public/data/points/`); Overpass within 2 km for any other place. People counts are estimates |
+| Map tiles | © OpenStreetMap contributors, © CARTO |
+
+Every response is cached for 30 minutes; after 8 s the app falls back to the last saved copy and says when it was saved. The app installs as a PWA and opens offline.
+
+## Run it
 
 ```bash
 cd web
 npm install
-npm run dev          # http://localhost:5173
-npm test             # scoring, allocation, policy and ledger tests on the real Gwalior data
+npm run dev     # http://localhost:5173
+npm test        # danger rules, AQI, modes, planner, learning, i18n parity, engine tests
 ```
 
-With no configuration, or if anonymous sign-in fails, the app runs in **demo mode**: data is kept in the browser, AI falls back to transparent rules, and the basemap is OpenFreeMap. On the Impact page, **Demo season load karo** fills in a simulated winter and summer. It uses the real Match engine plus simulated Pulse answers, every row is flagged `demo`, and one click removes them.
+Firebase is only needed for the optional **Continue with Google** (Officer / Partner). Enable the Google provider under Authentication and add your domain to Authorized domains. The demo never depends on it.
 
-### Turning on Firebase and Gemini
-
-1. Create a Firebase project (the free Spark plan is enough) and add a **Web app**.
-2. **Authentication → Sign-in method →** enable **Anonymous**.
-3. **Firestore Database →** create (production mode, region `asia-south1`).
-4. **AI Logic →** get started with the **Gemini Developer API**. AI Logic now requires **App Check**: create a reCAPTCHA Enterprise key for your domains, register it under App Check for the web app, and enforce App Check for AI Logic. For `npm run dev`, register a debug token and put it in `web/.env.development.local` as `VITE_APPCHECK_DEBUG_TOKEN` (never in `.env.local`, which is also used by production builds).
-5. `cp web/.env.example web/.env.local` and fill in the `VITE_FIREBASE_*` values and `VITE_RECAPTCHA_SITE_KEY`. Optionally set `VITE_GOOGLE_MAPS_API_KEY`.
-6. Deploy:
-
-```bash
-firebase login --reauth
-firebase use --add            # pick the project
-cd web && npm run build && cd ..
-firebase deploy --only hosting,firestore
-```
-
-## Data pipeline (`pipeline/`)
-
-Static city data is built once and committed under `web/public/data/gwalior/`.
-
-```bash
-pip install -r pipeline/requirements.txt
-earthengine authenticate      # once; the project must be registered for Earth Engine
-sh pipeline/run_all.sh
-```
-
-| Layer | Source | Notes |
-|---|---|---|
-| City boundary, bus stops, markets, guarded sites (banks, ATMs, hospitals, schools), roads, localities | OpenStreetMap (Overpass) | Gwalior is thinly mapped: only 3 bus stops |
-| Tree canopy | ESA WorldCover 2021, 10 m | tree-cover share per cell, computed on Google Earth Engine |
-| Surface temperature | Landsat 8/9 C2 L2, QA-masked median of 8 May 2026 scenes | computed on Google Earth Engine (`fetch_ee.py`); `fetch_rasters.py` reproduces it via Planetary Computer as a fallback (r = 0.92 against Earth Engine) |
-| Population | Meta High Resolution Settlement Layer, ~30 m | 9.4 lakh inside city limits |
-| Weather | Open-Meteo forecast, historical forecast, CAMS PM2.5 | one point for the whole city |
-
-**Synthetic data, clearly labelled.** Because OSM is thin, some guard posts, rehri zones, worksites, homeless spots and labour chowks are sampled in proportion to population. Night-shelter locations are placeholders. Every map point shows its source (`OSM`, `synthetic` or `demo`).
-
-## Scores
-
-All scores run from 0 to 100, and a **lower score means more need**.
-
-- **Exposure** = 0.45 · population + 0.35 · mapped outdoor people + 0.20 · main-road length (each scaled by its city 95th percentile)
-- **Chhaya** need = (0.5 · canopy gap + 0.5 · surface heat) × (0.3 + 0.7 · exposure) × (0.4 + 0.6 · day heat)
-- **Alaav** need = exposure × (0.65 + 0.35 · shelter distance) × night cold × (0.75 + 0.25 · Smoke-Trap)
-- **Match** gives each unit to the place with the highest (need + 0.15 · min(1, open reports / 3)) × newly covered people
-
-People are a multiplier: an empty, hot field is a planting opportunity, not an emergency. Reports carry little weight so that areas with fewer smartphones are not pushed down the list. Both properties are covered by tests.
-
-## 3-minute demo
-
-| Time | Show |
-|---|---|
-| 0:00 | Home: Shyam in December and in May. |
-| 0:30 | Map → **Sardi** → **Replay**: the 5-6 Jan 2026 smoke-trap night. Top-need list, then click a cell to see how its score is built. |
-| 1:10 | Phone: **Report** a guard's fire. Show the on-device blur, Gemini's classification, and the route "RWA ko heater request". It appears live on the laptop map. |
-| 1:50 | **Pulse**: "Nahi, RWA bolti hai bijli ka bill zyada aayega" → reason → bill calculator (~₹1,000/month). |
-| 2:20 | Press **Garmi**: the same map flips to heat. **Match** the All-Season Cabin, then show the "3× more need-weighted reach than first come". |
-| 2:45 | **Impact** → CSR PDF. Closing line. |
-
-## Honest limitations
-
-- Weights are expert judgement and not yet calibrated. A pilot's Pulse data is what should tune them.
-- Weather comes from a model at one point. IMD station extremes can be 2-3 °C more severe.
-- The browser voice flow stands in for an IVR / missed-call line (Exotel or Twilio) in a real deployment.
-- Anonymous auth means Firestore rules check the shape of data, not roles. A coordinator role (custom claims) is the next step.
+Deploys run on every push to `main` (`.github/workflows/deploy.yml`: test → build → Firebase Hosting).
 
 ## Repo layout
 
 ```
-pipeline/           Python: OSM, WorldCover, Landsat, HRSL, weather → web/public/data
-web/                React + Vite + Tailwind + deck.gl app
-  src/lib/          scoring, match, policy, impact, weather, ai (Gemini), privacy (MediaPipe), store (Firestore/local)
-  src/pages/        Home, MapPage, Report, Match, Pulse, Ledger, Method
-firestore.rules     validation + "madad, challan nahi" enforced server-side
-firebase.json       Hosting + Firestore
+web/src/lib/       risk (rules, conditions, fire risk), live (weather + air + cache + real past days), place (GPS, search, PIN),
+                   points (debt, protection), plan, tasks (tasks, checks, fire reports), checks (expiry, schedule, learning,
+                   protected hours, demo history), plant (where to plant, what, before/after), shade (Shade Clock), ist
+web/src/screens/   Entry, Today, Schemes, Tasks, Worker, Plant, Report, Misc (map, needs, checks, hours, alerts, settings, sources)
+web/src/ui/        StationBoard, Header, PlacePicker, Nav, DayStrip, PointsMap, Condition, AirPanel, ShadeClock
+web/src/i18n/ui.ts every word in easy English and Hindi
+pipeline/          Python builders for city data, pilot points and PINs
 ```
+
+## Honest limitations
+
+- Weather and air come from models at one point; street-level extremes can be 2–3 °C worse. Air is a model estimate, not a ground monitor.
+- People counts at points are estimates. Help costs and last winter's heater programme (60 heaters, its calls, visits and fixes) are demo data.
+- No system can check every heater every night, and it should not: that would be watching the guards. The numbers are a close, honest estimate with a range.
+- Tasks, checks and help requests are saved on the device in this version; a shared backend is the next step.
