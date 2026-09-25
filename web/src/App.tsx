@@ -30,7 +30,7 @@ const NotFound = lazy(() => misc().then((m) => ({ default: m.NotFound })))
 function Loading() {
   return (
     <div className="space-y-4" aria-busy>
-      <Skel className="h-56 w-full !rounded-[26px]" />
+      <Skel className="h-56 w-full" />
       <div className="grid gap-4 xl:grid-cols-[3fr_2fr]">
         <Skel className="h-[420px] !rounded-[22px]" />
         <Skel className="h-[420px] !rounded-[22px]" />
@@ -64,7 +64,7 @@ export default function App() {
   // theme colour follows today's screen (condition)
   useEffect(() => {
     const d = wx?.data.days[0]
-    document.querySelector('meta[name="theme-color"]')?.setAttribute('content', d ? condColor(conditionOf(d, wx.data.days[1])) : '#6d28d9')
+    document.querySelector('meta[name="theme-color"]')?.setAttribute('content', d ? condColor(conditionOf(d, wx.data.days[1])) : '#000c1f')
   }, [wx])
 
   if (pathname === '/welcome') return <Entry />
@@ -73,11 +73,6 @@ export default function App() {
 
   return (
     <div className="relative min-h-dvh">
-      <div className="aurora" aria-hidden>
-        <span />
-        <span />
-        <span />
-      </div>
       <a href="#main" className="sr-only-focusable fixed top-2 left-2 z-[200] rounded bg-ink px-3 py-2 text-white">
         {t.app.skip}
       </a>
@@ -86,10 +81,10 @@ export default function App() {
       </div>
       <div className="relative z-[1] flex">
         <Sidebar />
-        <main id="main" className="min-w-0 flex-1 px-3 pt-5 pb-28 sm:px-6 lg:px-8 lg:pb-10">
+        <main id="main" className="min-w-0 flex-1 px-3 pt-5 pb-28 sm:px-5 lg:pb-8">
           <Suspense fallback={<Loading />}>
             {/* one comfortable reading width, centred on wide screens */}
-            <div key={pathname} className={`page mx-auto w-full ${worker ? 'max-w-6xl' : 'max-w-[1440px]'}`}>
+            <div key={pathname} className="page mx-auto w-full max-w-[1480px]">
             <Routes>
               <Route path="/" element={worker ? <WorkerToday /> : <Today />} />
               <Route path="/map" element={<MapScreen />} />

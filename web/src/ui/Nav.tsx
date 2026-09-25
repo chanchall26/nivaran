@@ -1,4 +1,7 @@
-import { ChevronDown, PanelLeftClose, PanelLeftOpen, RefreshCw } from 'lucide-react'
+import {
+  Bell, CalendarDays, ChevronDown, CircleCheckBig, ClipboardList, Database, FileText, House, Landmark, Map, MapPin, MessageSquareText,
+  MoreHorizontal, Package, RefreshCw, Settings, ShieldCheck, Sprout, UserRound, type LucideIcon,
+} from 'lucide-react'
 import { useState } from 'react'
 import { NavLink, useLocation, useNavigate } from 'react-router-dom'
 import { useApp } from '../ctx'
@@ -14,31 +17,31 @@ import { Sheet } from './Sheet'
 interface Item {
   to: string
   label: string
-  emoji: EmojiName
+  Icon: LucideIcon
 }
 
 export function useNavItems(role: Role): Item[] {
   const { t } = useI18n()
-  const today = { to: '/', label: t.nav.today, emoji: 'house' as const }
-  const map = { to: '/map', label: t.nav.map, emoji: 'map' as const }
-  const settings = { to: '/settings', label: t.nav.settings, emoji: 'gear' as const }
-  const checks = { to: '/checks', label: t.nav.checks, emoji: 'check' as const }
-  const plant = { to: '/plant', label: t.nav.plant, emoji: 'seedling' as const }
-  const report = { to: '/report', label: t.nav.report, emoji: 'bar_chart' as const }
+  const today = { to: '/', label: t.nav.today, Icon: House }
+  const map = { to: '/map', label: t.nav.map, Icon: Map }
+  const settings = { to: '/settings', label: t.nav.settings, Icon: Settings }
+  const checks = { to: '/checks', label: t.nav.checks, Icon: CircleCheckBig }
+  const plant = { to: '/plant', label: t.nav.plant, Icon: Sprout }
+  const report = { to: '/report', label: t.nav.report, Icon: FileText }
   if (role === 'officer')
     return [
       today, map,
-      { to: '/needs', label: t.nav.needs, emoji: 'clipboard' },
-      { to: '/schemes', label: t.nav.schemes, emoji: 'money' },
+      { to: '/needs', label: t.nav.needs, Icon: ClipboardList },
+      { to: '/schemes', label: t.nav.schemes, Icon: Landmark },
       checks,
-      { to: '/hours', label: t.nav.hours, emoji: 'shield' },
+      { to: '/hours', label: t.nav.hours, Icon: ShieldCheck },
       plant,
       report,
-      { to: '/alerts', label: t.nav.alerts, emoji: 'bell' },
+      { to: '/alerts', label: t.nav.alerts, Icon: Bell },
       settings,
     ]
-  if (role === 'partner') return [today, { to: '/tasks', label: t.nav.tasks, emoji: 'package' }, checks, map, report, plant, settings]
-  return [today, { to: '/near', label: t.nav.near, emoji: 'pin' }, { to: '/ask', label: t.nav.ask, emoji: 'raise_hand' }, settings]
+  if (role === 'partner') return [today, { to: '/tasks', label: t.nav.tasks, Icon: Package }, checks, map, report, plant, settings]
+  return [today, { to: '/near', label: t.nav.near, Icon: MapPin }, { to: '/ask', label: t.nav.ask, Icon: MessageSquareText }, settings]
 }
 
 /** Links keep ?pin / ?date / ?replay so every view stays shareable. */
@@ -48,7 +51,6 @@ function useTo() {
 }
 
 const PAST_EMOJI: Record<ReplayKind, EmojiName> = { smog: 'mask', summer: 'hot_face', double: 'fire', winter: 'cold_face' }
-const PLACE_EMOJI: Record<string, EmojiName> = { g: 'city', d: 'office', l: 'mountain' }
 
 function useDemoPlaces() {
   const { t } = useI18n()
@@ -63,52 +65,48 @@ function useDemoPlaces() {
   return { rows, past, replay, backLive: () => go(PRESETS[replay ? replayPlace(replay) : 'gwalior']) }
 }
 
-function Group({ title, emoji, open, onToggle, children }: { title: string; emoji: EmojiName; open: boolean; onToggle: () => void; children: React.ReactNode }) {
+const ROW = 'flex w-full items-center gap-3 rounded-xl px-3.5 py-3 text-[15px] font-medium whitespace-nowrap text-[#dbe6f7] hover:bg-white/5'
+
+function Group({ title, Icon, open, onToggle, children }: { title: string; Icon: LucideIcon; open: boolean; onToggle: () => void; children: React.ReactNode }) {
   return (
     <div>
-      <button type="button" className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 font-semibold hover:bg-violet-50" aria-expanded={open} onClick={onToggle}>
-        <Emoji name={emoji} size={22} /> <span className="flex-1 truncate text-left">{title}</span>
-        <ChevronDown className={`size-4 text-muted transition-transform ${open ? 'rotate-180' : ''}`} {...ICON} aria-hidden />
+      <button type="button" className={ROW} aria-expanded={open} onClick={onToggle}>
+        <Icon className="size-6 shrink-0" strokeWidth={1.7} aria-hidden />
+        <span className="min-w-0 flex-1 truncate text-left">{title}</span>
+        <ChevronDown className={`size-4 shrink-0 text-[#6f82a6] transition-transform ${open ? 'rotate-180' : ''}`} {...ICON} aria-hidden />
       </button>
-      {open && <ul className="mt-1 mb-2 space-y-1 border-l-2 border-violet-100 pl-2 ml-5">{children}</ul>}
+      {open && <ul className="mt-1 mb-2 ml-7 space-y-0.5 border-l border-[#16325c] pl-3">{children}</ul>}
     </div>
   )
 }
 
-function BottomExtras({ compact, onDone }: { compact?: boolean; onDone?: () => void }) {
+function BottomExtras({ onDone }: { onDone?: () => void }) {
   const { t } = useI18n()
   const { setProfile } = useApp()
   const nav = useNavigate()
   const to = useTo()
   const demo = useDemoPlaces()
   const [open, setOpen] = useState(false)
+  // past days open when one is on screen; otherwise one tap away
   const [pastOpen, setPastOpen] = useState(() => !!demo.replay)
-  if (compact)
-    return (
-      <div className="flex flex-col items-center gap-1 border-t border-line pt-2">
-        <NavLink to={to('/sources')} className="grid size-10 place-items-center rounded-xl hover:bg-violet-50" title={t.nav.sources} aria-label={t.nav.sources}>
-          <Emoji name="satellite" size={24} pop />
-        </NavLink>
-      </div>
-    )
   return (
-    <div className="space-y-0.5 border-t border-line pt-3 text-sm">
-      <Group title={t.nav.demoPlaces} emoji="globe" open={open} onToggle={() => setOpen(!open)}>
+    <div className="space-y-0.5">
+      <Group title={t.nav.demoPlaces} Icon={MapPin} open={open} onToggle={() => setOpen(!open)}>
         {demo.rows.map((r) => (
           <li key={r.key}>
-            <button type="button" className="flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 text-left text-[13px] hover:bg-violet-50" onClick={() => (r.run(), onDone?.())}>
-              <Emoji name={PLACE_EMOJI[r.key]} size={18} /> {r.label}
+            <button type="button" className="w-full rounded-lg px-2.5 py-1.5 text-left text-[14px] text-[#c7d3ea] hover:bg-white/5" onClick={() => (r.run(), onDone?.())}>
+              {r.label}
             </button>
           </li>
         ))}
       </Group>
-      <Group title={t.nav.pastDays} emoji="calendar" open={pastOpen} onToggle={() => setPastOpen(!pastOpen)}>
+      <Group title={t.nav.pastDays} Icon={CalendarDays} open={pastOpen} onToggle={() => setPastOpen(!pastOpen)}>
         {demo.past.map((r) => (
           <li key={r.key}>
             <button
               type="button"
               aria-current={r.active ? 'true' : undefined}
-              className={`flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 text-left text-[13px] leading-snug ${r.active ? 'bg-gradient-to-r from-violet-100 to-pink-100 font-bold' : 'hover:bg-violet-50'}`}
+              className={`flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 text-left text-[13px] leading-snug ${r.active ? 'bg-[#0b3a2a] font-semibold text-white' : 'text-[#c7d3ea] hover:bg-white/5'}`}
               onClick={() => (r.run(), onDone?.())}
             >
               <Emoji name={PAST_EMOJI[r.key as ReplayKind]} size={18} /> <span>{r.label}</span>
@@ -117,7 +115,7 @@ function BottomExtras({ compact, onDone }: { compact?: boolean; onDone?: () => v
         ))}
         {demo.replay && (
           <li>
-            <button type="button" className="w-full rounded-lg px-3 py-1.5 text-left font-semibold text-[#6d28d9] hover:bg-violet-50" onClick={() => (demo.backLive(), onDone?.())}>
+            <button type="button" className="w-full rounded-lg px-2.5 py-1.5 text-left text-[13px] font-semibold text-[#4ade80] hover:bg-white/5" onClick={() => (demo.backLive(), onDone?.())}>
               {t.demoPlaces.backLive}
             </button>
           </li>
@@ -125,83 +123,69 @@ function BottomExtras({ compact, onDone }: { compact?: boolean; onDone?: () => v
       </Group>
       <button
         type="button"
-        className="flex w-full items-center gap-2 rounded-xl px-3 py-2 font-semibold hover:bg-violet-50"
+        className={ROW}
         onClick={() => {
           setProfile(null)
           onDone?.()
           nav(to('/welcome'))
         }}
       >
-        <Emoji name="people" size={22} /> {t.nav.switchRole}
+        <UserRound className="size-6 shrink-0" strokeWidth={1.7} aria-hidden /> {t.nav.switchRole}
       </button>
-      <NavLink to={to('/sources')} onClick={onDone} className="flex items-center gap-2 rounded-xl px-3 py-2 font-semibold hover:bg-violet-50">
-        <Emoji name="satellite" size={22} /> {t.nav.sources}
+      <NavLink to={to('/sources')} onClick={onDone} className={ROW}>
+        <Database className="size-6 shrink-0" strokeWidth={1.7} aria-hidden /> {t.nav.sources}
       </NavLink>
     </div>
   )
 }
 
-const COLLAPSE_KEY = 'bm:navSmall'
+function NavItems({ items, onDone }: { items: Item[]; onDone?: () => void }) {
+  const to = useTo()
+  return (
+    <ul className="space-y-1.5">
+      {items.map(({ to: path, label, Icon }) => (
+        <li key={path}>
+          <NavLink
+            to={to(path)}
+            end={path === '/'}
+            onClick={onDone}
+            className={({ isActive }) =>
+              `flex items-center gap-3.5 rounded-xl border px-4 py-3 text-[16px] transition-colors ${
+                isActive
+                  ? 'border-[#22c55e]/45 bg-gradient-to-r from-[#0b6b3f] to-[#075c36] font-semibold text-white shadow-[0_0_24px_-6px_rgb(34_197_94/0.55)]'
+                  : 'border-transparent font-medium text-[#dbe6f7] hover:bg-white/5'
+              }`
+            }
+          >
+            <Icon className="size-6 shrink-0" strokeWidth={1.8} aria-hidden />
+            <span className="truncate" title={label}>
+              {label}
+            </span>
+          </NavLink>
+        </li>
+      ))}
+    </ul>
+  )
+}
 
 export function Sidebar() {
   const { profile } = useApp()
-  const { t } = useI18n()
   const items = useNavItems(profile?.role ?? 'officer')
-  const to = useTo()
-  const [small, setSmall] = useState(() => {
-    try {
-      return localStorage.getItem(COLLAPSE_KEY) === '1'
-    } catch {
-      return false
-    }
-  })
-  const toggle = () => {
-    setSmall(!small)
-    try {
-      localStorage.setItem(COLLAPSE_KEY, small ? '0' : '1')
-    } catch {
-      /* not remembered */
-    }
-  }
   return (
     <nav
       aria-label="Main"
-      className={`glass sticky top-[var(--hdr,92px)] z-10 hidden h-[calc(100dvh-var(--hdr,92px))] shrink-0 flex-col overflow-y-auto border-r border-white/70 py-3 lg:flex ${small ? 'w-[4.5rem] px-2' : 'w-64 px-3'}`}
+      className="sticky top-[var(--hdr,84px)] z-10 hidden h-[calc(100dvh-var(--hdr,84px))] w-[248px] shrink-0 flex-col border-r border-[#16325c] bg-[#001229] lg:flex"
     >
-      <ul className="space-y-1.5 pb-4">
-        {items.map(({ to: path, label, emoji }) => (
-          <li key={path}>
-            <NavLink
-              to={to(path)}
-              end={path === '/'}
-              title={small ? label : undefined}
-              className={({ isActive }) =>
-                `group flex min-h-11 items-center gap-3 rounded-2xl py-1.5 text-[15px] font-semibold transition-all ${small ? 'justify-center px-0' : 'px-2.5'} ${
-                  isActive
-                    ? 'grad-brand text-white shadow-[0_10px_22px_-10px_rgb(192_38_211/0.8)]'
-                    : 'text-ink hover:bg-white hover:shadow-sm'
-                }`
-              }
-            >
-              {({ isActive }) => (
-                <>
-                  <span className={`grid size-8 shrink-0 place-items-center rounded-xl ${isActive ? 'bg-white/25' : 'bg-gradient-to-br from-violet-50 to-orange-50'}`}>
-                    <Emoji name={emoji} size={24} pop />
-                  </span>
-                  <span className={small ? 'sr-only' : 'truncate'} title={label}>{label}</span>
-                </>
-              )}
-            </NavLink>
-          </li>
-        ))}
-      </ul>
-      <div className="mt-auto">
-        <BottomExtras compact={small} />
+      <div className="flex-1 overflow-y-auto px-3 pt-4 pb-2">
+        <NavItems items={items} />
+        <div className="my-4 border-t border-[#16325c]" />
+        <BottomExtras />
       </div>
-      <button type="button" className={`btn btn-ghost btn-sm mt-2 shrink-0 text-muted ${small ? '!px-0' : 'justify-start'}`} onClick={toggle} aria-label={small ? t.nav.expand : t.nav.collapse}>
-        {small ? <PanelLeftOpen className="size-5" {...ICON} aria-hidden /> : <PanelLeftClose className="size-5" {...ICON} aria-hidden />}
-        {!small && <span className="text-sm">{t.nav.collapse}</span>}
-      </button>
+      {/* the worker looking at the city, from the design */}
+      <div aria-hidden className="relative h-[210px] shrink-0 overflow-hidden">
+        <img src="/art/worker-scene.png" alt="" className="absolute inset-x-0 bottom-0 w-full object-cover object-top" draggable={false} />
+        <div className="absolute inset-x-0 top-0 h-16 bg-gradient-to-b from-[#001229] to-transparent" />
+      </div>
     </nav>
   )
 }
@@ -212,23 +196,19 @@ export function BottomBar({ onMore }: { onMore: () => void }) {
   const to = useTo()
   const items = useNavItems(profile?.role ?? 'officer').slice(0, 4)
   return (
-    <nav aria-label="Tabs" className="glass pb-safe fixed inset-x-0 bottom-0 z-40 border-t border-white/70 shadow-[0_-10px_30px_-18px_rgb(76_29_149/0.45)] lg:hidden">
+    <nav aria-label="Tabs" className="glass pb-safe fixed inset-x-0 bottom-0 z-40 border-t border-[#16325c] lg:hidden">
       <ul className="mx-auto grid max-w-lg grid-cols-5">
-        {items.map(({ to: path, label, emoji }) => (
+        {items.map(({ to: path, label, Icon }) => (
           <li key={path}>
             <NavLink
               to={to(path)}
               end={path === '/'}
-              className={({ isActive }) => `flex flex-col items-center gap-0.5 px-1 pt-1.5 pb-1 text-[11px] leading-tight font-semibold ${isActive ? 'text-[#6d28d9]' : 'text-muted'}`}
+              className={({ isActive }) => `flex flex-col items-center gap-0.5 px-1 pt-1.5 pb-1 text-[11px] leading-tight font-semibold ${isActive ? 'text-[#4ade80]' : 'text-[#93a4c3]'}`}
             >
               {({ isActive }) => (
                 <>
-                  <span
-                    className={`grid h-9 w-12 place-items-center rounded-2xl transition-all duration-300 ${
-                      isActive ? 'grad-brand -translate-y-1 shadow-[0_8px_18px_-8px_rgb(192_38_211/0.9)]' : ''
-                    }`}
-                  >
-                    <Emoji name={emoji} size={isActive ? 26 : 24} />
+                  <span className={`grid h-8 w-12 place-items-center rounded-xl ${isActive ? 'bg-gradient-to-r from-[#0b6b3f] to-[#075c36] text-white' : ''}`}>
+                    <Icon className="size-5" strokeWidth={1.9} aria-hidden />
                   </span>
                   <span className="line-clamp-2 text-center">{label}</span>
                 </>
@@ -237,9 +217,9 @@ export function BottomBar({ onMore }: { onMore: () => void }) {
           </li>
         ))}
         <li>
-          <button type="button" onClick={onMore} className="flex w-full flex-col items-center gap-0.5 px-1 pt-1.5 pb-1 text-[11px] font-semibold text-muted">
-            <span className="grid h-9 w-12 place-items-center">
-              <Emoji name="sparkles" size={24} />
+          <button type="button" onClick={onMore} className="flex w-full flex-col items-center gap-0.5 px-1 pt-1.5 pb-1 text-[11px] font-semibold text-[#93a4c3]">
+            <span className="grid h-8 w-12 place-items-center">
+              <MoreHorizontal className="size-5" {...ICON} aria-hidden />
             </span>
             {t.nav.more}
           </button>
@@ -252,7 +232,6 @@ export function BottomBar({ onMore }: { onMore: () => void }) {
 export function MoreSheet({ open, onClose }: { open: boolean; onClose: () => void }) {
   const { profile, wx, refresh } = useApp()
   const { t } = useI18n()
-  const to = useTo()
   const items = useNavItems(profile?.role ?? 'officer')
   return (
     <Sheet open={open} onClose={onClose} title={t.nav.more}>
@@ -265,26 +244,9 @@ export function MoreSheet({ open, onClose }: { open: boolean; onClose: () => voi
           </button>
         )}
       </div>
-      <ul className="mb-3 grid grid-cols-2 gap-2">
-        {items.map(({ to: path, label, emoji }) => (
-          <li key={path}>
-            <NavLink
-              to={to(path)}
-              end={path === '/'}
-              onClick={onClose}
-              className={({ isActive }) =>
-                `lift flex items-center gap-2 rounded-2xl border px-3 py-2.5 font-semibold ${isActive ? 'grad-brand border-transparent text-white' : 'border-line bg-white'}`
-              }
-            >
-              <Emoji name={emoji} size={26} pop /> {label}
-            </NavLink>
-          </li>
-        ))}
-      </ul>
+      <NavItems items={items} onDone={onClose} />
+      <div className="my-3 border-t border-[#16325c]" />
       <BottomExtras onDone={onClose} />
-      <p className="mt-4 flex items-center gap-2 text-xs text-muted">
-        <Emoji name="sunrise" size={18} /> {t.app.tagline}
-      </p>
     </Sheet>
   )
 }

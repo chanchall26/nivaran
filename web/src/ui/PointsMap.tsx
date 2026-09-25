@@ -1,5 +1,5 @@
 /**
- * Map of points where people work outside. MapLibre with CARTO light tiles (no key).
+ * Map of points where people work outside. MapLibre with CARTO Dark Matter tiles (no key).
  * Each marker is a real button with a colour and size set by the layer being shown (danger
  * today, fire risk tonight, where to plant); a flame badge marks fire risk tonight.
  */
@@ -9,7 +9,7 @@ import { useEffect, useRef } from 'react'
 
 maplibregl.setWorkerUrl(maplibreWorkerUrl)
 
-const STYLE = 'https://basemaps.cartocdn.com/gl/positron-gl-style/style.json'
+const STYLE = 'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json'
 const NEAR_KM = 2.5
 
 export interface MapMarker {
@@ -68,8 +68,8 @@ export function PointsMap({
     m.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'bottom-right')
     m.on('load', () => {
       m.addSource('near', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } })
-      m.addLayer({ id: 'near-fill', type: 'fill', source: 'near', paint: { 'fill-color': '#1f6feb', 'fill-opacity': 0.06 } })
-      m.addLayer({ id: 'near-line', type: 'line', source: 'near', paint: { 'line-color': '#1f6feb', 'line-width': 1.5, 'line-dasharray': [3, 2] } })
+      m.addLayer({ id: 'near-fill', type: 'fill', source: 'near', paint: { 'fill-color': '#3b82f6', 'fill-opacity': 0.1 } })
+      m.addLayer({ id: 'near-line', type: 'line', source: 'near', paint: { 'line-color': '#60a5fa', 'line-width': 1.5, 'line-dasharray': [3, 2] } })
       readyRef.current = true
       pending.current.splice(0).forEach((f) => f())
     })
@@ -92,7 +92,7 @@ export function PointsMap({
     markers.current = []
     // the place itself
     const me = document.createElement('div')
-    me.className = 'size-3.5 rounded-full border-2 border-white bg-[#1f6feb] shadow'
+    me.className = 'size-3.5 rounded-full border-2 border-white bg-[#3b82f6] shadow-[0_0_0_4px_rgb(59_130_246/0.35)]'
     me.setAttribute('aria-hidden', 'true')
     markers.current.push(new maplibregl.Marker({ element: me }).setLngLat([center.lon, center.lat]).addTo(m))
     // big markers first, so small ones stay clickable on top
@@ -103,7 +103,7 @@ export function PointsMap({
       const size = (mp.size ?? 20) + (sel ? 6 : 0)
       b.setAttribute('aria-label', mp.label)
       b.title = mp.label
-      b.style.cssText = `position:relative;width:${size}px;height:${size}px;border-radius:999px;background:${mp.color};border:${sel ? 3 : 2}px solid ${sel ? '#1B2330' : '#fff'};box-shadow:0 1px 3px rgb(0 0 0 / .35);cursor:pointer;padding:0`
+      b.style.cssText = `position:relative;width:${size}px;height:${size}px;border-radius:999px;background:${mp.color};border:${sel ? 3 : 2}px solid #fff;box-shadow:${sel ? '0 0 0 4px #38bdf8, 0 2px 10px rgb(0 0 0 / .6)' : '0 1px 4px rgb(0 0 0 / .6)'};cursor:pointer;padding:0`
       if (mp.badge) {
         const f = document.createElement('span')
         f.style.cssText = `position:absolute;top:-9px;right:-9px;width:17px;height:17px;border-radius:999px;background:${mp.badge === 'fire-high' ? '#D7263D' : '#F07F13'};display:flex;align-items:center;justify-content:center;border:1.5px solid #fff`

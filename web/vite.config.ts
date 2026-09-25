@@ -42,6 +42,12 @@ export default defineConfig({
             options: { cacheName: 'map-tiles', expiration: { maxEntries: 1500, maxAgeSeconds: 30 * 86400 } },
           },
           {
+            // satellite tiles for the worker map (Sentinel-2 cloudless by EOX)
+            urlPattern: ({ url }) => url.hostname === 'tiles.maps.eox.at',
+            handler: 'CacheFirst',
+            options: { cacheName: 'sat-tiles', expiration: { maxEntries: 600, maxAgeSeconds: 30 * 86400 } },
+          },
+          {
             urlPattern: ({ url }) => url.origin === 'https://fonts.googleapis.com' || url.origin === 'https://fonts.gstatic.com',
             handler: 'CacheFirst',
             options: { cacheName: 'fonts', expiration: { maxEntries: 30, maxAgeSeconds: 365 * 86400 } },

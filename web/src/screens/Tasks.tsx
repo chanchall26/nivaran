@@ -53,11 +53,11 @@ function PrecheckBox({ task }: { task: Task }) {
     <fieldset className="mt-2 rounded-lg border border-line p-3">
       <legend className="px-1 text-sm font-semibold">{t.tasks.pre}</legend>
       <label className="flex items-center gap-2 py-1">
-        <input type="checkbox" className="size-4 accent-[#1b2330]" checked={p.socket} onChange={(e) => set({ socket: e.target.checked })} />
+        <input type="checkbox" className="size-4 accent-[#22c55e]" checked={p.socket} onChange={(e) => set({ socket: e.target.checked })} />
         <span className="text-sm">{t.tasks.preSocket}</span>
       </label>
       <label className="flex items-center gap-2 py-1">
-        <input type="checkbox" className="size-4 accent-[#1b2330]" checked={p.bill} onChange={(e) => set({ bill: e.target.checked })} />
+        <input type="checkbox" className="size-4 accent-[#22c55e]" checked={p.bill} onChange={(e) => set({ bill: e.target.checked })} />
         <span className="text-sm">{t.tasks.preBill}</span>
       </label>
       <label className="mt-1 block">
@@ -239,7 +239,7 @@ export default function Tasks() {
   return (
     <div className="space-y-4">
       <h1 className="font-display text-[28px] font-bold">{t.tasks.title}</h1>
-      <p className="min-h-6 font-semibold text-[#14663b]" role="status">
+      <p className="min-h-6 font-semibold text-[#86efac]" role="status">
         {msg}
       </p>
       {tasks.length > 0 && (

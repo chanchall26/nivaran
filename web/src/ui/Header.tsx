@@ -1,14 +1,12 @@
-import { Menu, RefreshCw, WifiOff } from 'lucide-react'
-import { useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { ChevronDown, Menu, Pointer, RefreshCw, Settings, UserRound, Users, WifiOff } from 'lucide-react'
+import { useEffect, useId, useRef, useState } from 'react'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useApp, useDay } from '../ctx'
 import { useI18n } from '../i18n'
-import { ago, clockDate, clockTime, istToday, longDate } from '../lib/ist'
-import { AQI_COLOR, aqiCategory, condColor, conditionOf, rituOf } from '../lib/risk'
-import { modeChips } from './Condition'
-import { AqiDot, ICON, Skel, Src, useWxText } from './atoms'
-import { Emoji, wxEmoji, type EmojiName } from './Emoji'
-import { StationBoard } from './StationBoard'
+import { ago, clockDate, clockTime } from '../lib/ist'
+import { condColor, conditionOf } from '../lib/risk'
+import { ICON, Skel, Src } from './atoms'
+import { Emoji, wxEmoji } from './Emoji'
 
 export function useNow(every = 30_000) {
   const [now, setNow] = useState(() => new Date())
@@ -19,230 +17,228 @@ export function useNow(every = 30_000) {
   return now
 }
 
-function Logo() {
+/** The green map pin of the design. */
+export function PinGreen({ size = 34 }: { size?: number }) {
+  // own gradient id per pin: the desktop and phone headers both draw one, and one of them is always hidden
+  const id = `pin-${useId().replace(/[^\w-]/g, '')}`
   return (
-    <span className="grad-sunrise grid size-10 shrink-0 place-items-center rounded-2xl shadow-[0_8px_18px_-8px_rgb(219_39_119/0.8)] ring-1 ring-white/50">
-      <Emoji name="sunrise" size={28} eager />
-    </span>
+    <svg viewBox="0 0 32 40" width={size * 0.8} height={size} aria-hidden className="shrink-0 drop-shadow-[0_6px_10px_rgb(34_197_94/0.45)]">
+      <defs>
+        <linearGradient id={id} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stopColor="#4ade80" />
+          <stop offset="1" stopColor="#16a34a" />
+        </linearGradient>
+      </defs>
+      <path d="M16 1C8 1 2 7.2 2 15c0 10.2 12.4 22.6 13 23.2a1.4 1.4 0 0 0 2 0C17.6 37.6 30 25.2 30 15 30 7.2 24 1 16 1z" fill={`url(#${id})`} />
+      <circle cx="16" cy="15" r="5.2" fill="#ecfdf5" />
+    </svg>
   )
 }
 
-const ROLE_EMOJI: Record<string, EmojiName> = { officer: 'building', partner: 'handshake', worker: 'worker' }
-
-export function LangSwitch() {
+export function LangSwitch({ plain }: { plain?: boolean }) {
   const { lang, setLang } = useI18n()
   return (
     <button
       type="button"
-      className="btn btn-line btn-sm min-w-[4.5rem] gap-1.5 font-bold"
+      className={plain ? 'rounded-lg px-2 py-1 text-lg font-semibold text-ink hover:bg-white/5' : 'btn btn-line btn-sm min-w-[4.5rem] font-bold'}
       onClick={() => setLang(lang === 'en' ? 'hi' : 'en')}
       aria-label={lang === 'en' ? 'हिंदी में बदलें' : 'Switch to English'}
     >
-      <Emoji name="globe" size={18} /> {lang === 'en' ? 'हिंदी' : 'EN'}
+      {lang === 'en' ? 'हिंदी' : 'English'}
     </button>
   )
 }
 
+function RoleMenu() {
+  const { profile, setProfile } = useApp()
+  const { t } = useI18n()
+  const nav = useNavigate()
+  const { search } = useLocation()
+  const [open, setOpen] = useState(false)
+  const box = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    if (!open) return
+    const close = (e: Event) => box.current && !box.current.contains(e.target as Node) && setOpen(false)
+    const esc = (e: KeyboardEvent) => e.key === 'Escape' && setOpen(false)
+    document.addEventListener('pointerdown', close)
+    document.addEventListener('keydown', esc)
+    return () => {
+      document.removeEventListener('pointerdown', close)
+      document.removeEventListener('keydown', esc)
+    }
+  }, [open])
+  if (!profile) return null
+  return (
+    <div ref={box} className="relative">
+      <button
+        type="button"
+        aria-haspopup="menu"
+        aria-expanded={open}
+        onClick={() => setOpen(!open)}
+        className="flex items-center gap-3 rounded-xl px-2 py-1.5 hover:bg-white/5"
+      >
+        <UserRound className="size-8 text-[#9cc3ff]" strokeWidth={1.6} aria-hidden />
+        <span className="text-[17px] font-semibold">{t.role[profile.role]}</span>
+        <ChevronDown className={`size-4 text-muted transition-transform ${open ? 'rotate-180' : ''}`} {...ICON} aria-hidden />
+      </button>
+      {open && (
+        <div role="menu" className="pop-in absolute right-0 z-50 mt-2 w-56 overflow-hidden rounded-xl border border-line bg-paper py-1 shadow-2xl">
+          <Link role="menuitem" to={{ pathname: '/settings', search }} onClick={() => setOpen(false)} className="flex items-center gap-2.5 px-3.5 py-2.5 hover:bg-white/5">
+            <Settings className="size-4" {...ICON} aria-hidden /> {t.nav.settings}
+          </Link>
+          <button
+            role="menuitem"
+            type="button"
+            onClick={() => {
+              setOpen(false)
+              setProfile(null)
+              nav({ pathname: '/welcome', search })
+            }}
+            className="flex w-full items-center gap-2.5 px-3.5 py-2.5 text-left hover:bg-white/5"
+          >
+            <Users className="size-4" {...ICON} aria-hidden /> {t.nav.switchRole}
+          </button>
+        </div>
+      )}
+    </div>
+  )
+}
+
+const Divider = () => <span aria-hidden className="hidden h-12 w-px shrink-0 bg-[#16325c] lg:block" />
+
 export function Header({ onPlace, onMenu }: { onPlace: () => void; onMenu: () => void }) {
-  const { place, wx, wxStatus, refresh, profile, replay, startDate } = useApp()
-  const { day, next, modes } = useDay(0)
+  const { place, wx, wxStatus, refresh, replay } = useApp()
+  const { day, next } = useDay(0)
   const { t, f, lang } = useI18n()
-  const wxText = useWxText()
   const now = useNow()
   const c = wx?.data.current
   // no data and no saved copy: show nothing rather than a skeleton that never ends
   const failed = wxStatus === 'error' && !wx
-  const air = wx?.data.air
-  const month = Number((startDate || istToday()).slice(5, 7))
   const info = day ? conditionOf(day, next) : null
-  const cond = info?.cond ?? 'mild'
-  const chips = modeChips(modes, cond, t)
-  const modeTint = chips[0].color
-  // the colour strip under the header follows today's screen (condition)
-  const tint = info ? condColor(info) : '#d5dce0'
+  const tint = info ? condColor(info) : '#16325c'
   const elev = wx?.data.elevation
-  const board = (size: 'sm' | 'wide' | 'md') => (
-    <StationBoard
-      hi={place.nameHi}
-      en={place.name}
-      small={elev != null ? (lang === 'hi' ? `समुद्र तल से ऊंचाई: ${Math.round(elev)} मी` : `Height above sea level: ${Math.round(elev)} m`) : undefined}
-      size={size}
-    />
-  )
+  const name = lang === 'hi' ? place.nameHi : place.name
+  const loc = lang === 'hi' ? 'hi-IN' : 'en-IN'
   // replays show the real date being replayed instead of today's clock
-  const timeMain = replay && wx?.data.replayDate ? longDate(wx.data.replayDate, lang) : clockTime(now, lang)
-  const timeSub = replay ? t.src.replayShort : clockDate(now, lang)
-  // phones: "25 Dec 2024" fits on one line; the source label already says "Real past day"
-  const timeShort =
-    replay && wx?.data.replayDate
-      ? new Date(wx.data.replayDate + 'T00:00:00Z').toLocaleDateString(lang === 'hi' ? 'hi-IN' : 'en-IN', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' })
-      : timeMain
+  const dateLine = replay && wx?.data.replayDate
+    ? new Date(wx.data.replayDate + 'T00:00:00Z').toLocaleDateString(loc, { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' })
+    : now.toLocaleDateString(loc, { weekday: 'short', day: 'numeric', month: 'short', timeZone: 'Asia/Kolkata' })
 
-  const modeChip = (
-    <span className="chip font-semibold" style={{ borderColor: modeTint, boxShadow: `inset 0 0 0 1px ${modeTint}` }}>
-      <span aria-hidden className="size-2 rounded-full" style={{ background: modeTint }} />
-      {chips[0].label}
-      {chips[1] && <span className="text-muted">+ {chips[1].label}</span>}
-    </span>
-  )
-  // honest label for where today's numbers come from
+  // honest label for where today's numbers come from: Live / Saved forecast / Real past day
   const savedAt = wx ? new Date(wx.savedAt) : null
   const savedText = savedAt
-    ? `${savedAt.toLocaleDateString(lang === 'hi' ? 'hi-IN' : 'en-IN', { day: 'numeric', month: 'short', timeZone: 'Asia/Kolkata' })}, ${clockTime(savedAt, lang)}`
+    ? `${savedAt.toLocaleDateString(loc, { day: 'numeric', month: 'short', timeZone: 'Asia/Kolkata' })}, ${clockTime(savedAt, lang)}`
     : ''
-  const source = (short: boolean) => !wx ? null : replay ? (
-    <span className="rounded-full bg-mist px-2 py-0.5 text-xs font-semibold text-muted">{t.header.realPast}</span>
-  ) : wx.from === 'network' && !wx.stale ? (
-    <span className="flex items-center gap-1.5 text-xs font-semibold text-[#157a45]">
-      <span className="live-dot" aria-hidden /> {t.header.live}
-    </span>
-  ) : (
-    <span className="rounded-full bg-mist px-2 py-0.5 text-xs font-semibold text-muted" title={f(t.header.saved, { time: savedText })}>
-      {short ? t.header.savedShort : f(t.header.saved, { time: savedText })}
-    </span>
-  )
-  const updated = wx ? (
-    <button type="button" className="btn btn-ghost btn-sm !min-h-7 !py-0 whitespace-nowrap text-muted" onClick={refresh} title={t.header.refresh}>
-      <RefreshCw className={`size-4 ${wxStatus === 'loading' ? 'animate-spin' : ''}`} {...ICON} aria-hidden />
-      <span className="text-xs">{f(t.header.updated, { ago: ago(now.getTime() - wx.savedAt, lang) })}</span>
-      <span className="sr-only">{t.header.refresh}</span>
+  const isLive = !!wx && !replay && wx.from === 'network' && !wx.stale
+  const badgeText = !wx ? null : replay ? t.header.realPast : isLive ? t.header.live : t.header.savedShort
+  const badgeTitle = !wx ? '' : `${replay ? t.header.realPast : isLive ? t.header.live : f(t.header.saved, { time: savedText })} · ${f(t.header.updated, { ago: ago(now.getTime() - wx.savedAt, lang) })} · ${t.header.refresh}`
+  const badge = badgeText && (
+    <button
+      type="button"
+      onClick={refresh}
+      title={badgeTitle}
+      aria-label={badgeTitle}
+      className={`inline-flex items-center gap-1.5 rounded-md px-2 py-0.5 text-[13px] font-bold whitespace-nowrap ${
+        isLive ? 'bg-[#15803d] text-white' : replay ? 'bg-[#334155] text-white' : 'bg-[#92400e] text-white'
+      }`}
+    >
+      {wxStatus === 'loading' ? <RefreshCw className="size-3 animate-spin" {...ICON} aria-hidden /> : isLive ? <span className="live-dot !size-1.5" aria-hidden /> : null}
+      {badgeText}
     </button>
-  ) : null
-
-  const weatherChip = c ? (
-    <Src kind="live">
-      <span className="flex items-center gap-2 rounded-2xl bg-gradient-to-br from-sky-50 to-violet-50 py-1 pr-3 pl-1.5 ring-1 ring-sky-100">
-        <Emoji name={wxEmoji(c.code, c.isDay)} size={30} float slow />
-        <span className="num text-xl">{Math.round(c.temp)}°</span>
-        <span className="hidden text-xs leading-tight whitespace-nowrap xl:block">
-          <span className="block font-semibold">{f(t.header.feels, { t: Math.round(c.feels) })}</span>
-          <span className="block text-muted">{wxText(day?.code ?? c.code)}</span>
-        </span>
-      </span>
-    </Src>
-  ) : failed ? null : (
-    <Skel className="h-10 w-28 !rounded-2xl" />
   )
-  const airChip = wx ? (
-    air ? (
-      <Src text={t.header.aqiTip}>
-        <span
-          className="flex items-center gap-2 rounded-2xl py-1.5 pr-3 pl-2 ring-1 ring-black/5"
-          style={{ background: `linear-gradient(135deg, ${AQI_COLOR[aqiCategory(air.aqi)]}38, #ffffff)` }}
-        >
-          <Emoji name={air.aqi > 200 ? 'mask' : 'leaf'} size={24} />
-          <span className="text-xs leading-tight whitespace-nowrap">
-            <span className="flex items-center gap-1.5 font-semibold">
-              <AqiDot aqi={air.aqi} /> {f(t.header.air, { cat: t.aqi[aqiCategory(air.aqi)] })}
-            </span>
-            <span className="block text-muted">{f(t.header.aqiLine, { aqi: air.aqi, pm: Math.round(air.pm25) })}</span>
-          </span>
-        </span>
-      </Src>
-    ) : (
-      <span className="rounded-2xl border border-line bg-white/70 px-3 py-2 text-xs whitespace-nowrap text-muted">{replay ? t.src.airNoReplay : t.header.noAir}</span>
-    )
-  ) : failed ? null : (
-    <Skel className="h-10 w-32 !rounded-2xl" />
-  )
-  const dot = <span aria-hidden className="size-1 shrink-0 rounded-full bg-[#c4b5fd]" />
 
   return (
-    <header className="glass sticky top-0 z-40 border-b border-white/60 shadow-[0_8px_30px_-18px_rgb(76_29_149/0.45)]" style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}>
-      {/* ---------- desktop / laptop: controls on top, status underneath ---------- */}
-      <div className="hidden h-[72px] items-center gap-4 px-5 lg:flex">
-        <Link to="/" className="flex shrink-0 items-center gap-2.5" aria-label={t.app.name}>
-          <Logo />
-          <span className="hidden font-display text-xl leading-none font-bold xl:block">
-            <span className="grad-text">{t.app.name}</span>
-          </span>
+    <header className="glass sticky top-0 z-40 border-b border-[#16325c]" style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}>
+      {/* ---------- desktop / laptop ---------- */}
+      <div className="hidden h-[80px] items-center gap-6 px-6 lg:flex">
+        <Link to="/" className="flex shrink-0 items-center gap-3" aria-label={t.app.name}>
+          <Emoji name="sun_cloud" size={46} eager />
+          <span className="text-[26px] font-bold tracking-tight text-white">{t.app.name}</span>
         </Link>
-        <span aria-hidden className="hidden h-9 w-px bg-line xl:block" />
-        <button
-          type="button"
-          onClick={onPlace}
-          className="lift group flex min-w-0 items-center gap-3 rounded-2xl border border-line bg-white/85 py-1 pr-3.5 pl-1"
-          aria-label={`${t.header.changePlace}: ${lang === 'hi' ? place.nameHi : place.name}`}
-        >
-          {board('wide')}
-          <span className="flex items-center gap-1.5 text-sm font-semibold whitespace-nowrap text-ink">
-            <Emoji name="pin" size={18} pop /> {t.header.changePlace}
-          </span>
-        </button>
+        <Divider />
 
-        <div className="flex-1" />
+        <div className="flex min-w-0 items-center gap-4">
+          <PinGreen size={40} />
+          <div className="min-w-0 leading-tight">
+            <div className="truncate text-[18px] font-semibold text-white" title={name}>
+              {name}
+            </div>
+            {elev != null && <div className="mt-1 truncate text-[13px] text-[#c7d3ea]">{f(t.header.elevation, { m: Math.round(elev) })}</div>}
+          </div>
+          <button type="button" onClick={onPlace} className="shrink-0 rounded-full border border-[#1f4f86] bg-[#04203f] px-5 py-2 text-[15px] font-semibold text-white hover:border-[#38bdf8]">
+            {t.header.changePlace}
+          </button>
+          <Pointer className="hidden size-7 shrink-0 text-[#9cc3ff] 2xl:block" strokeWidth={1.6} aria-hidden />
+        </div>
 
-        <div className="flex items-center gap-2.5">
-          {weatherChip}
-          {airChip}
-          <LangSwitch />
-          {profile && (
-            <Link to="/settings" className="chip lift !py-1.5 font-semibold" title={t.header.role}>
-              <Emoji name={ROLE_EMOJI[profile.role] ?? 'people'} size={20} pop /> <span className="hidden xl:inline">{t.role[profile.role]}</span>
-            </Link>
+        <Divider />
+        <div className="shrink-0 leading-tight">
+          <div className="text-[14px] text-[#c7d3ea]">{dateLine}</div>
+          <div className="mt-1 flex items-center gap-3">
+            <span className="text-[22px] font-bold text-white">{replay ? t.header.realPast : clockTime(now, lang)}</span>
+            {badge}
+          </div>
+        </div>
+
+        <Divider />
+        <div className="flex shrink-0 items-center">
+          {c ? (
+            <Src kind="live">
+              <span className="flex items-center gap-3">
+                <Emoji name={wxEmoji(c.code, c.isDay)} size={48} float slow />
+                <span className="leading-tight">
+                  <span className="block text-[26px] font-bold text-white">{Math.round(c.temp)}°</span>
+                  <span className="block text-[14px] text-[#c7d3ea]">{f(t.header.feels, { t: Math.round(c.feels) })}</span>
+                </span>
+              </span>
+            </Src>
+          ) : failed ? null : (
+            <Skel className="h-12 w-28" />
           )}
         </div>
-      </div>
 
-      <div className="hidden h-10 items-center gap-3 border-t border-white/70 bg-white/35 px-5 text-sm lg:flex">
-        {source(false)}
-        {dot}
-        <span className="flex items-baseline gap-2 whitespace-nowrap">
-          <b className="font-display">{timeMain}</b>
-          <span className="text-muted">{timeSub}</span>
-        </span>
-        {wx && dot}
-        {updated}
-        <div className="flex-1" />
-        <span className="flex items-center gap-2 whitespace-nowrap">
-          <Emoji name="leaf" size={16} />
-          <span className="text-xs font-semibold text-muted">{t.ritu[rituOf(month)]}</span>
-          {modeChip}
-        </span>
+        <Divider />
+        <LangSwitch plain />
+        <div className="ml-auto">
+          <RoleMenu />
+        </div>
       </div>
 
       {/* ---------- phone / tablet ---------- */}
-      <div className="px-3 pt-2 pb-1.5 lg:hidden">
-        <div className="flex items-center gap-2">
-          <button type="button" onClick={onPlace} className="min-w-0 shrink rounded-md" aria-label={`${t.header.changePlace}: ${place.name}`}>
-            {board('sm')}
+      <div className="px-3 pt-2 pb-2 lg:hidden">
+        <div className="flex items-center gap-2.5">
+          <Emoji name="sun_cloud" size={32} eager />
+          <button type="button" onClick={onPlace} className="flex min-w-0 flex-1 items-center gap-2 text-left" aria-label={`${t.header.changePlace}: ${name}`}>
+            <PinGreen size={24} />
+            <span className="min-w-0">
+              <span className="block truncate text-[15px] font-semibold text-white">{name}</span>
+              <span className="block text-[12px] text-[#9cc3ff]">{t.header.changePlace}</span>
+            </span>
           </button>
-          <span className="hidden shrink-0 sm:inline">{source(true)}</span>
-          <div className="ml-auto flex shrink-0 items-center gap-2">
-            {c ? (
-              <Src kind="live">
-                <span className="flex items-center gap-1">
-                  <Emoji name={wxEmoji(c.code, c.isDay)} size={28} float slow />
-                  <span className="num text-2xl">{Math.round(c.temp)}°</span>
-                </span>
-              </Src>
-            ) : (
-              (failed ? null : <Skel className="h-8 w-14" />)
-            )}
-            {air && (
-              <Src text={t.header.aqiTip}>
-                <span className="flex items-center gap-1 text-xs font-semibold">
-                  <AqiDot aqi={air.aqi} /> <span className="sr-only sm:not-sr-only">{t.aqi[aqiCategory(air.aqi)]}</span>
-                  <span className="sr-only">{f(t.header.aqiLine, { aqi: air.aqi, pm: Math.round(air.pm25) })}</span>
-                </span>
-              </Src>
-            )}
-            <button type="button" className="btn btn-ghost btn-sm !px-2" onClick={onMenu} aria-label={t.header.menu}>
-              <Menu className="size-6" {...ICON} aria-hidden />
-            </button>
-          </div>
+          {c ? (
+            <Src kind="live">
+              <span className="flex items-center gap-1">
+                <Emoji name={wxEmoji(c.code, c.isDay)} size={28} />
+                <span className="text-xl font-bold text-white">{Math.round(c.temp)}°</span>
+              </span>
+            </Src>
+          ) : failed ? null : (
+            <Skel className="h-8 w-14" />
+          )}
+          <button type="button" className="btn btn-ghost btn-sm !px-2" onClick={onMenu} aria-label={t.header.menu}>
+            <Menu className="size-6" {...ICON} aria-hidden />
+          </button>
         </div>
-        <div className="mt-1.5 flex items-center gap-2">
-          <span className="num text-lg font-bold whitespace-nowrap">{timeShort}</span>
-          {!replay && <span className="truncate text-xs text-muted">{timeSub}</span>}
-          <span className="shrink-0 sm:hidden">{source(true)}</span>
-          <span className="ml-auto">{modeChip}</span>
+        <div className="mt-1.5 flex items-center gap-2 text-[13px]">
+          <span className="text-[#c7d3ea]">{dateLine}</span>
+          {!replay && <span className="font-bold text-white">{clockTime(now, lang)}</span>}
+          {badge}
         </div>
       </div>
 
-      <div aria-hidden className="h-1 w-full" style={{ background: `linear-gradient(90deg, ${tint}, ${tint}cc 60%, #c026d3aa)` }} />
+      <div aria-hidden className="h-[3px] w-full" style={{ background: `linear-gradient(90deg, transparent, ${tint} 30%, ${tint} 70%, transparent)` }} />
       {wx?.stale && (
-        <div role="status" className="flex items-center justify-center gap-2 bg-gradient-to-r from-[#1e1b4b] to-[#4c1d95] px-3 py-1.5 text-center text-sm text-white">
+        <div role="status" className="flex items-center justify-center gap-2 bg-[#3b1520] px-3 py-1.5 text-center text-sm text-[#fecdd3]">
           <WifiOff className="size-4" {...ICON} aria-hidden />
           {f(typeof navigator !== 'undefined' && !navigator.onLine ? t.header.offline : t.header.refreshFail, {
             time: `${clockTime(new Date(wx.savedAt), lang)}, ${clockDate(new Date(wx.savedAt), lang)}`,

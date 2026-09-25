@@ -124,7 +124,7 @@ function Hero() {
 
       <div className="space-y-3">
         {c && (
-          <div className="pop-in inline-flex flex-wrap items-center gap-x-4 gap-y-2 rounded-2xl bg-white/95 px-4 py-3 text-ink shadow-xl">
+          <div className="pop-in inline-flex flex-wrap items-center gap-x-4 gap-y-2 rounded-2xl border border-white/20 bg-[#06152d]/85 px-4 py-3 text-white shadow-xl backdrop-blur">
             <span className="text-xs font-semibold text-muted">{f(L.today, { place: lang === 'hi' ? place.nameHi : place.name })}</span>
             <span className="flex items-center gap-2">
               <Emoji name={wxEmoji(c.code, c.isDay)} size={30} />
@@ -328,10 +328,10 @@ export default function Entry() {
                         set({ role: r, demo: false })
                       }}
                       className={`lift rise rise-${i + 1} group relative flex w-full items-center gap-4 rounded-2xl border-2 p-3.5 text-left transition-colors sm:p-4 ${
-                        on ? 'border-[#a855f7] bg-gradient-to-r from-violet-50 to-pink-50' : 'border-line bg-white hover:border-violet-200'
+                        on ? 'border-[#22c55e]/70 bg-[#0b3a2a]' : 'border-line bg-[#06152d] hover:border-[#2f5a9a]'
                       }`}
                     >
-                      <span className={`grid size-16 shrink-0 place-items-center rounded-2xl ${on ? 'grad-brand' : 'bg-gradient-to-br from-violet-100 via-pink-50 to-orange-100'}`}>
+                      <span className={`grid size-16 shrink-0 place-items-center rounded-2xl ${on ? 'grad-brand' : 'bg-[#0e2344]'}`}>
                         <Emoji name={ROLE_EMOJI[r]} size={46} pop eager />
                       </span>
                       <span className="min-w-0 flex-1">
@@ -352,7 +352,7 @@ export default function Entry() {
               <button type="button" className="btn btn-ink mt-6 w-full text-lg" disabled={!role} onClick={() => setStep(2)}>
                 {L.next}
               </button>
-              <div className="mt-6 rounded-2xl bg-gradient-to-r from-orange-50 via-pink-50 to-violet-50 p-4">
+              <div className="mt-6 rounded-2xl border border-line bg-[#06152d] p-4">
                 <p className="text-sm font-semibold">{L.demoTitle}</p>
                 <div className="mt-2 flex flex-wrap gap-2">
                   {roles.map(({ r, title }) => (
@@ -374,7 +374,7 @@ export default function Entry() {
               <p className="mt-1 text-muted">{L.placeHint}</p>
 
               {chosen ? (
-                <div className="pop-in mt-5 rounded-2xl border-2 border-[#a855f7] bg-gradient-to-br from-violet-50 via-white to-orange-50 p-4">
+                <div className="pop-in mt-5 rounded-2xl border-2 border-[#22c55e]/60 bg-[#06152d] p-4">
                   <div className="flex items-center justify-between gap-3">
                     <span className="text-sm font-semibold text-muted">{L.yourPlace}</span>
                     <button type="button" className="btn btn-ghost btn-sm" onClick={() => setFound(null)}>
@@ -385,10 +385,10 @@ export default function Entry() {
                     <StationBoard hi={chosen.nameHi} en={chosen.name} size="md" />
                     <div className="text-sm">
                       {chosen.region && <div className="font-semibold">{[chosen.region, chosen.pin].filter(Boolean).join(' · ')}</div>}
-                      <span className={`mt-1 inline-block rounded-full px-2.5 py-0.5 text-xs font-bold ${chosen.pilot ? 'grad-brand text-white' : 'bg-mist text-muted'}`}>
+                      <span className={`mt-1 inline-block rounded-full px-2.5 py-0.5 text-xs font-bold ${chosen.pilot ? 'bg-[#15803d] text-white' : 'bg-[#16325c] text-[#c7d3ea]'}`}>
                         {chosen.pilot ? t.picker.pilotCity : t.picker.weatherAir}
                       </span>
-                      {howLine && <div className="mt-1 flex items-center gap-1 text-muted"><Check className="size-4 text-[#16a34a]" strokeWidth={3} /> {howLine}</div>}
+                      {howLine && <div className="mt-1 flex items-center gap-1 text-muted"><Check className="size-4 text-[#4ade80]" strokeWidth={3} /> {howLine}</div>}
                     </div>
                   </div>
                 </div>
@@ -430,16 +430,16 @@ export default function Entry() {
                   </label>
 
                   {results && results.length > 0 && (
-                    <ul className="pop-in overflow-hidden rounded-2xl border border-line bg-white">
+                    <ul className="pop-in overflow-hidden rounded-2xl border border-line bg-[#06152d]">
                       {results.map((r) => (
                         <li key={`${r.lat},${r.lon},${r.name}`}>
-                          <button type="button" onClick={() => pickResult(r)} className="flex w-full items-center gap-3 px-3 py-2.5 text-left hover:bg-violet-50">
-                            <MapPin className="size-5 shrink-0 text-[#7c3aed]" {...ICON} aria-hidden />
+                          <button type="button" onClick={() => pickResult(r)} className="flex w-full items-center gap-3 px-3 py-2.5 text-left hover:bg-white/5">
+                            <MapPin className="size-5 shrink-0 text-[#4ade80]" {...ICON} aria-hidden />
                             <span className="min-w-0 flex-1">
                               <span className="block font-semibold">{lang === 'hi' ? r.nameHi : r.name}</span>
                               {r.region && <span className="block text-sm text-muted">{r.region}</span>}
                             </span>
-                            <span className={`rounded-full px-2 py-0.5 text-xs font-bold ${r.pilot ? 'grad-brand text-white' : 'bg-mist text-muted'}`}>
+                            <span className={`rounded-full px-2 py-0.5 text-xs font-bold ${r.pilot ? 'bg-[#15803d] text-white' : 'bg-[#16325c] text-[#c7d3ea]'}`}>
                               {r.pilot ? t.picker.pilotCity : t.picker.weatherAir}
                             </span>
                           </button>
@@ -456,7 +456,7 @@ export default function Entry() {
                           key={k}
                           type="button"
                           onClick={() => setFound({ place: PRESETS[k], how: 'preset' })}
-                          className="lift flex flex-col items-center gap-1 rounded-2xl border border-line bg-white px-2 py-3 text-center"
+                          className="lift flex flex-col items-center gap-1 rounded-2xl border border-line bg-[#06152d] px-2 py-3 text-center"
                         >
                           <Emoji name={PRESET_EMOJI[k]} size={40} pop />
                           <span className="text-sm leading-tight font-semibold">{k === 'leh' ? t.picker.lehDemo : lang === 'hi' ? PRESETS[k].nameHi.split(',').pop() : PRESETS[k].name.split(',').pop()}</span>
@@ -467,7 +467,7 @@ export default function Entry() {
                 </div>
               )}
 
-              <div aria-live="polite">{err && <p className="mt-4 rounded-xl bg-[#fdecee] px-3 py-2 text-sm font-medium text-[#8a1424]">{err}</p>}</div>
+              <div aria-live="polite">{err && <p className="mt-4 rounded-xl bg-[#3b1520] px-3 py-2 text-sm font-medium text-[#fecdd3]">{err}</p>}</div>
 
               <div className="mt-6 flex gap-3">
                 <button type="button" className="btn btn-line" onClick={() => setStep(1)}>
@@ -528,8 +528,8 @@ export default function Entry() {
 
               {role === 'worker' && (
                 <>
-                  <p className="flex items-center gap-2 rounded-2xl bg-gradient-to-r from-emerald-50 to-teal-50 px-3 py-2.5 font-semibold">
-                    <Lock className="size-4 text-[#0d9488]" {...ICON} aria-hidden /> {t.entry.noName}
+                  <p className="flex items-center gap-2 rounded-2xl border border-[#16a34a]/40 bg-[#06311f] px-3 py-2.5 font-semibold text-[#c7f0d6]">
+                    <Lock className="size-4 text-[#4ade80]" {...ICON} aria-hidden /> {t.entry.noName}
                   </p>
                   <Chips label={`${t.form.work} (${t.entry.optional})`} value={p.work} onChange={(v) => set({ work: v })} options={Object.entries(t.form.works) as [Work, string][]} />
                   <Chips label={`${t.form.shift} (${t.entry.optional})`} value={p.shift} onChange={(v) => set({ shift: v })} options={Object.entries(t.form.shifts) as [Shift, string][]} />

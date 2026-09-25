@@ -45,7 +45,7 @@ export function ProtectionLine({ row }: { row: Row }) {
     <span className="text-sm">
       {has.length > 0 && (
         <span>
-          <b className="text-[#157a45]">{t.who.has}:</b> {has.map((x) => t.who.guards[x.kind]).join(', ')}
+          <b className="text-[#4ade80]">{t.who.has}:</b> {has.map((x) => t.who.guards[x.kind]).join(', ')}
         </span>
       )}
       {partly.length > 0 && (
@@ -57,7 +57,7 @@ export function ProtectionLine({ row }: { row: Row }) {
       {missing.length > 0 && (
         <span>
           {(has.length > 0 || partly.length > 0) && ' · '}
-          <b className="text-[#b01f33]">{t.who.missing}:</b> {missing.map((x) => t.who.guards[x.kind]).join(', ')}
+          <b className="text-[#f87171]">{t.who.missing}:</b> {missing.map((x) => t.who.guards[x.kind]).join(', ')}
         </span>
       )}
     </span>
@@ -224,7 +224,7 @@ export function HistoryList({ pointId }: { pointId: string }) {
         <StateLine st={st} />
         <ol className="mt-1 space-y-0.5 border-l-2 border-line pl-3 text-xs">
           {items.slice(-8).map((it, i) => (
-            <li key={i} className={it.bad ? 'font-semibold text-[#8a1424]' : ''}>
+            <li key={i} className={it.bad ? 'font-semibold text-[#fca5a5]' : ''}>
               <span className="tabular text-muted">{new Date(it.at).toLocaleDateString(lang === 'hi' ? 'hi-IN' : 'en-IN', { day: 'numeric', month: 'short', timeZone: 'Asia/Kolkata' })}</span> {it.text}
             </li>
           ))}
@@ -309,7 +309,7 @@ export function ChecksPanel({ full }: { full?: boolean }) {
   return (
     <div className="space-y-5">
       <div className="grid gap-3 sm:grid-cols-2">
-        <Bar label={t.checks.delivered} value={delivered} max={delivered} color="#5b6770" />
+        <Bar label={t.checks.delivered} value={delivered} max={delivered} color="#93a4c3" />
         <Bar label={t.checks.confirmed} value={latestOk} max={delivered} color={LEVEL_COLOR[0]} />
       </div>
 

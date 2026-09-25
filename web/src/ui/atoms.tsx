@@ -103,7 +103,7 @@ export function useSrcLabel(kind?: string, text?: string) {
 export function DemoTag({ label }: { label?: string }) {
   const { t } = useI18n()
   return (
-    <span className="inline-flex items-center rounded-full bg-[#e2e6e9] px-2 py-0.5 text-xs font-semibold text-muted">
+    <span className="inline-flex items-center rounded-full bg-[#16325c] px-2 py-0.5 text-xs font-semibold text-[#c7d3ea]">
       {label ?? t.src.demo}
     </span>
   )
@@ -138,7 +138,7 @@ export function SectionHead({ children, right, sub, emoji }: { children: ReactNo
     <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
       <div className="flex min-w-0 items-center gap-3">
         {emoji && (
-          <span className="grid size-11 shrink-0 place-items-center rounded-2xl bg-gradient-to-br from-violet-100 via-pink-50 to-orange-100 shadow-inner">
+          <span className="grid size-11 shrink-0 place-items-center rounded-2xl border border-line bg-[#0e2344]">
             <Emoji name={emoji} size={30} pop />
           </span>
         )}
@@ -175,6 +175,6 @@ export function RulesInfo() {
 }
 
 /** Darker level colours for small text on white (AA contrast). */
-export const LEVEL_TEXT = ['#157a45', '#7a6000', '#a84f00', '#b01f33'] as const
+export const LEVEL_TEXT = ['#4ade80', '#facc15', '#fb923c', '#f87171'] as const
 
 export const inr = (n: number) => '₹' + Math.round(n).toLocaleString('en-IN')

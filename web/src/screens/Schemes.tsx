@@ -124,7 +124,7 @@ export default function Schemes() {
             {points.map((p) => (
               <li key={p.id}>
                 <label className="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 hover:bg-mist">
-                  <input type="checkbox" className="size-4 accent-[#1b2330]" checked={chosen.has(p.id)} onChange={() => toggle([p.id])} />
+                  <input type="checkbox" className="size-4 accent-[#22c55e]" checked={chosen.has(p.id)} onChange={() => toggle([p.id])} />
                   <span className="truncate text-sm">{pointName(p, lang)}</span>
                 </label>
               </li>
@@ -151,10 +151,10 @@ export default function Schemes() {
                 </button>
               ))}
             </div>
-            {planFor === 'auto' && !weekModes.length && <p className="mt-2 text-sm font-semibold text-[#8a6d00]">{t.schemes.mildHint}</p>}
+            {planFor === 'auto' && !weekModes.length && <p className="mt-2 text-sm font-semibold text-[#facc15]">{t.schemes.mildHint}</p>}
           </fieldset>
           <label className="mt-4 flex cursor-pointer items-start gap-2">
-            <input type="checkbox" className="mt-1 size-4 accent-[#1b2330]" checked={equal} onChange={(e) => (setEqual(e.target.checked), setPlan(null))} />
+            <input type="checkbox" className="mt-1 size-4 accent-[#22c55e]" checked={equal} onChange={(e) => (setEqual(e.target.checked), setPlan(null))} />
             <span>
               <span className="font-semibold">{t.schemes.equal}</span>
               <span className="block text-sm text-muted">{t.schemes.equalD}</span>
@@ -167,7 +167,7 @@ export default function Schemes() {
       </div>
 
       <PanelBox title={t.schemes.step3} right={<DemoTag label={t.src.demoCost} />}>
-        {applied != null && <p className="mb-3 rounded-lg bg-[#e6f4ec] px-3 py-2 font-semibold text-[#14663b]" role="status">{f(t.schemes.applied, { n: applied })}</p>}
+        {applied != null && <p className="mb-3 rounded-lg border border-[#16a34a]/40 bg-[#06311f] px-3 py-2 font-semibold text-[#86efac]" role="status">{f(t.schemes.applied, { n: applied })}</p>}
         {!plan ? (
           <p className="text-muted">{t.schemes.empty}</p>
         ) : !plan.picks.length ? (
@@ -267,7 +267,7 @@ function ShiftPanel({ rate }: { rate: number }) {
               <tr key={r.k} className="border-b border-line/60">
                 <td className="py-2 pr-3">{t.schemes.shiftRows[r.k]}</td>
                 <td className={`py-2 pr-3 text-right ${r.k === bestBefore ? 'font-bold' : ''}`}>{r.before}</td>
-                <td className={`py-2 text-right ${r.k === bestAfter ? 'font-bold text-[#157a45]' : ''}`}>{r.after}</td>
+                <td className={`py-2 text-right ${r.k === bestAfter ? 'font-bold text-[#4ade80]' : ''}`}>{r.after}</td>
               </tr>
             ))}
           </tbody>

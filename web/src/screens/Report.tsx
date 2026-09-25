@@ -143,9 +143,9 @@ export default function Report() {
                   <dt>{t.report.checked}</dt>
                   <dd className="num text-2xl font-bold">{monthly.checked}</dd>
                   <dt>{t.report.working}</dt>
-                  <dd className="num text-2xl font-bold text-[#157a45]">{monthly.working}</dd>
+                  <dd className="num text-2xl font-bold text-[#4ade80]">{monthly.working}</dd>
                   <dt>{t.report.notWorking}</dt>
-                  <dd className="num text-2xl font-bold text-[#b01f33]">{monthly.checked - monthly.working}</dd>
+                  <dd className="num text-2xl font-bold text-[#f87171]">{monthly.checked - monthly.working}</dd>
                   {monthly.trend && (
                     <>
                       <dt>{t.report.rate}</dt>
@@ -175,13 +175,13 @@ export default function Report() {
               <PanelBox title={f(t.report.csrLine, { n: csr.n })}>
                 <ul className="space-y-2 text-lg">
                   <li>
-                    <b className="num text-3xl text-[#157a45]">{csr.ok}</b> {f(t.report.csrOk, { n: '' }).trim()}
+                    <b className="num text-3xl text-[#4ade80]">{csr.ok}</b> {f(t.report.csrOk, { n: '' }).trim()}
                   </li>
                   <li>
                     <b className="num text-3xl">{csr.priority}</b> {f(t.report.csrPriority, { n: '' }).trim()}
                   </li>
                   <li>
-                    <b className="num text-3xl text-[#b01f33]">{csr.fail}</b> {f(t.report.csrFail, { n: '' }).trim()}
+                    <b className="num text-3xl text-[#f87171]">{csr.fail}</b> {f(t.report.csrFail, { n: '' }).trim()}
                   </li>
                   <li>
                     <b className="num text-3xl text-muted">{csr.never}</b> {f(t.report.csrUnchecked, { n: '' }).trim()}

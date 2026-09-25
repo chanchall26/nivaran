@@ -80,7 +80,7 @@ function SceneSvg({ scene, date, minutes, best }: { scene: Scene; date: string; 
   const P = (x: number, y: number) => `${(150 + x * k).toFixed(1)},${(150 - y * k).toFixed(1)}`
   const poly = (pts: [number, number][]) => pts.map(([x, y]) => P(x, y)).join(' ')
   return (
-    <svg viewBox="0 0 300 300" className="w-full max-w-[300px] rounded-lg border border-line bg-[#f4f1e8]" role="img" aria-label={f(t.shade.at, { time: timeLabel(minutes, lang) })}>
+    <svg viewBox="0 0 300 300" className="w-full max-w-[300px] rounded-lg border border-line bg-[#2a3a52]" role="img" aria-label={f(t.shade.at, { time: timeLabel(minutes, lang) })}>
       <defs>
         <clipPath id="sc-clip">
           <rect width="300" height="300" />
@@ -88,31 +88,31 @@ function SceneSvg({ scene, date, minutes, best }: { scene: Scene; date: string; 
       </defs>
       <g clipPath="url(#sc-clip)">
         {sh.buildings.map((b, i) => (
-          <polygon key={`s${i}`} points={poly(b)} fill="#3d4a5c" fillOpacity={0.35} />
+          <polygon key={`s${i}`} points={poly(b)} fill="#000814" fillOpacity={0.62} />
         ))}
         {sh.trees.map((tr, i) => (
-          <circle key={`ts${i}`} cx={150 + tr.c[0] * k} cy={150 - tr.c[1] * k} r={tr.r * k} fill="#3d4a5c" fillOpacity={0.3} />
+          <circle key={`ts${i}`} cx={150 + tr.c[0] * k} cy={150 - tr.c[1] * k} r={tr.r * k} fill="#000814" fillOpacity={0.55} />
         ))}
         {scene.buildings.map((b, i) => (
-          <polygon key={`b${i}`} points={poly(b.poly)} fill="#c9c2b2" stroke="#8d8676" strokeWidth={0.8} />
+          <polygon key={`b${i}`} points={poly(b.poly)} fill="#8a9bb8" stroke="#c7d3ea" strokeWidth={0.8} />
         ))}
         {scene.trees.map(([x, y], i) => (
-          <circle key={`t${i}`} cx={150 + x * k} cy={150 - y * k} r={3 * k * 0.9} fill="#4c9a5b" fillOpacity={0.75} />
+          <circle key={`t${i}`} cx={150 + x * k} cy={150 - y * k} r={3 * k * 0.9} fill="#22c55e" fillOpacity={0.8} />
         ))}
         {best && (
           <>
-            <line x1={150} y1={150} x2={150 + best[0] * k} y2={150 - best[1] * k} stroke="#1B2330" strokeDasharray="4 3" strokeWidth={1.5} />
-            <circle cx={150 + best[0] * k} cy={150 - best[1] * k} r={7} fill="none" stroke="#157a45" strokeWidth={3} />
+            <line x1={150} y1={150} x2={150 + best[0] * k} y2={150 - best[1] * k} stroke="#eaf2fb" strokeDasharray="4 3" strokeWidth={1.5} />
+            <circle cx={150 + best[0] * k} cy={150 - best[1] * k} r={7} fill="none" stroke="#4ade80" strokeWidth={3} />
           </>
         )}
         <circle cx={150} cy={150} r={6} fill="#F07F13" stroke="#fff" strokeWidth={2} />
       </g>
-      <text x={286} y={22} textAnchor="middle" fontSize="12" fontWeight="700" fill="#1B2330">
+      <text x={286} y={22} textAnchor="middle" fontSize="12" fontWeight="700" fill="#eaf2fb">
         N
       </text>
-      <path d="M286 26 l-5 12 h10 z" fill="#1B2330" />
-      <line x1={12} y1={288} x2={12 + 20 * k} y2={288} stroke="#1B2330" strokeWidth={2} />
-      <text x={12} y={282} fontSize="10" fill="#1B2330">
+      <path d="M286 26 l-5 12 h10 z" fill="#eaf2fb" />
+      <line x1={12} y1={288} x2={12 + 20 * k} y2={288} stroke="#eaf2fb" strokeWidth={2} />
+      <text x={12} y={282} fontSize="10" fill="#eaf2fb">
         20 m
       </text>
     </svg>

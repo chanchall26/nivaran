@@ -128,7 +128,7 @@ export function PlacePicker({ open, onClose }: { open: boolean; onClose: () => v
       </button>
 
       <div aria-live="polite">
-        {err && <p className="mt-3 rounded-lg bg-[#fdecee] px-3 py-2 text-sm text-[#8a1424]">{err}</p>}
+        {err && <p className="mt-3 rounded-lg bg-[#3b1520] px-3 py-2 text-sm text-[#fecdd3]">{err}</p>}
         {busy === 'search' && <p className="mt-3 text-sm text-muted">{t.picker.searching}</p>}
       </div>
 

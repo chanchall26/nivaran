@@ -18,7 +18,7 @@ import { pct, pointName } from './shared'
 
 const KIND_COLOR: Record<PlantKind, string> = { trees: '#2E8B57', hedge: '#0CA3A3', both: '#6A4C93', windbreak: '#4A6FA5' }
 /** Darker shades of the same colours for small text on white (AA contrast). */
-const KIND_TEXT: Record<PlantKind, string> = { trees: '#236b44', hedge: '#06706f', both: '#5a3f80', windbreak: '#3a5a88' }
+const KIND_TEXT: Record<PlantKind, string> = { trees: '#4ade80', hedge: '#2dd4bf', both: '#c4b5fd', windbreak: '#93c5fd' }
 
 /** Satellite land cover per point for the pilot cities (data/cover, ESA WorldCover 2021). */
 function useCover(pilot: string | null) {

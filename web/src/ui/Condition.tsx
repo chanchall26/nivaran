@@ -140,7 +140,7 @@ export function FiveDay({ days, trend }: { days: Day[]; trend: string | null }) 
         {days.slice(0, 5).map((d) => {
           const l = dayLevel(d)
           return (
-            <li key={d.date} className="lift rounded-2xl border border-line bg-gradient-to-b from-white to-violet-50/60 px-1.5 py-2.5 text-center" title={f(t.five.worst, { level: t.level[l] })}>
+            <li key={d.date} className="lift rounded-2xl border border-line bg-[#06152d] px-1.5 py-2.5 text-center" title={f(t.five.worst, { level: t.level[l] })}>
               <div className="truncate text-xs font-semibold" title={weekday(d.date, lang)}>
                 {new Intl.DateTimeFormat(lang === 'hi' ? 'hi-IN' : 'en-IN', { weekday: 'short', timeZone: 'UTC' }).format(new Date(d.date + 'T00:00:00Z'))}
               </div>

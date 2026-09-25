@@ -39,16 +39,16 @@ export function AqiGauge({ aqi, label, after }: { aqi: number; label: string; af
           <path key={e} d={arc(angle(EDGES[i]), angle(e))} stroke={AQI_COLOR[i]} strokeWidth="18" fill="none" />
         ))}
         {after && (
-          <path d={band(Math.min(...after), Math.max(...after), R - 14)} stroke="#1b2330" strokeOpacity="0.28" strokeWidth="9" strokeLinecap="round" fill="none">
+          <path d={band(Math.min(...after), Math.max(...after), R - 14)} stroke="#eaf2fb" strokeOpacity="0.38" strokeWidth="9" strokeLinecap="round" fill="none">
             <title>{`${Math.min(...after)}-${Math.max(...after)}`}</title>
           </path>
         )}
-        <line x1={CX} y1={CY} x2={nx} y2={ny} stroke="#1b2330" strokeWidth="3.5" strokeLinecap="round" />
-        <circle cx={CX} cy={CY} r="6" fill="#1b2330" />
+        <line x1={CX} y1={CY} x2={nx} y2={ny} stroke="#eaf2fb" strokeWidth="3.5" strokeLinecap="round" />
+        <circle cx={CX} cy={CY} r="6" fill="#eaf2fb" />
         {[0, 100, 200, 300, 400, 500].map((v) => {
           const [x, y] = pt(angle(v), R + 14)
           return (
-            <text key={v} x={x} y={y + 3} textAnchor="middle" fontSize="8" fill="#5b6770">
+            <text key={v} x={x} y={y + 3} textAnchor="middle" fontSize="8" fill="#93a4c3">
               {v}
             </text>
           )
@@ -101,7 +101,7 @@ export function AirStrip({ day }: { day: Day }) {
             key={h.hour}
             className="rounded-[2px]"
             title={`${hourLabel(h.hour, lang)}: ${h.aqi != null ? `AQI ${h.aqi}, ${t.aqi[aqiCategory(h.aqi)]}` : '–'}`}
-            style={{ background: h.aqi != null ? AQI_COLOR[aqiCategory(h.aqi)] : '#e2e6e9' }}
+            style={{ background: h.aqi != null ? AQI_COLOR[aqiCategory(h.aqi)] : '#1e3a6b' }}
           />
         ))}
       </ol>
