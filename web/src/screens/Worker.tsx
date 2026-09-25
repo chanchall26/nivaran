@@ -292,7 +292,7 @@ export function WorkerToday() {
   const nowHour = useNowHour(0)
   const [shift, setShift] = useState<Shift>(profile?.shift ?? 'day')
   const [sel, setSel] = useState<number | null>(null)
-  const near = useNear(3)
+  const { rows: near, finding } = useNear(3)
   const to = useLinkTo()
 
   const name = lang === 'hi' ? place.nameHi : place.name
@@ -532,7 +532,7 @@ export function WorkerToday() {
                 {D.seeAll} <ArrowRight className="size-4" strokeWidth={2.2} aria-hidden />
               </Link>
             </div>
-            <NearRows rows={near} />
+            <NearRows rows={near} finding={finding} />
           </section>
         </div>
       </div>
@@ -599,7 +599,7 @@ interface NearRow {
   d: number
 }
 /** Water, shelters and hospitals from OpenStreetMap for any place (loaded once per place). */
-function useOsmHelp(): Point[] {
+function useOsmHelp(): { points: Point[]; done: boolean } {
   const { place } = useApp()
   const [help, setHelp] = useState<{ key: string; points: Point[] }>({ key: '', points: [] })
   const key = `${place.lat.toFixed(3)},${place.lon.toFixed(3)}`
@@ -621,13 +621,14 @@ function useOsmHelp(): Point[] {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [key])
-  return help.key === key ? help.points : []
+  return help.key === key ? { points: help.points, done: true } : { points: [], done: false }
 }
 
-function useNear(limit: number): NearRow[] | null {
+/** Nearby help, and whether OpenStreetMap is still being asked (it can take 20-40 s). */
+function useNear(limit: number): { rows: NearRow[] | null; finding: boolean } {
   const { place, pts } = useApp()
-  const osm = useOsmHelp()
-  return useMemo(() => {
+  const { points: osm, done } = useOsmHelp()
+  const rows = useMemo(() => {
     // still loading: skeleton; failed: whatever OSM help we have, or "none near"
     if (pts.status === 'loading' && !osm.length) return null
     const curated = (pts.points ?? []).filter((p) => p.offers?.length)
@@ -640,6 +641,7 @@ function useNear(limit: number): NearRow[] | null {
       .sort((a, b) => a.d - b.d)
       .slice(0, limit)
   }, [pts.points, pts.status, osm, place.lat, place.lon, limit])
+  return { rows, finding: !done }
 }
 
 /** Hospital red, shelter blue, water cyan, anything else green: the icon squares of the design. */
@@ -650,7 +652,7 @@ function nearIcon(p: Point): { bg: string; Icon: typeof Plus } {
   return { bg: '#0a9f5c', Icon: Plus }
 }
 
-function NearRows({ rows }: { rows: NearRow[] | null }) {
+function NearRows({ rows, finding }: { rows: NearRow[] | null; finding?: boolean }) {
   const { t, f, lang } = useI18n()
   const { place } = useApp()
   const D = LOOK[lang].dash
@@ -660,11 +662,21 @@ function NearRows({ rows }: { rows: NearRow[] | null }) {
       <a href="tel:14461" className="underline">{t.safety.shelterDelhi}</a>
     </p>
   )
-  if (!rows) return <Skel className="h-40 w-full" />
+  if (!rows)
+    return (
+      <>
+        <p className="py-2 text-[#c7d3ea]" role="status">
+          {t.worker.findingHelp}
+        </p>
+        <Skel className="h-32 w-full" />
+      </>
+    )
   if (!rows.length)
     return (
       <>
-        <p className="py-3 text-[#c7d3ea]">{t.worker.noneNear}</p>
+        <p className="py-3 text-[#c7d3ea]" role="status">
+          {finding ? t.worker.findingHelp : t.worker.noneNear}
+        </p>
         {helpline}
       </>
     )
@@ -700,11 +712,11 @@ function NearRows({ rows }: { rows: NearRow[] | null }) {
 
 export function NearList({ limit = 10 }: { limit?: number }) {
   const { t } = useI18n()
-  const rows = useNear(limit)
+  const { rows, finding } = useNear(limit)
   return (
     <section className="panel p-5">
       <h2 className="mb-2 text-[20px] font-bold">{t.worker.near}</h2>
-      <NearRows rows={rows} />
+      <NearRows rows={rows} finding={finding} />
     </section>
   )
 }
