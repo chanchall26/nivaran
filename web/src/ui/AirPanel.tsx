@@ -1,6 +1,7 @@
+import { useApp } from '../ctx'
 import { useI18n } from '../i18n'
 import { hourLabel } from '../lib/ist'
-import { AQI_COLOR, aqiCategory, airProblem, pm10Index, pm25Index, worstAirSpan, type Day } from '../lib/risk'
+import { airProblem, AQI_COLOR, aqiCategory, aqiParts, type Day, grapStage, inNcr, pm10Index, pm25Index, worstAirSpan } from '../lib/risk'
 import { Src } from './atoms'
 
 // CPCB bands on a 0-500 half circle, drawn in proportion to the AQI
@@ -124,13 +125,20 @@ const avg = (xs: (number | null)[]) => {
 /** Indian AQI for the day being shown: gauge, PM2.5 and PM10, what the real problem is, worst hours. */
 export function AirPanel({ day, now, after }: { day: Day; now?: { aqi: number; pm25: number; pm10: number } | null; after?: [number, number] | null }) {
   const { t, f, lang } = useI18n()
+  const { place } = useApp()
   const pm25 = avg(day.hours.map((h) => h.pm25))
   const pm10 = avg(day.hours.map((h) => h.pm10))
   if (day.aqi == null || pm25 == null || pm10 == null) return <p className="text-sm text-muted">{t.air.none}</p>
   // on a clean day there is no "problem" and no "worst hours" worth naming
   const bad = day.aqi > 100
-  const problem = bad ? airProblem(pm25, pm10) : null
+  const main = day.air?.main ?? null
+  const gasMain = main === 'o3' || main === 'no2' || main === 'so2' || main === 'co' ? main : null
+  const problem = bad && !gasMain ? airProblem(pm25, pm10) : null
   const worst = bad ? worstAirSpan(day) : null
+  // gases that matter today (index above 50), with their sub-index
+  const parts = aqiParts(day.air?.pm25, day.air?.pm10, day.air ?? {})
+  const gases = (['o3', 'no2', 'so2', 'co'] as const).filter((k) => parts[k] != null && (parts[k]! > 50 || k === main))
+  const grap = inNcr(place.lat, place.lon) ? grapStage(day.aqi) : null
   return (
     <div className="grid gap-4 sm:grid-cols-[16rem_1fr] sm:items-center">
       <div className="flex flex-col items-center">
@@ -144,10 +152,32 @@ export function AirPanel({ day, now, after }: { day: Day; now?: { aqi: number; p
       <div className="space-y-3">
         <PmBar label={t.air.pm25} value={pm25} index={pm25Index(pm25) ?? 0} />
         <PmBar label={t.air.pm10} value={pm10} index={pm10Index(pm10) ?? 0} />
+        {gases.length > 0 && (
+          <p className="text-sm text-muted">
+            {f(t.air.also, {
+              list: gases.map((k) => `${t.air.pollutant[k]} ${Math.round(k === 'co' ? (day.air?.co ?? 0) / 1000 : (day.air?.[k] ?? 0))}${k === 'co' ? ' mg/m³' : ' µg/m³'} (${f(t.air.index, { n: Math.round(parts[k] ?? 0) })})`).join(' · '),
+            })}
+          </p>
+        )}
+        {gasMain && day.aqi > 50 && (
+          <div>
+            <span className="chip font-bold">{f(t.air.sets, { p: t.air.pollutant[gasMain] })}</span>
+            <p className="mt-1 text-sm text-muted">{t.air.gasWhy[gasMain]}</p>
+          </div>
+        )}
         {problem && (
           <div>
             <span className="chip font-bold">{t.air.problem[problem]}</span>
             <p className="mt-1 text-sm text-muted">{t.air.problemWhy[problem]}</p>
+          </div>
+        )}
+        {grap && (
+          <div className="rounded-lg border border-line p-3">
+            <div className="font-semibold">{f(t.air.grap, { n: ['I', 'II', 'III', 'IV'][grap - 1] })}</div>
+            <p className="mt-1 text-sm">{t.air.grapDo[grap - 1]}</p>
+            <a className="mt-1 block text-xs text-muted underline" href="https://caqm.nic.in/index1.aspx?lsid=4168&lev=2&lid=4171&langid=1" target="_blank" rel="noreferrer">
+              {t.air.grapNote}
+            </a>
           </div>
         )}
         <AirStrip day={day} />

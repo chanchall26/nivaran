@@ -9,7 +9,7 @@ import { burningRisk, hourLevel, inShift, isNightHour, nightStats, type Burning,
 export type PointType =
   | 'atm' | 'bank' | 'hospital' | 'bus' | 'rail' | 'market' | 'fuel' | 'signal' | 'construction' | 'shelter' | 'labour' | 'gate' | 'water'
 export type Group = 'guard' | 'attendant' | 'vendor' | 'porter' | 'labour' | 'traffic' | 'worker' | 'homeless' | 'delivery' | 'driver'
-export type Offer = 'shade' | 'water' | 'shelter' | 'heater'
+export type Offer = 'shade' | 'water' | 'shelter' | 'heater' | 'medical'
 
 export interface Crew {
   group: Group
@@ -114,6 +114,25 @@ const STREET: Record<PointType, Pick<Point, 'street' | 'traffic' | 'shadeNow'>> 
 
 const PER_TYPE: Partial<Record<PointType, number>> = { atm: 3, bank: 2, hospital: 2, bus: 2, rail: 1, market: 3, fuel: 2, signal: 3, construction: 2 }
 
+// overpass-api.de and kumi.systems now answer browser requests with 406 and no CORS header;
+// these two answer with CORS (checked 25 Sep 2026). The old ones stay as a last resort.
+const MIRRORS = [
+  'https://maps.mail.ru/osm/tools/overpass/api/interpreter',
+  'https://overpass.private.coffee/api/interpreter',
+  'https://overpass-api.de/api/interpreter',
+  'https://overpass.kumi.systems/api/interpreter',
+]
+async function overpass(q: string): Promise<OsmEl[]> {
+  for (const m of MIRRORS) {
+    try {
+      return (await getJson<{ elements: OsmEl[] }>(m, { method: 'POST', body: 'data=' + encodeURIComponent(q) })).elements
+    } catch {
+      /* try the next mirror */
+    }
+  }
+  throw new Error('overpass')
+}
+
 /** Points around any Indian place from OpenStreetMap, with default people counts ("Estimated"). */
 export async function loadOsm(lat: number, lon: number): Promise<Point[]> {
   const r = 2000
@@ -124,24 +143,7 @@ export async function loadOsm(lat: number, lon: number): Promise<Point[]> {
     node(around:${r},${lat},${lon})[highway=traffic_signals];
     way(around:${r},${lat},${lon})[landuse=construction];
   );out center 400;`
-  // overpass-api.de and kumi.systems now answer browser requests with 406 and no CORS header;
-  // these two answer with CORS (checked 25 Sep 2026). The old ones stay as a last resort.
-  const mirrors = [
-    'https://maps.mail.ru/osm/tools/overpass/api/interpreter',
-    'https://overpass.private.coffee/api/interpreter',
-    'https://overpass-api.de/api/interpreter',
-    'https://overpass.kumi.systems/api/interpreter',
-  ]
-  let els: OsmEl[] | null = null
-  for (const m of mirrors) {
-    try {
-      els = (await getJson<{ elements: OsmEl[] }>(m, { method: 'POST', body: 'data=' + encodeURIComponent(q) })).elements
-      break
-    } catch {
-      /* try the next mirror */
-    }
-  }
-  if (!els) throw new Error('overpass')
+  const els = await overpass(q)
   const picked: Point[] = []
   const count: Partial<Record<PointType, number>> = {}
   const rows = els
@@ -190,6 +192,58 @@ export async function loadOsmCached(lat: number, lon: number): Promise<{ points:
     if (hit) return { ...hit, stale: true }
     throw err
   }
+}
+
+// ---------- help near me: water, night shelters, hospitals from OpenStreetMap ----------
+
+type HelpKind = 'water' | 'shelter' | 'medical'
+const HELP_TYPE: Record<HelpKind, PointType> = { water: 'water', shelter: 'shelter', medical: 'hospital' }
+function helpKind(t: Record<string, string>): HelpKind | null {
+  if (t.amenity === 'drinking_water' || t.amenity === 'water_point') return 'water'
+  if (t.social_facility === 'shelter' || (t.amenity === 'shelter' && t.shelter_type !== 'public_transport' && t.shelter_type !== 'picnic_shelter')) return t.social_facility === 'shelter' ? 'shelter' : null
+  if (t.amenity === 'hospital' || t.amenity === 'clinic') return 'medical'
+  return null
+}
+
+/**
+ * Drinking water, night shelters and hospitals within 3 km of any place (OpenStreetMap), the
+ * nearest few of each, as help points (no people). Cached a day per place.
+ */
+export async function loadHelpNear(lat: number, lon: number, names: Record<HelpKind, [string, string]>): Promise<Point[]> {
+  const key = `bm:help:${lat.toFixed(3)},${lon.toFixed(3)}`
+  try {
+    const hit = JSON.parse(localStorage.getItem(key) ?? 'null') as { savedAt: number; points: Point[] } | null
+    if (hit && Array.isArray(hit.points) && Date.now() - hit.savedAt < 86400_000) return hit.points
+  } catch {
+    /* not cached */
+  }
+  const r = 3000
+  const els = await overpass(`[out:json][timeout:20];(
+    node(around:${r},${lat},${lon})[amenity~"^(drinking_water|water_point|hospital|clinic)$"];
+    way(around:${r},${lat},${lon})[amenity~"^(hospital|clinic)$"];
+    nwr(around:${r},${lat},${lon})[social_facility=shelter];
+  );out center 300;`)
+  const byKind: Record<HelpKind, Point[]> = { water: [], shelter: [], medical: [] }
+  for (const e of els) {
+    const t = e.tags ?? {}
+    const k = helpKind(t)
+    const plat = e.lat ?? e.center?.lat
+    const plon = e.lon ?? e.center?.lon
+    if (!k || plat == null || plon == null) continue
+    const name = t.name || t['name:en'] || names[k][0]
+    byKind[k].push({
+      id: `help-${e.type}-${e.id}`, name, nameHi: t['name:hi'] || (t.name ? name : names[k][1]),
+      lat: plat, lon: plon, type: HELP_TYPE[k], ward: '', wardHi: '', people: [], offers: [k], osm: `${e.type}/${e.id}`, auto: true,
+    })
+  }
+  const near = (ps: Point[]) => ps.sort((a, b) => km(lat, lon, a.lat, a.lon) - km(lat, lon, b.lat, b.lon)).slice(0, 4)
+  const points = [...near(byKind.shelter), ...near(byKind.water), ...near(byKind.medical)]
+  try {
+    localStorage.setItem(key, JSON.stringify({ savedAt: Date.now(), points }))
+  } catch {
+    /* not cached */
+  }
+  return points
 }
 
 // ---------- danger at a point ----------

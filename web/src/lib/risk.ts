@@ -25,6 +25,11 @@ export interface Hour {
   wind: number
   pm25: number | null
   pm10: number | null
+  /** gases in µg/m³ as Open-Meteo gives them (CO too; converted to mg/m³ for the index) */
+  o3?: number | null
+  no2?: number | null
+  so2?: number | null
+  co?: number | null
   aqi: number | null
 }
 
@@ -39,8 +44,10 @@ export interface Day {
   rainSum: number
   sunrise?: string
   sunset?: string
-  /** Indian AQI from the day's mean PM2.5 / PM10 (CPCB uses 24-hour averages) */
+  /** Indian AQI, CPCB method: 24-hour means (PM, NO2, SO2), highest 8-hour mean (O3, CO) */
   aqi: number | null
+  /** the day's values behind the AQI, and the pollutant that sets it */
+  air?: DayAir
   /** most common WMO weather code in daylight hours, when known */
   code?: number
 }
@@ -69,13 +76,79 @@ function subIndex(c: number, bands: Band[]) {
   return 500
 }
 
-/** Indian AQI: the higher of the PM2.5 and PM10 sub-indices. */
-export function indianAqi(pm25: number | null | undefined, pm10: number | null | undefined): number | null {
-  const a = pm25 == null ? NaN : subIndex(pm25, PM25_BANDS)
-  const b = pm10 == null ? NaN : subIndex(pm10, PM10_BANDS)
-  const m = Math.max(Number.isFinite(a) ? a : -1, Number.isFinite(b) ? b : -1)
-  return m < 0 ? null : Math.round(m)
+// Gases, from CPCB's "About National Air Quality Index" table (CO in mg/m³, the rest µg/m³;
+// O3 and CO are 8-hour values). The open top bands run on to where the index reaches 500.
+const NO2_BANDS: Band[] = [[0, 40], [41, 80], [81, 180], [181, 280], [281, 400], [401, 800]]
+const O3_BANDS: Band[] = [[0, 50], [51, 100], [101, 168], [169, 208], [209, 748], [749, 1000]]
+const CO_BANDS: Band[] = [[0, 1], [1.1, 2], [2.1, 10], [10.1, 17], [17.1, 34], [34.1, 50]]
+const SO2_BANDS: Band[] = [[0, 40], [41, 80], [81, 380], [381, 800], [801, 1600], [1601, 2400]]
+
+export type Pollutant = 'pm25' | 'pm10' | 'o3' | 'no2' | 'so2' | 'co'
+/** Gas concentrations in µg/m³ (Open-Meteo units, CO included). */
+export interface Gases {
+  o3?: number | null
+  no2?: number | null
+  so2?: number | null
+  co?: number | null
 }
+export interface DayAir extends Gases {
+  pm25: number | null
+  pm10: number | null
+  main: Pollutant | null
+}
+
+const val = (x: number | null | undefined) => (x == null || !Number.isFinite(x) ? null : x)
+
+/** Each pollutant's sub-index (only the ones we have a value for). */
+export function aqiParts(pm25: number | null | undefined, pm10: number | null | undefined, g: Gases = {}): Partial<Record<Pollutant, number>> {
+  const out: Partial<Record<Pollutant, number>> = {}
+  const add = (k: Pollutant, c: number | null, bands: Band[]) => {
+    if (c == null) return
+    const s = subIndex(c, bands)
+    if (Number.isFinite(s)) out[k] = Math.min(500, s)
+  }
+  add('pm25', val(pm25), PM25_BANDS)
+  add('pm10', val(pm10), PM10_BANDS)
+  add('o3', val(g.o3), O3_BANDS)
+  add('no2', val(g.no2), NO2_BANDS)
+  add('so2', val(g.so2), SO2_BANDS)
+  const co = val(g.co)
+  add('co', co == null ? null : co / 1000, CO_BANDS)
+  return out
+}
+
+/**
+ * Indian AQI: the worst sub-index. CPCB needs particulate matter among the pollutants, so
+ * without PM2.5 or PM10 there is no AQI.
+ */
+export function indianAqi(pm25: number | null | undefined, pm10: number | null | undefined, g?: Gases): number | null {
+  const parts = aqiParts(pm25, pm10, g)
+  if (parts.pm25 == null && parts.pm10 == null) return null
+  return Math.round(Math.max(...Object.values(parts)))
+}
+
+/** The pollutant with the worst sub-index. */
+export function mainPollutant(parts: Partial<Record<Pollutant, number>>): Pollutant | null {
+  let best: Pollutant | null = null
+  for (const [k, v] of Object.entries(parts) as [Pollutant, number][]) if (best == null || v > (parts[best] ?? -1)) best = k
+  return best
+}
+
+// ---------- GRAP (Delhi-NCR) ----------
+
+/**
+ * The Graded Response Action Plan stage this AQI falls in (CAQM, revised December 2024):
+ * I 201-300, II 301-400, III 401-450, IV above 450. The official stage is declared by CAQM.
+ */
+export function grapStage(aqi: number | null | undefined): 1 | 2 | 3 | 4 | null {
+  if (aqi == null || aqi <= 200) return null
+  if (aqi <= 300) return 1
+  if (aqi <= 400) return 2
+  if (aqi <= 450) return 3
+  return 4
+}
+/** Delhi and the NCR districts around it (a generous box). */
+export const inNcr = (lat: number, lon: number) => lat >= 27.8 && lat <= 29.3 && lon >= 76.3 && lon <= 78.1
 
 export type AqiCat = 0 | 1 | 2 | 3 | 4 | 5
 export const AQI_COLOR = ['#00B050', '#92D050', '#FFFF00', '#FFC000', '#FF0000', '#C00000'] as const

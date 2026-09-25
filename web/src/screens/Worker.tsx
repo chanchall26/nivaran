@@ -4,15 +4,17 @@ import { Link } from 'react-router-dom'
 import { useApp, useDay } from '../ctx'
 import { useI18n } from '../i18n'
 import { LOOK } from '../i18n/look'
+import { UI } from '../i18n/ui'
 import { hourLabel } from '../lib/ist'
 import { km, pilotFor, placeFromGps, reverseGeocode } from '../lib/place'
-import type { Point } from '../lib/points'
-import { AQI_COLOR, aqiCategory, conditionOf, dayLevel, hourLevel, inShift, isNightHour, LEVEL_COLOR, rainLikely, rituOf, type Day, type Level, type Shift } from '../lib/risk'
+import { loadHelpNear, type Point } from '../lib/points'
+import { AQI_COLOR, aqiCategory, conditionOf, dayLevel, hourLevel, inNcr, inShift, isNightHour, LEVEL_COLOR, rainLikely, rituOf, type Day, type Level, type Shift } from '../lib/risk'
 import { taskStore, type AskNeed } from '../lib/tasks'
 import { ICON, Skel, Src } from '../ui/atoms'
 import { modeChips } from '../ui/Condition'
 import { COND_EMOJI, Emoji, wxEmoji } from '../ui/Emoji'
 import { HeroMap } from '../ui/HeroMap'
+import { SafetyCards } from '../ui/Safety'
 import { useLinkTo } from './panels'
 import { pointName, useNowHour } from './shared'
 
@@ -570,6 +572,8 @@ export function WorkerToday() {
         </div>
       </div>
 
+      <SafetyCards day={day} next={next} shift={shift} />
+
       <div className="flex justify-end">
         <ReadAloud text={`${D.todayOutside}: ${levelWord}. ${D.feelsLike} ${feels}°. ${advice}`} />
       </div>
@@ -581,35 +585,76 @@ interface NearRow {
   p: Point
   d: number
 }
+/** Water, shelters and hospitals from OpenStreetMap for any place (loaded once per place). */
+function useOsmHelp(): Point[] {
+  const { place } = useApp()
+  const [help, setHelp] = useState<{ key: string; points: Point[] }>({ key: '', points: [] })
+  const key = `${place.lat.toFixed(3)},${place.lon.toFixed(3)}`
+  const names = useMemo(
+    () => ({
+      water: [UI.en.safety.helpNames.water, UI.hi.safety.helpNames.water] as [string, string],
+      shelter: [UI.en.safety.helpNames.shelter, UI.hi.safety.helpNames.shelter] as [string, string],
+      medical: [UI.en.safety.helpNames.medical, UI.hi.safety.helpNames.medical] as [string, string],
+    }),
+    [],
+  )
+  useEffect(() => {
+    let off = false
+    loadHelpNear(place.lat, place.lon, names)
+      .then((points) => !off && setHelp({ key, points }))
+      .catch(() => !off && setHelp({ key, points: [] }))
+    return () => {
+      off = true
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [key])
+  return help.key === key ? help.points : []
+}
+
 function useNear(limit: number): NearRow[] | null {
   const { place, pts } = useApp()
-  return useMemo(
-    () =>
-      pts.points
-        ? pts.points
-            .filter((p) => p.offers?.length)
-            .map((p) => ({ p, d: km(place.lat, place.lon, p.lat, p.lon) }))
-            .sort((a, b) => a.d - b.d)
-            .slice(0, limit)
-        : null,
-    [pts.points, place.lat, place.lon, limit],
-  )
+  const osm = useOsmHelp()
+  return useMemo(() => {
+    if (!pts.points) return null
+    const curated = pts.points.filter((p) => p.offers?.length)
+    // an OSM place already in the curated list (within 80 m) is not shown twice
+    const extra = osm.filter((o) => !curated.some((c) => km(c.lat, c.lon, o.lat, o.lon) < 0.08))
+    return [...curated, ...extra]
+      .map((p) => ({ p, d: km(place.lat, place.lon, p.lat, p.lon) }))
+      .sort((a, b) => a.d - b.d)
+      .slice(0, limit)
+  }, [pts.points, osm, place.lat, place.lon, limit])
 }
 
 /** Hospital red, shelter blue, water cyan, anything else green: the icon squares of the design. */
 function nearIcon(p: Point): { bg: string; Icon: typeof Plus } {
   if (p.type === 'shelter' || p.offers?.includes('shelter')) return { bg: '#3294fb', Icon: House }
-  if (p.type === 'hospital') return { bg: '#e73040', Icon: Plus }
+  if (p.type === 'hospital' || p.offers?.includes('medical')) return { bg: '#e73040', Icon: Plus }
   if (p.type === 'water') return { bg: '#0891b2', Icon: Droplet }
   return { bg: '#0a9f5c', Icon: Plus }
 }
 
 function NearRows({ rows }: { rows: NearRow[] | null }) {
   const { t, f, lang } = useI18n()
+  const { place } = useApp()
   const D = LOOK[lang].dash
+  const helpline = inNcr(place.lat, place.lon) && (
+    <p className="mt-2 flex items-center gap-2 text-[15px] font-semibold text-[#9cc3ff]">
+      <PhoneCall className="size-4 shrink-0" strokeWidth={2} aria-hidden />
+      <a href="tel:14461" className="underline">{t.safety.shelterDelhi}</a>
+    </p>
+  )
   if (!rows) return <Skel className="h-40 w-full" />
-  if (!rows.length) return <p className="py-3 text-[#c7d3ea]">{t.worker.noneNear}</p>
+  if (!rows.length)
+    return (
+      <>
+        <p className="py-3 text-[#c7d3ea]">{t.worker.noneNear}</p>
+        {helpline}
+      </>
+    )
   return (
+    <>
+    {helpline}
     <ul className="divide-y divide-[#16325c]">
       {rows.map(({ p, d }) => {
         const { bg, Icon } = nearIcon(p)
@@ -633,6 +678,7 @@ function NearRows({ rows }: { rows: NearRow[] | null }) {
         )
       })}
     </ul>
+    </>
   )
 }
 

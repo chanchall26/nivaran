@@ -4,7 +4,7 @@
  * than 8 s falls back to the last saved copy, so the screen is never blank.
  */
 import { addDays } from './ist'
-import { indianAqi, type Day, type Hour } from './risk'
+import { aqiParts, indianAqi, mainPollutant, type Day, type Hour, type Pollutant } from './risk'
 
 export interface Current {
   time: string
@@ -17,6 +17,8 @@ export interface Current {
   isDay: boolean
 }
 export interface Air {
+  /** the pollutant that sets the AQI */
+  main?: Pollutant | null
   aqi: number
   pm25: number
   pm10: number
@@ -151,6 +153,10 @@ interface OmAirHourly {
   time: string[]
   pm2_5: (number | null)[]
   pm10: (number | null)[]
+  ozone?: (number | null)[]
+  nitrogen_dioxide?: (number | null)[]
+  sulphur_dioxide?: (number | null)[]
+  carbon_monoxide?: (number | null)[]
 }
 
 const num = (v: number | null | undefined, d = NaN) => (v == null || !Number.isFinite(v) ? d : v)
@@ -169,8 +175,14 @@ function mode(xs: number[]) {
 
 /** Group hourly rows into days of exactly the hours we have (normally 24). */
 export function buildDays(h: OmHourly, air: OmAirHourly | null, dates: string[]): Day[] {
-  const airAt = new Map<string, { pm25: number | null; pm10: number | null }>()
-  air?.time.forEach((t, i) => airAt.set(t, { pm25: air.pm2_5[i], pm10: air.pm10[i] }))
+  type AirRow = { pm25: number | null; pm10: number | null; o3: number | null; no2: number | null; so2: number | null; co: number | null }
+  const airAt = new Map<string, AirRow>()
+  air?.time.forEach((t, i) =>
+    airAt.set(t, {
+      pm25: air.pm2_5[i], pm10: air.pm10[i],
+      o3: air.ozone?.[i] ?? null, no2: air.nitrogen_dioxide?.[i] ?? null, so2: air.sulphur_dioxide?.[i] ?? null, co: air.carbon_monoxide?.[i] ?? null,
+    }),
+  )
   return dates
     .map((date) => {
       const hours: Hour[] = []
@@ -180,6 +192,7 @@ export function buildDays(h: OmHourly, air: OmAirHourly | null, dates: string[])
         const a = airAt.get(t)
         const pm25 = a?.pm25 ?? null
         const pm10 = a?.pm10 ?? null
+        const gas = { o3: a?.o3 ?? null, no2: a?.no2 ?? null, so2: a?.so2 ?? null, co: a?.co ?? null }
         const hour = Number(t.slice(11, 13))
         hours.push({
           time: t, hour,
@@ -189,7 +202,7 @@ export function buildDays(h: OmHourly, air: OmAirHourly | null, dates: string[])
           rainProb: h.precipitation_probability ? (h.precipitation_probability[i] ?? null) : null,
           rain: num(h.precipitation?.[i], 0),
           wind: num(h.wind_speed_10m[i], 0),
-          pm25, pm10, aqi: indianAqi(pm25, pm10),
+          pm25, pm10, ...gas, aqi: indianAqi(pm25, pm10, gas),
         })
         if (hour >= 7 && hour <= 18 && h.weather_code?.[i] != null) codes.push(h.weather_code[i] as number)
       })
@@ -201,13 +214,30 @@ export function buildDays(h: OmHourly, air: OmAirHourly | null, dates: string[])
       const pm10s = hours.map((x) => x.pm10 ?? NaN)
       const m25 = avg(pm25s)
       const m10 = avg(pm10s)
+      // CPCB: 24-hour means for PM, NO2 and SO2; the highest 8-hour mean for O3 and CO
+      const series = (k: 'o3' | 'no2' | 'so2' | 'co') => hours.map((x) => x[k] ?? NaN)
+      const max8 = (xs: number[]) => {
+        let best = NaN
+        for (let i = 0; i + 8 <= xs.length; i++) {
+          const m = avg(xs.slice(i, i + 8))
+          if (Number.isFinite(m) && !(m <= best)) best = m
+        }
+        return best
+      }
+      const fin = (x: number) => (Number.isFinite(x) ? x : null)
+      const dayAir = {
+        pm25: fin(m25), pm10: fin(m10),
+        o3: fin(max8(series('o3'))), co: fin(max8(series('co'))), no2: fin(avg(series('no2'))), so2: fin(avg(series('so2'))),
+      }
+      const parts = aqiParts(dayAir.pm25, dayAir.pm10, dayAir)
       return {
         date, hours,
         tmax: Math.max(...temps), tmin: Math.min(...temps),
         fmax: Math.max(...feels), fmin: Math.min(...feels),
         rainProbMax: probs.length ? Math.max(...probs) : null,
         rainSum: hours.reduce((a, x) => a + x.rain, 0),
-        aqi: indianAqi(Number.isFinite(m25) ? m25 : null, Number.isFinite(m10) ? m10 : null),
+        aqi: indianAqi(dayAir.pm25, dayAir.pm10, dayAir),
+        air: { ...dayAir, main: mainPollutant(parts) },
         code: mode(codes),
       } as Day
     })
@@ -216,6 +246,8 @@ export function buildDays(h: OmHourly, air: OmAirHourly | null, dates: string[])
 
 // ---------- live forecast ----------
 
+/** Everything CPCB's AQI can use that Open-Meteo's air model gives (NH3 and lead it does not). */
+const AIR_VARS = 'pm2_5,pm10,ozone,nitrogen_dioxide,sulphur_dioxide,carbon_monoxide'
 const HOURLY = 'temperature_2m,apparent_temperature,relative_humidity_2m,precipitation_probability,precipitation,wind_speed_10m,weather_code'
 const DAILY = 'temperature_2m_max,temperature_2m_min,apparent_temperature_max,apparent_temperature_min,precipitation_probability_max,precipitation_sum,sunrise,sunset'
 
@@ -235,7 +267,14 @@ interface OmForecast {
   daily: { time: string[]; sunrise: string[]; sunset: string[] }
 }
 interface OmAir {
-  current?: { pm2_5: number | null; pm10: number | null }
+  current?: {
+    pm2_5: number | null
+    pm10: number | null
+    ozone?: number | null
+    nitrogen_dioxide?: number | null
+    sulphur_dioxide?: number | null
+    carbon_monoxide?: number | null
+  }
   hourly?: OmAirHourly
 }
 
@@ -252,7 +291,7 @@ export async function loadLive(lat: number, lon: number, start: string, force = 
       `https://api.open-meteo.com/v1/forecast?${base}` +
       `&current=temperature_2m,apparent_temperature,relative_humidity_2m,precipitation,weather_code,wind_speed_10m,is_day` +
       `&hourly=${HOURLY}&daily=${DAILY}`
-    const aUrl = `https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${lat}&longitude=${lon}&timezone=Asia%2FKolkata&current=pm2_5,pm10&hourly=pm2_5,pm10&start_date=${start}&end_date=${addDays(start, 2)}`
+    const aUrl = `https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${lat}&longitude=${lon}&timezone=Asia%2FKolkata&current=${AIR_VARS}&hourly=${AIR_VARS}&start_date=${start}&end_date=${addDays(start, 2)}`
     const [w, a] = await Promise.all([getJson<OmForecast>(wUrl), getJson<OmAir>(aUrl).catch(() => null)])
     const days = buildDays(w.hourly, a?.hourly ?? null, w.daily.time)
     days.forEach((d, i) => {
@@ -260,14 +299,16 @@ export async function loadLive(lat: number, lon: number, start: string, force = 
       d.sunset = w.daily.sunset[i]
     })
     const c = w.current
-    const aqi = indianAqi(a?.current?.pm2_5, a?.current?.pm10)
+    const cur = a?.current
+    const gasNow = { o3: cur?.ozone, no2: cur?.nitrogen_dioxide, so2: cur?.sulphur_dioxide, co: cur?.carbon_monoxide }
+    const aqi = indianAqi(cur?.pm2_5, cur?.pm10, gasNow)
     return {
       kind: 'live', lat, lon, elevation: w.elevation ?? null,
       current: {
         time: c.time, temp: c.temperature_2m, feels: c.apparent_temperature, rh: c.relative_humidity_2m,
         rain: c.precipitation, code: c.weather_code, wind: c.wind_speed_10m, isDay: c.is_day === 1,
       },
-      air: aqi == null ? null : { aqi, pm25: a?.current?.pm2_5 ?? NaN, pm10: a?.current?.pm10 ?? NaN },
+      air: aqi == null ? null : { aqi, pm25: cur?.pm2_5 ?? NaN, pm10: cur?.pm10 ?? NaN, main: mainPollutant(aqiParts(cur?.pm2_5, cur?.pm10, gasNow)) },
       airAvailable: aqi != null,
       days,
     }
@@ -340,7 +381,7 @@ export async function loadReplay(kind: ReplayKind, lat: number, lon: number): Pr
       date = !hot && pick > 0 ? r.daily.time[pick - 1] : r.daily.time[pick]
     }
     const dates = [date, addDays(date, 1)]
-    const airUrl = `https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${lat}&longitude=${lon}&hourly=pm2_5,pm10&timezone=Asia%2FKolkata&start_date=${dates[0]}&end_date=${dates[1]}`
+    const airUrl = `https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${lat}&longitude=${lon}&hourly=${AIR_VARS}&timezone=Asia%2FKolkata&start_date=${dates[0]}&end_date=${dates[1]}`
     // the air archive is slow now and then: one more try before giving up on it
     const air = await getJson<OmAir>(airUrl, 12000).catch(() => getJson<OmAir>(airUrl, 12000)).catch(() => null)
     const hasAir = !!air?.hourly?.pm2_5?.some((v) => v != null)
@@ -350,7 +391,7 @@ export async function loadReplay(kind: ReplayKind, lat: number, lon: number): Pr
     return {
       kind: 'replay', lat, lon, elevation: r.elevation ?? null, replayDate: date,
       current: { time: now.time, temp: now.temp, feels: now.feels, rh: now.rh, rain: now.rain, code: days[0].code ?? 0, wind: now.wind, isDay: cfg.nowHour >= 7 && cfg.nowHour < 19 },
-      air: aqi == null ? null : { aqi, pm25: now.pm25 ?? NaN, pm10: now.pm10 ?? NaN },
+      air: aqi == null ? null : { aqi, pm25: now.pm25 ?? NaN, pm10: now.pm10 ?? NaN, main: mainPollutant(aqiParts(now.pm25, now.pm10, now)) },
       airAvailable: hasAir,
       days,
     }

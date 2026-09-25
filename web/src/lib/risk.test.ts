@@ -7,6 +7,7 @@ import { FILE_HEATER_RATE, HELP, heaterValue, optionsFor, suggestPlan } from './
 import type { Point } from './points'
 import { pointRisk, protectionOf, resilienceDebt, topNeed } from './points'
 import {
+  aqiParts, grapStage, inNcr, mainPollutant,
   airProblem, aqiCategory, burningRisk, climateOf, coldLevel, coldSpan, conditionOf, dayLevel, fireRisk, heatLevel, heatSpan, hourLevel, indianAqi,
   modesOf, needsFor, nightStats, plantingNow, rituOf, trendOf, worstAirSpan, type Day, type Hour,
 } from './risk'
@@ -389,5 +390,27 @@ describe('bad input never reaches the screens', () => {
     expect(db.checks).toHaveLength(1)
     expect(db.fires).toEqual([])
     expect(sanitizeDb('{bad').tasks).toEqual([])
+  })
+})
+
+describe('full CPCB AQI with gases', () => {
+  it('uses the CPCB gas bands (O3 8-hour, NO2, SO2, CO in mg/m³)', () => {
+    expect(aqiParts(null, null, { o3: 65 }).o3).toBeCloseTo(65, 0)
+    expect(Math.round(aqiParts(null, null, { no2: 100 }).no2!)).toBe(120)
+    expect(Math.round(aqiParts(null, null, { co: 1500 }).co!)).toBe(73)
+    expect(Math.round(aqiParts(null, null, { so2: 60 }).so2!)).toBe(75)
+  })
+  it('a clean-PM day with ozone reads as ozone, not "Good 5"', () => {
+    expect(indianAqi(3, 5)).toBe(5)
+    expect(indianAqi(3, 5, { o3: 65, no2: 10 })).toBe(65)
+    expect(mainPollutant(aqiParts(3, 5, { o3: 65 }))).toBe('o3')
+  })
+  it('without particulate matter there is no AQI (CPCB needs PM)', () => {
+    expect(indianAqi(null, null, { o3: 80 })).toBeNull()
+  })
+  it('GRAP stages follow CAQM thresholds; NCR box covers Delhi, not Gwalior', () => {
+    expect([150, 250, 350, 420, 460].map(grapStage)).toEqual([null, 1, 2, 3, 4])
+    expect(inNcr(28.63, 77.22)).toBe(true)
+    expect(inNcr(26.18, 78.14)).toBe(false)
   })
 })
