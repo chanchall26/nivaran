@@ -141,7 +141,7 @@ export async function analyseReport(opts: {
 // ---- pulse answer ---------------------------------------------------------------------
 
 const REASONS: PulseReason[] = [
-  'none', 'electricity_bill', 'rwa_refused', 'broken', 'stolen', 'no_water', 'plant_died', 'not_received', 'other',
+  'none', 'no_socket', 'too_far', 'full', 'closed', 'electricity_bill', 'rwa_refused', 'broken', 'stolen', 'no_water', 'plant_died', 'not_received', 'other',
 ]
 const pulseSchema = Schema.object({
   properties: {
@@ -155,7 +155,8 @@ const PULSE_SYSTEM = `You understand short answers from security guards, vendors
 to a check-in call about help they received (heater, blanket kit, cabin, shade net, water pot, sapling).
 Answers may be Hindi, Hinglish, Bundeli or broken English, often via speech-to-text with errors.
 Decide whether the help is working/being used (ok) and, if not, the main reason:
-electricity_bill (fear of bill / owner says bill too high), rwa_refused (RWA, society, owner or secretary
+no_socket (no socket / power point where the heater should run), too_far (shelter or water point too far),
+full (shelter full), closed (shelter or water point closed), electricity_bill (fear of bill / owner says bill too high), rwa_refused (RWA, society, owner or secretary
 does not allow), broken, stolen (or removed), no_water, plant_died, not_received, other.
 followUpHi / followUpEn: one warm, respectful sentence acknowledging the answer (and, if not ok, saying help will follow).`
 

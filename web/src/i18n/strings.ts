@@ -295,6 +295,10 @@ const en = {
   },
   reason: {
     none: 'All good',
+    no_socket: 'No socket / no power point',
+    too_far: 'Too far away',
+    full: 'It was full',
+    closed: 'It was closed',
     electricity_bill: 'Worried about electricity bill',
     rwa_refused: 'Society or owner said no',
     broken: 'Broken',
@@ -306,6 +310,10 @@ const en = {
   },
   action: {
     none: 'Nothing to do. Next check in 7 days.',
+    no_socket: 'A socket and bill permission for this guard room is now in the plan (about ₹1,500), before any new heater.',
+    too_far: 'Night team will offer transport, or a warm kit where people stay.',
+    full: 'Shelter team told; nearby overflow space and blankets sent.',
+    closed: 'Shelter caretaker called; the timing is flagged to the city.',
     electricity_bill: 'Sent the society a cost sheet: an 800 W heater for 6 hours a night costs about ₹{cost} a month. Also offered a timer plug and an insulated cabin.',
     rwa_refused: 'Sent the society secretary the pollution board advice and a "Barahmasa Colony" invite. Follow-up call in 3 days.',
     brokenHeater: 'Asked for a warranty replacement. A warm kit is sent meanwhile.',
@@ -694,6 +702,10 @@ const hi: Dict = {
   },
   reason: {
     none: 'सब ठीक',
+    no_socket: 'सॉकेट नहीं / बिजली का पॉइंट नहीं',
+    too_far: 'बहुत दूर है',
+    full: 'भरा हुआ था',
+    closed: 'बंद था',
     electricity_bill: 'बिजली बिल की चिंता',
     rwa_refused: 'सोसाइटी या मालिक ने मना किया',
     broken: 'ख़राब / टूटा',
@@ -705,6 +717,10 @@ const hi: Dict = {
   },
   action: {
     none: 'कुछ नहीं करना। अगली जाँच 7 दिन बाद।',
+    no_socket: 'इस गार्ड रूम के लिए सॉकेट और बिल की अनुमति अब प्लान में है (लगभग ₹1,500), नए हीटर से पहले।',
+    too_far: 'रात की टीम आने-जाने का इंतज़ाम करेगी, या जहाँ लोग हैं वहीं गर्म किट।',
+    full: 'रैन बसेरा टीम को बताया; पास की अतिरिक्त जगह और कंबल भेजे।',
+    closed: 'रैन बसेरा के केयरटेकर को कॉल; समय की दिक़्क़त नगर निगम को भेजी।',
     electricity_bill: 'सोसाइटी को ख़र्च का हिसाब भेजा: 800 W हीटर, रात 6 घंटे = लगभग ₹{cost} महीना। टाइमर प्लग और इंसुलेटेड केबिन का विकल्प भी।',
     rwa_refused: 'सोसाइटी सचिव को प्रदूषण बोर्ड की सलाह और "बारहमासा कॉलोनी" का न्योता भेजा। 3 दिन में फिर कॉल।',
     brokenHeater: 'वारंटी में बदलने का अनुरोध। तब तक गर्म किट भेजी।',

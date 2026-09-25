@@ -30,6 +30,10 @@ const PLAN: { item: ItemType; units: number; okRate: number; reasons: [PulseReas
 
 const ANSWERS: Record<PulseReason, string> = {
   none: 'हाँ जी, सब ठीक है',
+  no_socket: 'हीटर है पर गार्ड रूम में सॉकेट ही नहीं है',
+  too_far: 'रैन बसेरा बहुत दूर है',
+  full: 'रैन बसेरे में जगह नहीं थी',
+  closed: 'रात को बंद था',
   electricity_bill: 'नहीं चला, सोसाइटी वाले कहते हैं बिजली का बिल बढ़ जाएगा',
   rwa_refused: 'सेक्रेटरी साहब ने मना कर दिया',
   broken: 'ख़राब हो गया, चल नहीं रहा',

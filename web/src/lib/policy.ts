@@ -60,7 +60,12 @@ export function parsePulseRules(answer: string, item: ItemType): { ok: boolean; 
   const a = ` ${answer.toLowerCase().replace(/[.,!?।"]/g, ' ')} `
   // short words match whole tokens only ("no" must not match "phone")
   const has = (...w: string[]) => w.some((x) => (x.length <= 3 ? a.includes(` ${x} `) : a.includes(x)))
+  if (has('socket', 'सॉकेट', 'point nahi', 'plug', 'प्लग', 'board nahi')) return { ok: false, reason: 'no_socket' }
   if (has('bill', 'बिल', 'bijli', 'बिजली', 'light ka', 'electricity')) return { ok: false, reason: 'electricity_bill' }
+  if (has('door hai', 'दूर है', 'bahut door', 'बहुत दूर', 'too far', 'far away')) return { ok: false, reason: 'too_far' }
+  // "bhara tha" alone means the water pot was FULL (good), so only shelter-capacity phrases count
+  if (has('jagah nahi', 'जगह नहीं', 'no space', 'no room', 'shelter full', 'बसेरा भरा')) return { ok: false, reason: 'full' }
+  if (has('band tha', 'बंद था', 'closed', 'tala', 'ताला')) return { ok: false, reason: 'closed' }
   if (has('mana', 'मना', 'rwa', 'secretary', 'सेक्रेटरी', 'malik', 'मालिक', 'allow', 'refused', 'said no', 'society'))
     return { ok: false, reason: 'rwa_refused' }
   if (has('toot', 'टूट', 'kharab', 'ख़राब', 'खराब', 'broken', 'jal gaya', 'leaks', 'टपकता')) return { ok: false, reason: 'broken' }

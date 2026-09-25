@@ -154,6 +154,10 @@ export interface Delivery {
 
 export type PulseReason =
   | 'none'
+  | 'no_socket'
+  | 'too_far'
+  | 'full'
+  | 'closed'
   | 'electricity_bill'
   | 'rwa_refused'
   | 'broken'
