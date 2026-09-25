@@ -628,15 +628,18 @@ function useNear(limit: number): NearRow[] | null {
   const { place, pts } = useApp()
   const osm = useOsmHelp()
   return useMemo(() => {
-    if (!pts.points) return null
-    const curated = pts.points.filter((p) => p.offers?.length)
+    // still loading: skeleton; failed: whatever OSM help we have, or "none near"
+    if (pts.status === 'loading' && !osm.length) return null
+    const curated = (pts.points ?? []).filter((p) => p.offers?.length)
     // an OSM place already in the curated list (within 80 m) is not shown twice
     const extra = osm.filter((o) => !curated.some((c) => km(c.lat, c.lon, o.lat, o.lon) < 0.08))
     return [...curated, ...extra]
       .map((p) => ({ p, d: km(place.lat, place.lon, p.lat, p.lon) }))
+      // "near" means near: never list a place from another city
+      .filter((r) => r.d <= 25)
       .sort((a, b) => a.d - b.d)
       .slice(0, limit)
-  }, [pts.points, osm, place.lat, place.lon, limit])
+  }, [pts.points, pts.status, osm, place.lat, place.lon, limit])
 }
 
 /** Hospital red, shelter blue, water cyan, anything else green: the icon squares of the design. */

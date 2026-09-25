@@ -122,12 +122,22 @@ const MIRRORS = [
   'https://overpass-api.de/api/interpreter',
   'https://overpass.kumi.systems/api/interpreter',
 ]
+/**
+ * Public Overpass servers are often slow (20-40 s at busy times). Ask the two CORS mirrors at
+ * once and take the first answer; only if both fail, try the others one by one.
+ */
 async function overpass(q: string): Promise<OsmEl[]> {
-  for (const m of MIRRORS) {
-    try {
-      return (await getJson<{ elements: OsmEl[] }>(m, { method: 'POST', body: 'data=' + encodeURIComponent(q) })).elements
-    } catch {
-      /* try the next mirror */
+  const ask = (m: string, ms: number) =>
+    getJson<{ elements: OsmEl[] }>(m, { method: 'POST', body: 'data=' + encodeURIComponent(q) }, ms).then((r) => r.elements)
+  try {
+    return await Promise.any(MIRRORS.slice(0, 2).map((m) => ask(m, 30000)))
+  } catch {
+    for (const m of MIRRORS.slice(2)) {
+      try {
+        return await ask(m, 15000)
+      } catch {
+        /* try the next mirror */
+      }
     }
   }
   throw new Error('overpass')

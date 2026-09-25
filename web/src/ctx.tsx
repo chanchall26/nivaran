@@ -186,7 +186,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const ptsKey = pilot ?? placeId(place)
   useEffect(() => {
     let off = false
-    setPts((s) => ({ ...s, status: 'loading' }))
+    // a new place never shows the last place's points while its own load
+    setPts({ points: null, status: 'loading', kind: pilot ? 'curated' : 'osm' })
     const p = pilot
       ? loadCurated(pilot).then((points) => ({ points, kind: 'curated' as const }))
       : loadOsmCached(place.lat, place.lon).then((r) => ({ points: r.points, kind: 'osm' as const }))
