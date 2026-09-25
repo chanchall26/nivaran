@@ -176,7 +176,7 @@ export function Header({ onPlace, onMenu }: { onPlace: () => void; onMenu: () =>
           <div className="text-[14px] text-[#c7d3ea]">{dateLine}</div>
           <div className="mt-1 flex items-center gap-3">
             <span className="text-[22px] font-bold text-white">{replay ? t.header.realPast : clockTime(now, lang)}</span>
-            {badge}
+            {!replay && badge}
           </div>
         </div>
 

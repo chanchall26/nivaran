@@ -167,7 +167,8 @@ main h1 { color: #ffffff; }
 button.chip:hover { border-color: #3b82f6; }
 button.chip:active { transform: scale(0.97); }
 .chip[aria-pressed='true'],
-.chip[aria-selected='true'] {
+.chip[aria-selected='true'],
+.chip[data-on='true'] {
   background: linear-gradient(135deg, #0e7490, #0369a1);
   border-color: rgb(56 189 248 / 0.45);
   color: #fff;

@@ -226,7 +226,7 @@ export function WhatIf({
         <legend className="sr-only">{w.title}</legend>
         <div className="flex flex-wrap gap-1.5">
           {LEVERS.map((l) => (
-            <label key={l} className={`chip cursor-pointer !py-1 has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-[#1f6feb] has-[:focus-visible]:ring-offset-2 ${on.has(l) ? '!border-ink !bg-ink !text-white' : ''}`}>
+            <label key={l} data-on={on.has(l) ? 'true' : undefined} className="chip cursor-pointer !py-1 has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-[#1f6feb] has-[:focus-visible]:ring-offset-2">
               <input type="checkbox" className="sr-only" checked={on.has(l)} onChange={() => toggle(l)} />
               <span aria-hidden className={`inline-block size-3 rounded-sm border ${on.has(l) ? 'border-white bg-white' : 'border-muted'}`} />
               {w.levers[l]}

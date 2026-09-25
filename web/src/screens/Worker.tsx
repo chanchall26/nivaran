@@ -8,7 +8,7 @@ import { UI } from '../i18n/ui'
 import { hourLabel } from '../lib/ist'
 import { km, pilotFor, placeFromGps, reverseGeocode } from '../lib/place'
 import { loadHelpNear, type Point } from '../lib/points'
-import { AQI_COLOR, aqiCategory, conditionOf, dayLevel, hourLevel, inNcr, inShift, isNightHour, LEVEL_COLOR, rainLikely, rituOf, type Day, type Level, type Shift } from '../lib/risk'
+import { aqiCategory, conditionOf, dayLevel, hourLevel, inNcr, inShift, isNightHour, LEVEL_COLOR, rainLikely, rituOf, type Day, type Level, type Shift } from '../lib/risk'
 import { taskStore, type AskNeed } from '../lib/tasks'
 import { ICON, Skel, Src } from '../ui/atoms'
 import { modeChips } from '../ui/Condition'
@@ -81,6 +81,17 @@ const LEVEL_TINT = [
   { bg: 'linear-gradient(135deg, #7c3505, #5c2804)', edge: 'rgb(251 146 60 / 0.6)', icon: ['#fdba74', '#ea580c'] },
   { bg: 'linear-gradient(135deg, #7f1d2d, #5c1420)', edge: 'rgb(248 113 113 / 0.65)', icon: ['#fca5a5', '#dc2626'] },
 ] as const
+
+/** Air cards take the CPCB category's colour (good green ... severe maroon) as a dark tint, so colour and word agree. */
+const AIR_TINT = [
+  { edge: 'rgb(22 163 74 / 0.45)', bg: '#06311f', dot: '#14532d', icon: '#4ade80', fill: 'rgb(34 197 94 / 0.3)', text: '#c7f0d6' },
+  { edge: 'rgb(132 204 22 / 0.45)', bg: '#1c2e07', dot: '#365314', icon: '#a3e635', fill: 'rgb(163 230 53 / 0.3)', text: '#d9f99d' },
+  { edge: 'rgb(234 179 8 / 0.5)', bg: '#2e2606', dot: '#4d3b00', icon: '#facc15', fill: 'rgb(250 204 21 / 0.3)', text: '#fef08a' },
+  { edge: 'rgb(249 115 22 / 0.55)', bg: '#331a08', dot: '#5c2804', icon: '#fb923c', fill: 'rgb(251 146 60 / 0.3)', text: '#fed7aa' },
+  { edge: 'rgb(239 68 68 / 0.6)', bg: '#3a0d12', dot: '#5c1420', icon: '#f87171', fill: 'rgb(248 113 113 / 0.3)', text: '#fecaca' },
+  { edge: 'rgb(190 18 60 / 0.65)', bg: '#3b0a1a', dot: '#4c0519', icon: '#fb7185', fill: 'rgb(251 113 133 / 0.3)', text: '#fecdd3' },
+] as const
+const AIR_NONE = { edge: '#16325c', bg: '#061a36', dot: '#0e2344', icon: '#93a4c3', fill: 'none', text: '#c7d3ea' }
 
 function ShieldCheck3D({ level, size = 44 }: { level: Level; size?: number }) {
   const [a, b] = LEVEL_TINT[level].icon
@@ -365,6 +376,7 @@ export function WorkerToday() {
   const aqi = air?.aqi ?? day.aqi
   const aqiCat = aqi != null ? aqiCategory(aqi) : null
   const aqiWord = aqiCat != null ? t.aqi[aqiCat] : '–'
+  const at = aqiCat != null ? AIR_TINT[aqiCat] : AIR_NONE
   const month = Number((startDate || day.date).slice(5, 7))
   const ritu = t.ritu[rituOf(month)]
   const modeLabel = modeChips(modes, cond, t)[0].label
@@ -426,15 +438,15 @@ export function WorkerToday() {
               </div>
 
               <div className="grid content-start gap-3 sm:grid-cols-2">
-                <div className="flex items-center gap-3 rounded-xl border border-[#16a34a]/45 bg-[#06311f] px-4 py-3">
-                  <span className="grid size-12 shrink-0 place-items-center rounded-full bg-[#14532d]">
-                    <Leaf className="size-6 fill-[#22c55e]/30 text-[#4ade80]" strokeWidth={1.9} aria-hidden />
+                <div className="flex items-center gap-3 rounded-xl border px-4 py-3" style={{ borderColor: at.edge, background: at.bg }}>
+                  <span className="grid size-12 shrink-0 place-items-center rounded-full" style={{ background: at.dot }}>
+                    <Leaf className="size-6" style={{ color: at.icon }} fill={at.fill} strokeWidth={1.9} aria-hidden />
                   </span>
                   <Src text={t.header.aqiTip}>
                     <span className="block leading-tight">
-                      <span className="block text-[15px] text-[#c7f0d6]">AQI</span>
+                      <span className="block text-[15px]" style={{ color: at.text }}>AQI</span>
                       <span className="block text-[30px] font-bold text-white">{aqi ?? '–'}</span>
-                      <span className="block text-[15px] text-[#c7f0d6]">{aqiWord}</span>
+                      <span className="block text-[15px]" style={{ color: at.text }}>{aqiWord}</span>
                     </span>
                   </Src>
                 </div>
@@ -477,7 +489,7 @@ export function WorkerToday() {
                 </span>
               </Src>
               <span aria-hidden className="mx-1 hidden h-20 w-px bg-[#16325c] sm:block" />
-              <span className="flex min-w-0 items-center gap-2">
+              <span className="flex min-w-0 flex-1 basis-32 items-center gap-2">
                 <Emoji name={rainEmoji} size={46} />
                 <span className="leading-tight">
                   <span className="block text-[16px] text-[#7cc4ff]">{rainTitle}</span>
@@ -485,12 +497,13 @@ export function WorkerToday() {
                 </span>
               </span>
             </div>
-            <div className="mt-4 grid grid-cols-3 divide-x divide-[#16325c] border-t border-[#16325c] pt-4 text-[17px]">
+            <div className="mt-4 grid grid-cols-[auto_minmax(0,1fr)_auto] divide-x divide-[#16325c] border-t border-[#16325c] pt-4 text-[17px]">
               <span className="flex items-center gap-2 pr-3">
-                <Leaf className="size-6 shrink-0 fill-[#22c55e]/25 text-[#4ade80]" strokeWidth={1.8} aria-hidden />
+                <Leaf className="size-6 shrink-0" style={{ color: at.icon }} fill={at.fill} strokeWidth={1.8} aria-hidden />
                 <Src text={t.header.aqiTip}>
                   <span className="whitespace-nowrap">
-                    {D.air}: <b style={{ color: aqiCat != null && aqiCat <= 1 ? '#4ade80' : aqiCat != null ? AQI_COLOR[aqiCat] : '#93a4c3' }}>{aqiWord}</b>
+                    <span className="max-sm:sr-only">{D.air}: </span>
+                    <b style={{ color: at.icon }}>{aqiWord}</b>
                   </span>
                 </Src>
               </span>
@@ -545,14 +558,14 @@ export function WorkerToday() {
           </span>
           <ChevronRight className="size-5 text-[#c7d3ea]" strokeWidth={2.2} aria-hidden />
         </a>
-        <a href="#your-shift" className="lift flex items-center gap-3 rounded-2xl border border-[#16a34a]/45 bg-[#06311f] p-4">
-          <Leaf className="size-12 shrink-0 fill-[#22c55e]/30 text-[#4ade80]" strokeWidth={1.4} aria-hidden />
+        <a href="#your-shift" className="lift flex items-center gap-3 rounded-2xl border p-4" style={{ borderColor: at.edge, background: at.bg }}>
+          <Leaf className="size-12 shrink-0" style={{ color: at.icon }} fill={at.fill} strokeWidth={1.4} aria-hidden />
           <span className="flex-1 leading-tight">
-            <span className="block text-[15px] text-[#c7f0d6]">AQI</span>
+            <span className="block text-[15px]" style={{ color: at.text }}>AQI</span>
             <span className="block text-[28px] font-bold text-white">{aqi ?? '–'}</span>
-            <span className="block text-[15px] text-[#c7f0d6]">{aqiWord}</span>
+            <span className="block text-[15px]" style={{ color: at.text }}>{aqiWord}</span>
           </span>
-          <ChevronRight className="size-5 text-[#c7f0d6]" strokeWidth={2.2} aria-hidden />
+          <ChevronRight className="size-5" style={{ color: at.text }} strokeWidth={2.2} aria-hidden />
         </a>
         <a href="#your-shift" className="lift flex items-center gap-3 rounded-2xl border border-[#1d4ed8]/40 bg-[#05253f] p-4">
           <Emoji name={rainEmoji} size={56} />
