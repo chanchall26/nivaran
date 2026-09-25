@@ -10,7 +10,8 @@ import {
   airProblem, aqiCategory, burningRisk, climateOf, coldLevel, coldSpan, conditionOf, dayLevel, fireRisk, heatLevel, heatSpan, hourLevel, indianAqi,
   modesOf, needsFor, nightStats, plantingNow, rituOf, trendOf, worstAirSpan, type Day, type Hour,
 } from './risk'
-import type { Check, Task } from './tasks'
+import { sanitizeDb, type Check, type Task } from './tasks'
+import { validLatLon } from './place'
 
 const hour = (h: number, over: Partial<Hour> = {}): Hour => ({
   time: `2026-09-26T${String(h).padStart(2, '0')}:00`, hour: h, temp: 25, feels: 25, rh: 50, rainProb: 0, rain: 0, wind: 10, pm25: 20, pm10: 40, aqi: 40, ...over,
@@ -367,5 +368,26 @@ describe('Hindi and English have the same words', () => {
   it('Hindi is in Devanagari', () => {
     expect(UI.hi.level.every((s) => /[ऀ-ॿ]/.test(s))).toBe(true)
     expect(UI.hi.today.title).toMatch(/[ऀ-ॿ]/)
+  })
+})
+
+describe('bad input never reaches the screens', () => {
+  it('coordinates must be real', () => {
+    expect(validLatLon(26.2, 78.1)).toBe(true)
+    expect(validLatLon(95, 500)).toBe(false)
+    expect(validLatLon(NaN, 10)).toBe(false)
+    expect(validLatLon('26', 78)).toBe(false)
+  })
+  it('damaged saved tasks and checks are dropped, good ones kept', () => {
+    const good = { id: 'a', help: 'heater', status: 'delivered', qty: 1, people: 1, createdAt: 1, updatedAt: 1, deliveredAt: 2 }
+    const db = sanitizeDb({
+      tasks: [good, { id: 'x', help: 'heater', status: 'delivered' }, null, 'oops'],
+      checks: [{ taskId: 'a', at: 5, ok: true }, { taskId: 'a', at: 'bad', ok: true }],
+      fires: 'nope',
+    })
+    expect(db.tasks.map((t) => t.id)).toEqual(['a'])
+    expect(db.checks).toHaveLength(1)
+    expect(db.fires).toEqual([])
+    expect(sanitizeDb('{bad').tasks).toEqual([])
   })
 })

@@ -8,7 +8,7 @@ import { useSearchParams } from 'react-router-dom'
 import { addDays, istHour, istToday, isIsoDate } from './lib/ist'
 import { loadLive, loadReplay, prefetch, pruneCache, REPLAY_KINDS, type Loaded, type ReplayKind } from './lib/live'
 import {
-  DEFAULT_PLACE, lookupPin, pilotFor, placeId, placeParams, PRESETS, rememberPlace, reverseGeocode, savedPlace, snapCityFor, type Place,
+  DEFAULT_PLACE, lookupPin, pilotFor, placeId, placeParams, PRESETS, rememberPlace, reverseGeocode, savedPlace, snapCityFor, validLatLon, type Place,
 } from './lib/place'
 import { loadSnapshot } from './lib/snapshot'
 import { loadCurated, loadOsmCached, type Point } from './lib/points'
@@ -57,7 +57,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const qDate = params.get('date')
   const today = istToday()
-  const liveStart = isIsoDate(qDate) ? qDate : today
+  // a demo ?date must sit inside the forecast range (the forecast answers 16 days ahead)
+  const liveStart = isIsoDate(qDate) && qDate >= addDays(today, -30) && qDate <= addDays(today, 9) ? qDate : today
 
   // ---- URL -> place, once on load ----
   const booted = useRef(false)
@@ -69,7 +70,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     const lon = Number(params.get('lon'))
     if (pin) {
       lookupPin(pin).then((p) => p && setPlaceRaw(p)).catch(() => {})
-    } else if (Number.isFinite(lat) && Number.isFinite(lon) && params.get('lat')) {
+    } else if (params.get('lat') && validLatLon(lat, lon)) {
       const preset = Object.values(PRESETS).find((p) => Math.abs(p.lat - lat) < 1e-3 && Math.abs(p.lon - lon) < 1e-3)
       if (preset) setPlaceRaw(preset)
       else

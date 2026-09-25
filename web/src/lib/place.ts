@@ -26,6 +26,10 @@ export const PRESETS = {
 export type PresetKey = keyof typeof PRESETS
 export const DEFAULT_PLACE: Place = PRESETS.gwalior
 
+/** A real point on Earth (a bad ?lat=95 in a shared link must not reach the map). */
+export const validLatLon = (lat: unknown, lon: unknown): boolean =>
+  typeof lat === 'number' && typeof lon === 'number' && Number.isFinite(lat) && Number.isFinite(lon) && Math.abs(lat) <= 90 && Math.abs(lon) <= 180
+
 export function km(aLat: number, aLon: number, bLat: number, bLon: number) {
   const p = Math.PI / 180
   const h = Math.sin(((bLat - aLat) * p) / 2) ** 2 + Math.cos(aLat * p) * Math.cos(bLat * p) * Math.sin(((bLon - aLon) * p) / 2) ** 2
@@ -188,7 +192,7 @@ export function savedPlace(): Place | null {
   try {
     const p = JSON.parse(localStorage.getItem(KEY) ?? 'null') as Place | null
     // pilot cities can be added after a place was saved
-    return p && Number.isFinite(p.lat) ? { ...p, pilot: pilotFor(p.lat, p.lon) } : null
+    return p && validLatLon(p.lat, p.lon) && typeof p.name === 'string' ? { ...p, nameHi: p.nameHi || p.name, pilot: pilotFor(p.lat, p.lon) } : null
   } catch {
     return null
   }
@@ -204,7 +208,8 @@ export function rememberPlace(p: Place) {
 }
 export function recentPlaces(): Place[] {
   try {
-    return JSON.parse(localStorage.getItem(RECENT) ?? '[]') as Place[]
+    const list = JSON.parse(localStorage.getItem(RECENT) ?? '[]') as unknown
+    return Array.isArray(list) ? (list as Place[]).filter((p) => p && validLatLon(p.lat, p.lon) && typeof p.name === 'string') : []
   } catch {
     return []
   }

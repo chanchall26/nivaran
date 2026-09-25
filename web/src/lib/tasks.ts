@@ -95,14 +95,27 @@ const EMPTY: Db = { tasks: [], checks: [], fires: [], requests: [] }
 let db: Db = read()
 const subs = new Set<() => void>()
 
+const STATUSES: TaskStatus[] = ['planned', 'delivered', 'working', 'failed']
+const num = (x: unknown) => typeof x === 'number' && Number.isFinite(x)
+const list = <T,>(x: unknown, ok: (v: T) => boolean): T[] => (Array.isArray(x) ? (x as T[]).filter((v) => v != null && typeof v === 'object' && ok(v)) : [])
+
+/** Saved data can be old or damaged: keep only records every screen can safely show. */
+export function sanitizeDb(d: unknown): Db {
+  const o = (d ?? {}) as Partial<Record<keyof Db, unknown>>
+  return {
+    tasks: list<Task>(o.tasks, (t) => typeof t.id === 'string' && typeof t.help === 'string' && STATUSES.includes(t.status) && num(t.qty) && num(t.people) && num(t.createdAt) && num(t.updatedAt) && (t.deliveredAt == null || num(t.deliveredAt))),
+    checks: list<Check>(o.checks, (c) => typeof c.taskId === 'string' && num(c.at) && typeof c.ok === 'boolean'),
+    fires: list<FireReport>(o.fires, (f) => typeof f.pointId === 'string' && num(f.at)),
+    requests: list<HelpRequest>(o.requests, (r) => typeof r.need === 'string' && num(r.createdAt)),
+  }
+}
+
 function read(): Db {
   try {
-    const d = JSON.parse(localStorage.getItem(KEY) ?? 'null') as Partial<Db> | null
-    if (d && Array.isArray(d.tasks)) return { tasks: d.tasks, checks: d.checks ?? [], fires: d.fires ?? [], requests: d.requests ?? [] }
+    return sanitizeDb(JSON.parse(localStorage.getItem(KEY) ?? 'null'))
   } catch {
-    /* ignore */
+    return EMPTY
   }
-  return EMPTY
 }
 function write(next: Db) {
   db = next

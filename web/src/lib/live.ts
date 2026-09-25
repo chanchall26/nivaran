@@ -80,7 +80,9 @@ interface Entry {
 function readEntry(key: string): Entry | null {
   try {
     const raw = localStorage.getItem(PREFIX + key)
-    return raw ? (JSON.parse(raw) as Entry) : null
+    const e = raw ? (JSON.parse(raw) as Entry) : null
+    // a damaged or old-format copy is treated as missing
+    return e && Number.isFinite(e.savedAt) && Array.isArray(e.data?.days) && e.data.days.length && e.data.current ? e : null
   } catch {
     return null
   }

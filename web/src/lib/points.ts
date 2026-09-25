@@ -124,7 +124,14 @@ export async function loadOsm(lat: number, lon: number): Promise<Point[]> {
     node(around:${r},${lat},${lon})[highway=traffic_signals];
     way(around:${r},${lat},${lon})[landuse=construction];
   );out center 400;`
-  const mirrors = ['https://overpass-api.de/api/interpreter', 'https://overpass.kumi.systems/api/interpreter']
+  // overpass-api.de and kumi.systems now answer browser requests with 406 and no CORS header;
+  // these two answer with CORS (checked 25 Sep 2026). The old ones stay as a last resort.
+  const mirrors = [
+    'https://maps.mail.ru/osm/tools/overpass/api/interpreter',
+    'https://overpass.private.coffee/api/interpreter',
+    'https://overpass-api.de/api/interpreter',
+    'https://overpass.kumi.systems/api/interpreter',
+  ]
   let els: OsmEl[] | null = null
   for (const m of mirrors) {
     try {
