@@ -66,11 +66,11 @@ function useDemoPlaces() {
 function Group({ title, emoji, open, onToggle, children }: { title: string; emoji: EmojiName; open: boolean; onToggle: () => void; children: React.ReactNode }) {
   return (
     <div>
-      <button type="button" className="flex w-full items-center gap-2 rounded-xl px-3 py-2 font-semibold hover:bg-violet-50" aria-expanded={open} onClick={onToggle}>
-        <Emoji name={emoji} size={22} /> <span className="flex-1 text-left">{title}</span>
+      <button type="button" className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 font-semibold hover:bg-violet-50" aria-expanded={open} onClick={onToggle}>
+        <Emoji name={emoji} size={22} /> <span className="flex-1 truncate text-left">{title}</span>
         <ChevronDown className={`size-4 text-muted transition-transform ${open ? 'rotate-180' : ''}`} {...ICON} aria-hidden />
       </button>
-      {open && <ul className="mt-0.5 space-y-0.5 pl-3">{children}</ul>}
+      {open && <ul className="mt-1 mb-2 space-y-1 border-l-2 border-violet-100 pl-2 ml-5">{children}</ul>}
     </div>
   )
 }
@@ -82,7 +82,7 @@ function BottomExtras({ compact, onDone }: { compact?: boolean; onDone?: () => v
   const to = useTo()
   const demo = useDemoPlaces()
   const [open, setOpen] = useState(false)
-  const [pastOpen, setPastOpen] = useState(true)
+  const [pastOpen, setPastOpen] = useState(() => !!demo.replay)
   if (compact)
     return (
       <div className="flex flex-col items-center gap-1 border-t border-line pt-2">
@@ -92,11 +92,11 @@ function BottomExtras({ compact, onDone }: { compact?: boolean; onDone?: () => v
       </div>
     )
   return (
-    <div className="space-y-1 border-t border-line pt-3 text-sm">
+    <div className="space-y-0.5 border-t border-line pt-3 text-sm">
       <Group title={t.nav.demoPlaces} emoji="globe" open={open} onToggle={() => setOpen(!open)}>
         {demo.rows.map((r) => (
           <li key={r.key}>
-            <button type="button" className="flex w-full items-center gap-2 rounded-lg px-3 py-1.5 text-left hover:bg-violet-50" onClick={() => (r.run(), onDone?.())}>
+            <button type="button" className="flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 text-left text-[13px] hover:bg-violet-50" onClick={() => (r.run(), onDone?.())}>
               <Emoji name={PLACE_EMOJI[r.key]} size={18} /> {r.label}
             </button>
           </li>
@@ -108,7 +108,7 @@ function BottomExtras({ compact, onDone }: { compact?: boolean; onDone?: () => v
             <button
               type="button"
               aria-current={r.active ? 'true' : undefined}
-              className={`flex w-full items-center gap-2 rounded-lg px-3 py-1.5 text-left leading-snug ${r.active ? 'bg-gradient-to-r from-violet-100 to-pink-100 font-bold' : 'hover:bg-violet-50'}`}
+              className={`flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 text-left text-[13px] leading-snug ${r.active ? 'bg-gradient-to-r from-violet-100 to-pink-100 font-bold' : 'hover:bg-violet-50'}`}
               onClick={() => (r.run(), onDone?.())}
             >
               <Emoji name={PAST_EMOJI[r.key as ReplayKind]} size={18} /> <span>{r.label}</span>
@@ -168,7 +168,7 @@ export function Sidebar() {
       aria-label="Main"
       className={`glass sticky top-[var(--hdr,92px)] z-10 hidden h-[calc(100dvh-var(--hdr,92px))] shrink-0 flex-col overflow-y-auto border-r border-white/70 py-3 lg:flex ${small ? 'w-[4.5rem] px-2' : 'w-64 px-3'}`}
     >
-      <ul className="space-y-0.5 pb-3">
+      <ul className="space-y-1.5 pb-4">
         {items.map(({ to: path, label, emoji }) => (
           <li key={path}>
             <NavLink
@@ -176,7 +176,7 @@ export function Sidebar() {
               end={path === '/'}
               title={small ? label : undefined}
               className={({ isActive }) =>
-                `group flex items-center gap-3 rounded-2xl py-1.5 font-semibold transition-all ${small ? 'justify-center px-0' : 'px-2.5'} ${
+                `group flex min-h-11 items-center gap-3 rounded-2xl py-1.5 text-[15px] font-semibold transition-all ${small ? 'justify-center px-0' : 'px-2.5'} ${
                   isActive
                     ? 'grad-brand text-white shadow-[0_10px_22px_-10px_rgb(192_38_211/0.8)]'
                     : 'text-ink hover:bg-white hover:shadow-sm'
@@ -188,7 +188,7 @@ export function Sidebar() {
                   <span className={`grid size-8 shrink-0 place-items-center rounded-xl ${isActive ? 'bg-white/25' : 'bg-gradient-to-br from-violet-50 to-orange-50'}`}>
                     <Emoji name={emoji} size={24} pop />
                   </span>
-                  <span className={small ? 'sr-only' : 'truncate'}>{label}</span>
+                  <span className={small ? 'sr-only' : 'truncate'} title={label}>{label}</span>
                 </>
               )}
             </NavLink>

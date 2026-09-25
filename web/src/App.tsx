@@ -86,9 +86,10 @@ export default function App() {
       </div>
       <div className="relative z-[1] flex">
         <Sidebar />
-        <main id="main" className={`min-w-0 flex-1 px-3 pt-5 pb-28 sm:px-6 lg:pb-10 ${worker ? 'mx-auto max-w-3xl' : ''}`}>
+        <main id="main" className="min-w-0 flex-1 px-3 pt-5 pb-28 sm:px-6 lg:px-8 lg:pb-10">
           <Suspense fallback={<Loading />}>
-            <div key={pathname} className="page">
+            {/* one comfortable reading width, centred on wide screens */}
+            <div key={pathname} className={`page mx-auto w-full ${worker ? 'max-w-6xl' : 'max-w-[1440px]'}`}>
             <Routes>
               <Route path="/" element={worker ? <WorkerToday /> : <Today />} />
               <Route path="/map" element={<MapScreen />} />

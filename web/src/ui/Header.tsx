@@ -109,98 +109,106 @@ export function Header({ onPlace, onMenu }: { onPlace: () => void; onMenu: () =>
     </button>
   ) : null
 
+  const weatherChip = c ? (
+    <Src kind="live">
+      <span className="flex items-center gap-2 rounded-2xl bg-gradient-to-br from-sky-50 to-violet-50 py-1 pr-3 pl-1.5 ring-1 ring-sky-100">
+        <Emoji name={wxEmoji(c.code, c.isDay)} size={30} float slow />
+        <span className="num text-xl">{Math.round(c.temp)}°</span>
+        <span className="hidden text-xs leading-tight whitespace-nowrap xl:block">
+          <span className="block font-semibold">{f(t.header.feels, { t: Math.round(c.feels) })}</span>
+          <span className="block text-muted">{wxText(day?.code ?? c.code)}</span>
+        </span>
+      </span>
+    </Src>
+  ) : failed ? null : (
+    <Skel className="h-10 w-28 !rounded-2xl" />
+  )
+  const airChip = wx ? (
+    air ? (
+      <Src text={t.header.aqiTip}>
+        <span
+          className="flex items-center gap-2 rounded-2xl py-1.5 pr-3 pl-2 ring-1 ring-black/5"
+          style={{ background: `linear-gradient(135deg, ${AQI_COLOR[aqiCategory(air.aqi)]}38, #ffffff)` }}
+        >
+          <Emoji name={air.aqi > 200 ? 'mask' : 'leaf'} size={24} />
+          <span className="text-xs leading-tight whitespace-nowrap">
+            <span className="flex items-center gap-1.5 font-semibold">
+              <AqiDot aqi={air.aqi} /> {f(t.header.air, { cat: t.aqi[aqiCategory(air.aqi)] })}
+            </span>
+            <span className="block text-muted">{f(t.header.aqiLine, { aqi: air.aqi, pm: Math.round(air.pm25) })}</span>
+          </span>
+        </span>
+      </Src>
+    ) : (
+      <span className="rounded-2xl border border-line bg-white/70 px-3 py-2 text-xs whitespace-nowrap text-muted">{replay ? t.src.airNoReplay : t.header.noAir}</span>
+    )
+  ) : failed ? null : (
+    <Skel className="h-10 w-32 !rounded-2xl" />
+  )
+  const dot = <span aria-hidden className="size-1 shrink-0 rounded-full bg-[#c4b5fd]" />
+
   return (
     <header className="glass sticky top-0 z-40 border-b border-white/60 shadow-[0_8px_30px_-18px_rgb(76_29_149/0.45)]" style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}>
-      {/* ---------- desktop / laptop ---------- */}
-      <div className="hidden items-center gap-2.5 px-4 py-2 lg:flex">
-        <Link to="/" className="flex items-center gap-2.5" aria-label={t.app.name}>
+      {/* ---------- desktop / laptop: controls on top, status underneath ---------- */}
+      <div className="hidden h-[68px] items-center gap-4 px-5 lg:flex">
+        <Link to="/" className="flex shrink-0 items-center gap-2.5" aria-label={t.app.name}>
           <Logo />
-          <span className="hidden font-display text-lg leading-none font-bold 2xl:block">
+          <span className="hidden font-display text-xl leading-none font-bold xl:block">
             <span className="grad-text">{t.app.name}</span>
           </span>
         </Link>
-        {board('md')}
-        <div className="flex flex-col items-start gap-1">
-          <button type="button" className="btn btn-line btn-sm whitespace-nowrap" onClick={onPlace}>
+        <span aria-hidden className="hidden h-9 w-px bg-line xl:block" />
+        <button
+          type="button"
+          onClick={onPlace}
+          className="lift group flex min-w-0 items-center gap-3 rounded-2xl border border-line bg-white/85 py-1 pr-3.5 pl-1"
+          aria-label={`${t.header.changePlace}: ${lang === 'hi' ? place.nameHi : place.name}`}
+        >
+          {board('md')}
+          <span className="flex items-center gap-1.5 text-sm font-semibold whitespace-nowrap text-ink">
             <Emoji name="pin" size={18} pop /> {t.header.changePlace}
-          </button>
-          <span className="pl-1">{source(false)}</span>
-        </div>
-
-        <div className="mx-auto flex flex-col items-center px-2 text-center">
-          <span className="num text-[28px] font-bold">{timeMain}</span>
-          <span className="text-xs text-muted">{timeSub}</span>
-          <span className="-mb-1 hidden 2xl:block">{updated}</span>
-        </div>
-
-        <div className="flex items-center gap-2">
-          {c ? (
-            <Src kind="live">
-              <span className="lift flex items-center gap-2 rounded-2xl bg-gradient-to-br from-sky-50 to-violet-50 px-3 py-1 ring-1 ring-sky-100">
-                <Emoji name={wxEmoji(c.code, c.isDay)} size={34} float slow />
-                <span className="num text-2xl">{Math.round(c.temp)}°</span>
-                <span className="flex flex-col text-xs leading-tight whitespace-nowrap">
-                  <span className="font-semibold">{f(t.header.feels, { t: Math.round(c.feels) })}</span>
-                  <span className="text-muted">{wxText(day?.code ?? c.code)}</span>
-                </span>
-              </span>
-            </Src>
-          ) : (
-            (failed ? null : <Skel className="h-10 w-40 rounded-full" />)
-          )}
-          {wx ? (
-            air ? (
-              <Src text={t.header.aqiTip}>
-                <span
-                  className="lift flex items-center gap-2 rounded-2xl px-3 py-1.5 ring-1 ring-black/5"
-                  style={{ background: `linear-gradient(135deg, ${AQI_COLOR[aqiCategory(air.aqi)]}33, #ffffff)` }}
-                >
-                  <Emoji name={air.aqi > 200 ? 'mask' : 'leaf'} size={26} />
-                  <AqiDot aqi={air.aqi} />
-                  <span className="flex flex-col text-xs leading-tight whitespace-nowrap">
-                    <span className="font-semibold">{f(t.header.air, { cat: t.aqi[aqiCategory(air.aqi)] })}</span>
-                    <span className="text-muted">{f(t.header.aqiLine, { aqi: air.aqi, pm: Math.round(air.pm25) })}</span>
-                  </span>
-                </span>
-              </Src>
-            ) : (
-              <span className="rounded-full border border-line px-3 py-1.5 text-xs text-muted">{replay ? t.src.airNoReplay : t.header.noAir}</span>
-            )
-          ) : (
-            (failed ? null : <Skel className="h-10 w-36 rounded-full" />)
-          )}
-          <span className="hidden flex-col items-start gap-0.5 2xl:flex">
-            <span className="text-xs font-semibold text-muted">{t.ritu[rituOf(month)]}</span>
-            {modeChip}
           </span>
-        </div>
+        </button>
 
-        <div className="flex items-center gap-1">
+        <div className="flex-1" />
+
+        <div className="flex items-center gap-2.5">
+          {weatherChip}
+          {airChip}
           <LangSwitch />
           {profile && (
-            <Link to="/settings" className="chip lift !py-1 font-semibold" title={t.header.role}>
-              <Emoji name={ROLE_EMOJI[profile.role] ?? 'people'} size={20} pop /> {t.role[profile.role]}
+            <Link to="/settings" className="chip lift !py-1.5 font-semibold" title={t.header.role}>
+              <Emoji name={ROLE_EMOJI[profile.role] ?? 'people'} size={20} pop /> <span className="hidden xl:inline">{t.role[profile.role]}</span>
             </Link>
           )}
         </div>
       </div>
 
-      {/* laptop-width second line: season + updated (hidden on very wide screens where it fits above) */}
-      <div className="hidden items-center gap-3 border-t border-white/70 px-4 py-1 lg:flex 2xl:hidden">
-        <Emoji name="leaf" size={18} />
-        <span className="text-xs font-semibold text-muted">{t.ritu[rituOf(month)]}</span>
-        {modeChip}
-        <span className="ml-auto">{updated}</span>
+      <div className="hidden h-10 items-center gap-3 border-t border-white/70 bg-white/35 px-5 text-sm lg:flex">
+        {source(false)}
+        {dot}
+        <span className="flex items-baseline gap-2 whitespace-nowrap">
+          <b className="font-display">{timeMain}</b>
+          <span className="text-muted">{timeSub}</span>
+        </span>
+        {wx && dot}
+        {updated}
+        <div className="flex-1" />
+        <span className="flex items-center gap-2 whitespace-nowrap">
+          <Emoji name="leaf" size={16} />
+          <span className="text-xs font-semibold text-muted">{t.ritu[rituOf(month)]}</span>
+          {modeChip}
+        </span>
       </div>
 
       {/* ---------- phone / tablet ---------- */}
       <div className="px-3 pt-2 pb-1.5 lg:hidden">
         <div className="flex items-center gap-2">
-          <button type="button" onClick={onPlace} className="shrink-0 rounded-md" aria-label={`${t.header.changePlace}: ${place.name}`}>
+          <button type="button" onClick={onPlace} className="min-w-0 shrink rounded-md" aria-label={`${t.header.changePlace}: ${place.name}`}>
             {board('sm')}
           </button>
           <span className="hidden shrink-0 sm:inline">{source(true)}</span>
-          <div className="ml-auto flex items-center gap-2">
+          <div className="ml-auto flex shrink-0 items-center gap-2">
             {c ? (
               <Src kind="live">
                 <span className="flex items-center gap-1">

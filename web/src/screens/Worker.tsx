@@ -106,48 +106,61 @@ export function WorkerToday() {
     'linear-gradient(135deg, #fb923c 0%, #fbbf24 100%)',
     'linear-gradient(135deg, #b91c1c 0%, #be123c 100%)',
   ]
-  return (
-    <div className="space-y-4">
-      <div className="flex justify-end">
-        <DayTabs />
-      </div>
-      <section
-        className="rise relative isolate overflow-hidden rounded-[26px] p-5 shadow-[0_18px_40px_-20px_rgb(30_27_75/0.55)] sm:p-7"
-        style={{ background: LEVEL_GRAD[level], color: dark ? '#1e1b4b' : '#fff' }}
-      >
-        <span aria-hidden className="pointer-events-none absolute -top-16 -right-12 -z-10 size-56 rounded-full bg-white/25 blur-2xl" />
-        <span aria-hidden className="absolute top-4 right-4 sm:top-6 sm:right-6">
-          <Emoji name={COND_EMOJI[cond]} size={72} float eager />
-        </span>
-        <h1 className="plain pr-20 font-display text-3xl leading-tight font-extrabold sm:text-4xl">{headline}</h1>
-        <div className="mt-3 flex items-end gap-3">
-          <Src kind="live">
-            <span className="num text-[64px] font-bold">{feels}°</span>
-          </Src>
-          <span className="pb-2 text-lg font-semibold">{t.today.feels}</span>
-        </div>
-        <p className="mt-2 text-xl leading-snug font-semibold">{advice}</p>
-        <div className="mt-4 flex flex-wrap gap-2">
-          <ReadAloud text={`${headline}. ${t.today.feels} ${feels}°. ${advice}`} />
-        </div>
-      </section>
-
-      <section className="panel p-4 sm:p-5">
-        <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-          <h2 className="font-display text-xl font-bold">{t.worker.yourShift}</h2>
-          <ShiftSwitch value={shift} onChange={(s) => s !== 'all' && setShift(s)} withAll={false} />
-        </div>
-        <DayStrip day={day} shift={shift} nowHour={nowHour} selected={sel} onSelect={(h) => setSel(sel === h ? null : h)} height="h-20" />
-      </section>
-
-      <NearList limit={3} />
-
+  const ask = (
+    <div className="space-y-2.5">
       <Link to={to('/ask')} className="btn btn-ink w-full !min-h-16 !rounded-2xl text-xl">
         <Emoji name="megaphone" size={34} pop /> {t.worker.ask}
       </Link>
       <p className="flex items-center justify-center gap-2 rounded-2xl bg-white/80 px-3 py-2 text-center font-semibold ring-1 ring-line">
         <Emoji name="ambulance" size={28} /> {t.worker.emergency}
       </p>
+    </div>
+  )
+  return (
+    <div className="space-y-4">
+      <div className="flex justify-end">
+        <DayTabs />
+      </div>
+      {/* phones: one column with help right under the risk; wide screens: two columns */}
+      <div className="grid gap-5 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)] lg:items-start">
+        <div className="space-y-4">
+          <section
+            className="rise relative isolate overflow-hidden rounded-[26px] p-5 shadow-[0_18px_40px_-20px_rgb(30_27_75/0.55)] sm:p-7"
+            style={{ background: LEVEL_GRAD[level], color: dark ? '#1e1b4b' : '#fff' }}
+          >
+            <span aria-hidden className="pointer-events-none absolute -top-16 -right-12 -z-10 size-56 rounded-full bg-white/25 blur-2xl" />
+            <span aria-hidden className="absolute top-4 right-4 sm:top-6 sm:right-6">
+              <Emoji name={COND_EMOJI[cond]} size={72} float eager />
+            </span>
+            <h1 className="plain pr-20 font-display text-3xl leading-tight font-extrabold sm:text-4xl">{headline}</h1>
+            <div className="mt-3 flex items-end gap-3">
+              <Src kind="live">
+                <span className="num text-[64px] font-bold">{feels}°</span>
+              </Src>
+              <span className="pb-2 text-lg font-semibold">{t.today.feels}</span>
+            </div>
+            <p className="mt-2 text-xl leading-snug font-semibold">{advice}</p>
+            <div className="mt-4 flex flex-wrap gap-2">
+              <ReadAloud text={`${headline}. ${t.today.feels} ${feels}°. ${advice}`} />
+            </div>
+          </section>
+
+          <div className="lg:hidden">{ask}</div>
+
+          <section className="panel p-4 sm:p-5">
+            <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+              <h2 className="font-display text-xl font-bold">{t.worker.yourShift}</h2>
+              <ShiftSwitch value={shift} onChange={(s) => s !== 'all' && setShift(s)} withAll={false} />
+            </div>
+            <DayStrip day={day} shift={shift} nowHour={nowHour} selected={sel} onSelect={(h) => setSel(sel === h ? null : h)} height="h-20" />
+          </section>
+        </div>
+
+        <div className="space-y-4">
+          <div className="hidden lg:block">{ask}</div>
+          <NearList limit={3} />
+        </div>
+      </div>
     </div>
   )
 }
