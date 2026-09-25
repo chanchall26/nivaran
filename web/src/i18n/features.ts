@@ -1,6 +1,6 @@
 /**
  * Words for the team tools and the later features (inbox, alerts, tree finder,
- * colony badge, cabin, install, live call). Merged into STRINGS in strings.ts.
+ * colony badge, cabin, install). Merged into STRINGS in strings.ts.
  */
 const en = {
   nav2: {
@@ -189,15 +189,6 @@ const en = {
     button: 'Install',
     later: 'Later',
     offline: 'You are offline. Showing saved data.',
-  },
-  live: {
-    button: 'Live AI call (beta)',
-    hint: 'Talk to Gemini like a phone call. Needs the microphone.',
-    starting: 'Connecting…',
-    talking: 'Live: speak in Hindi or English',
-    stop: 'End live call',
-    failed: 'Live call could not start: {e}',
-    unsupported: 'Live calls need Firebase and a microphone.',
   },
 }
 
@@ -390,15 +381,6 @@ const hi: FeatureDict = {
     button: 'इंस्टॉल करें',
     later: 'बाद में',
     offline: 'आप ऑफ़लाइन हैं। सेव किया डेटा दिखा रहे हैं।',
-  },
-  live: {
-    button: 'लाइव AI कॉल (बीटा)',
-    hint: 'फ़ोन कॉल की तरह Gemini से बात करें। माइक चाहिए।',
-    starting: 'जोड़ रहे हैं…',
-    talking: 'लाइव: हिंदी या English में बोलें',
-    stop: 'लाइव कॉल बंद करें',
-    failed: 'लाइव कॉल शुरू नहीं हुई: {e}',
-    unsupported: 'लाइव कॉल के लिए Firebase और माइक चाहिए।',
   },
 }
 

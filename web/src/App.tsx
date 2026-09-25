@@ -4,6 +4,7 @@ import {
 import { lazy, Suspense, useEffect, useState } from 'react'
 import { NavLink, Route, Routes, useLocation } from 'react-router-dom'
 import { Brand } from './components/Brand'
+import { InstallBanner } from './components/InstallBanner'
 import { LangToggle, SeasonToggle } from './components/kit'
 import { useI18n } from './i18n'
 import { store } from './lib/store'
@@ -130,6 +131,8 @@ export default function App() {
           </div>
         )}
       </header>
+
+      <InstallBanner />
 
       {cityError && (
         <div className="relative z-10 bg-critical px-4 py-2 text-center text-sm font-semibold text-white">

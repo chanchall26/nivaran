@@ -18,7 +18,15 @@ Theme: **Clean Air & Climate Resilience** (GDG hackathon).
 | **Barahmasa Match** | Allocates heaters, warm kits, shade nets, water points, saplings and all-season guard cabins by need × people, with a written reason for each choice and a comparison against "first come, first served" | `/match` |
 | **Pulse Check** | Hindi voice check-in ("Kal raat heater chala?"). A "no" gets a reason (bijli bill, RWA refused, broken…) and each reason gets its own fix | `/pulse` |
 | **Impact Ledger** | Heater active rate, sapling survival, report-to-help time, reasons help failed, and modelled estimates shown as ranges with their assumptions. One-click CSR PDF | `/ledger` |
+| **Team tools** | One hub for NGOs, RWAs, donors and city staff | `/team` |
+| **Reports inbox** | Assign reports to a team and mark them solved (feeds report-to-help time) | `/inbox` |
+| **Alerts** | Next 3 nights (cold + smoke-trap) or days (heat), with a ready WhatsApp message for RWAs, NGOs or markets, in Hindi or English | `/alerts` |
+| **Plant trees** | Photo of a street spot + 4 questions → Gemini says if a tree can grow there and picks from a Gwalior species list; hard rules (wires, space, water) always win. Spots appear on the summer map | `/trees` |
+| **Barahmasa Colony** | An RWA takes a 5-point pledge for its guards and gets a downloadable 3D badge | `/colony` |
+| **All-season guard cabin** | Cool roof + insulation + a tree: one asset for both seasons, and where to put it | `/cabin` |
 | **Method** | Every formula, source and limitation | `/method` |
+
+The whole app works in **Hindi and simple English** (switch in the header), follows the season as its theme (a hot afternoon or a winter night), and installs as an **app (PWA)** that opens on a weak network.
 
 ## Google tech used
 
