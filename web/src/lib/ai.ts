@@ -6,7 +6,8 @@
 import { getAI, getGenerativeModel, GoogleAIBackend, Schema, type GenerativeModel } from 'firebase/ai'
 import { firebase } from './firebase'
 import { parsePulseRules, routeFor } from './policy'
-import type { ItemType, PulseReason, ReportCategory, Route, Season } from './types'
+import { allowedSpecies, recommend, ruleVerdict, type SpotAnswers } from './species'
+import type { ItemType, PulseReason, ReportCategory, Route, Season, SpeciesId } from './types'
 
 export const GEMINI_MODEL = import.meta.env.VITE_GEMINI_MODEL || 'gemini-3-flash-preview'
 /** tried when the main model is overloaded or retired */
@@ -190,3 +191,70 @@ export async function analysePulse(answer: string, item: ItemType): Promise<Puls
 }
 
 export const aiMode = () => (firebase() ? `Gemini (${GEMINI_MODEL}) · Firebase AI Logic` : 'Rules (Gemini off)')
+
+// ---- plantable spot + species -------------------------------------------------------------
+
+const spotSchema = Schema.object({
+  properties: {
+    verdict: Schema.enumString({ enum: ['yes', 'maybe', 'no'] }),
+    wiresSeen: Schema.enumString({ enum: ['yes', 'no', 'unclear'] }),
+    pavedSeen: Schema.enumString({ enum: ['yes', 'no', 'unclear'] }),
+    whyEn: Schema.string({ description: 'One or two short, simple English sentences about the spot' }),
+    whyHi: Schema.string({ description: 'The same in simple Hindi (Devanagari)' }),
+    species: Schema.array({ items: Schema.string(), description: 'Up to 3 species ids, best first, only from the allowed list' }),
+  },
+})
+
+const SPOT_SYSTEM = `You help plant street trees in Gwalior, India (hot dry summers to 46C, cold winters,
+monsoon ~750 mm). You look at a photo of a street spot (faces blurred) plus the volunteer's answers,
+and decide if a tree can be planted there.
+- verdict "yes": open soil or a footpath edge with room, no blocking wires/roofs/drains.
+- "maybe": possible after work (cutting paving, a small species under wires, needs watering plan).
+- "no": on the road, in a drain, against a wall with no room, or nowhere for roots.
+- Look for overhead wires and paving in the photo and report them.
+- Choose species ONLY from the allowed list given. Prefer shade where people stand; in crowded humid
+  lanes prefer open-crown trees (amaltas, kachnar) over very dense ones.
+- If the photo is not a street or ground photo, say so and use "no".
+- Never describe people.`
+
+export interface SpotAnalysis {
+  verdict: 'yes' | 'maybe' | 'no'
+  species: SpeciesId[]
+  whyEn: string
+  whyHi: string
+  wiresSeen?: boolean
+  ai: 'gemini' | 'rules'
+}
+
+export async function analyseSpot(opts: { imageDataUrl?: string; answers: SpotAnswers }): Promise<SpotAnalysis> {
+  // anything the photo shows overrides "not sure", and always tightens (never loosens) constraints
+  const rules = (a: SpotAnswers): SpotAnalysis => ({ verdict: ruleVerdict(a), species: recommend(a), whyEn: '', whyHi: '', ai: 'rules' })
+  const m = modelChain('spot', spotSchema, SPOT_SYSTEM)
+  if (!m || !opts.imageDataUrl) return rules(opts.answers)
+  try {
+    const allowed = allowedSpecies(opts.answers).map((s) => s.id)
+    const [, mime, b64] = opts.imageDataUrl.match(/^data:(.+?);base64,(.*)$/) ?? []
+    const j = await generateJson(m, [
+      { inlineData: { mimeType: mime, data: b64 } },
+      {
+        text: `Volunteer answers: wires overhead=${opts.answers.wires ?? 'unsure'}, space=${opts.answers.space}, ` +
+          `paved=${opts.answers.paved}, someone will water for 2 years=${opts.answers.water ?? 'unsure'}, ` +
+          `crowded area=${opts.answers.crowded}. Allowed species ids: ${allowed.join(', ') || '(none)'}.`,
+      },
+    ])
+    const a: SpotAnswers = {
+      ...opts.answers,
+      wires: j.wiresSeen === 'yes' ? true : opts.answers.wires,
+      paved: j.pavedSeen === 'yes' ? true : opts.answers.paved,
+    }
+    const ok = new Set(allowedSpecies(a).map((s) => s.id))
+    const picked = (Array.isArray(j.species) ? j.species : []).filter((id: string): id is SpeciesId => ok.has(id as SpeciesId))
+    const species = (picked.length ? picked : recommend(a)).slice(0, 3)
+    let verdict: SpotAnalysis['verdict'] = ['yes', 'maybe', 'no'].includes(j.verdict) ? j.verdict : ruleVerdict(a)
+    if (!ok.size) verdict = 'no'
+    return { verdict, species: verdict === 'no' ? [] : species, whyEn: j.whyEn ?? '', whyHi: j.whyHi ?? '', wiresSeen: j.wiresSeen === 'yes', ai: 'gemini' }
+  } catch (e) {
+    console.warn('Gemini spot analysis failed, using rules', e)
+    return rules(opts.answers)
+  }
+}

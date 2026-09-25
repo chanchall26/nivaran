@@ -12,6 +12,7 @@ import {
   Package,
   ShieldCheck,
   ShoppingCart,
+  Sprout,
   Sun,
   Users,
 } from 'lucide-react'
@@ -61,6 +62,13 @@ export const reportIcon = (season: 'garmi' | 'sardi', resolved: boolean) => {
 export const deliveryIcon = () => ({
   url: badgeUrl(Package, 'delivery', '#1d1b18', '#1d1b18', '#ffffff'),
   id: 'delivery',
+  width: 32,
+  height: 32,
+})
+
+export const spotIcon = () => ({
+  url: badgeUrl(Sprout, 'spot', '#12a150', '#12a150', '#ffffff'),
+  id: 'spot',
   width: 32,
   height: 32,
 })

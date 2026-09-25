@@ -1,3 +1,5 @@
+import { FEATURES } from './features'
+
 /**
  * Every word the UI shows, in simple English and Hindi. `{name}` is a parameter.
  * Hindi mirrors the English keys exactly (the type enforces it).
@@ -798,6 +800,6 @@ const hi: Dict = {
   },
 }
 
-export const STRINGS = { en, hi }
+export const STRINGS = { en: { ...en, ...FEATURES.en }, hi: { ...hi, ...FEATURES.hi } }
 export type Lang = keyof typeof STRINGS
-export type Strings = Dict
+export type Strings = (typeof STRINGS)['en']

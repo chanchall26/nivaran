@@ -1,7 +1,9 @@
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react'
 import { computeNorms, type Norms } from './lib/scoring'
 import { store, type CollectionName } from './lib/store'
-import type { Cell, CityMeta, Delivery, Place, PulseCheck, Report, Season, WeatherSource, WeatherSummary } from './lib/types'
+import type {
+  Cell, CityMeta, Colony, Delivery, Place, PulseCheck, Report, Season, TreeSpot, WeatherSource, WeatherSummary,
+} from './lib/types'
 import { defaultSeason, fetchLive, fetchReplay, typical } from './lib/weather'
 
 interface CityData {
@@ -26,6 +28,8 @@ interface AppState {
   reports: Report[]
   deliveries: Delivery[]
   pulses: PulseCheck[]
+  spots: TreeSpot[]
+  colonies: Colony[]
 }
 
 const Ctx = createContext<AppState | null>(null)
@@ -74,6 +78,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const reports = useCollection<Report>('reports')
   const deliveries = useCollection<Delivery>('deliveries')
   const pulses = useCollection<PulseCheck>('pulses')
+  const spots = useCollection<TreeSpot>('spots')
+  const colonies = useCollection<Colony>('colonies')
 
   useEffect(() => {
     const get = (f: string) =>
@@ -108,7 +114,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       setSourceRaw(s)
       writePref(SOURCE_KEY, s)
     },
-    weather, weatherLoading, weatherError, typicalWeather, reports, deliveries, pulses,
+    weather, weatherLoading, weatherError, typicalWeather, reports, deliveries, pulses, spots, colonies,
   }
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>
 }

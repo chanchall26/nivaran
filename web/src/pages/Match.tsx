@@ -3,6 +3,7 @@ import { GeoJsonLayer, ScatterplotLayer } from '@deck.gl/layers'
 import { cellToLatLng } from 'h3-js'
 import { CheckCheck, Droplets, Flame, Home, Loader2, Minus, PackageCheck, Plus, Shirt, Sprout, Tent, TrendingUp } from 'lucide-react'
 import { useMemo, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { Btn, inr, Panel, SectionTitle, TiltCard } from '../components/kit'
 import { MapView } from '../components/MapView'
 import { useI18n } from '../i18n'
@@ -25,8 +26,11 @@ export default function Match() {
   const seasonal = (Object.keys(ITEMS) as ItemType[])
     .filter((t) => ITEMS[t].season === season || ITEMS[t].season === 'both')
     .sort((a, b) => Number(ITEMS[a].season === 'both') - Number(ITEMS[b].season === 'both'))
-  const [item, setItem] = useState<ItemType>(seasonal[0])
-  const [units, setUnits] = useState(DEFAULT_UNITS[seasonal[0]])
+  const [params] = useSearchParams()
+  const wanted = params.get('item') as ItemType | null
+  const first = wanted && seasonal.includes(wanted) ? wanted : seasonal[0]
+  const [item, setItem] = useState<ItemType>(first)
+  const [units, setUnits] = useState(DEFAULT_UNITS[first])
   const [donor, setDonor] = useState('Demo CSR Foundation')
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState<number | null>(null)

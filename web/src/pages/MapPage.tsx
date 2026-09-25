@@ -3,24 +3,25 @@ import { H3HexagonLayer } from '@deck.gl/geo-layers'
 import { GeoJsonLayer, IconLayer } from '@deck.gl/layers'
 import { cellToLatLng, gridDisk, latLngToCell } from 'h3-js'
 import { Box, ChevronUp, Layers, Navigation, Square, X } from 'lucide-react'
-import { useCallback, useMemo, useRef, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { Link, useSearchParams } from 'react-router-dom'
 import { CityStatus, directionsUrl, LevelPill, needText, NeedRing, SourceTag, WeatherChips } from '../components/kit'
 import { MapView } from '../components/MapView'
 import { useI18n } from '../i18n'
 import { needColor, RAMPS } from '../lib/colors'
 import { cellLabel } from '../lib/format'
-import { deliveryIcon, PLACE_META, placeIcon, reportIcon } from '../lib/icons'
+import { deliveryIcon, PLACE_META, placeIcon, reportIcon, spotIcon } from '../lib/icons'
 import { H3_RES } from '../lib/match'
 import { band, score, type Breakdown } from '../lib/scoring'
-import type { Cell, Delivery, Place, PlaceKind, Report } from '../lib/types'
+import type { Cell, Delivery, Place, PlaceKind, Report, TreeSpot } from '../lib/types'
 import { useApp } from '../state'
 
 type Scored = Cell & { b: Breakdown }
 
 export default function MapPage() {
-  const { city, season, weather, reports, deliveries } = useApp()
+  const { city, season, weather, reports, deliveries, spots } = useApp()
   const { s, f, lang } = useI18n()
+  const [params] = useSearchParams()
   const [selected, setSelected] = useState<string | null>(null)
   const [is3d, setIs3d] = useState(true)
   const [sheetOpen, setSheetOpen] = useState(false)
@@ -30,6 +31,7 @@ export default function MapPage() {
   })
   const [showReports, setShowReports] = useState(true)
   const [showDeliveries, setShowDeliveries] = useState(true)
+  const [showSpots, setShowSpots] = useState(true)
   const fly = useRef<(lat: number, lon: number, z?: number) => void>(() => {})
   const kinds = kindsBySeason[season]
   const setKinds = (k: Set<PlaceKind>) => setKindsBySeason((m) => ({ ...m, [season]: k }))
@@ -62,6 +64,16 @@ export default function MapPage() {
       fly.current(lat, lon, 13.4)
     }
   }, [])
+
+  // deep link: /map?h3=<cell> opens that cell (used by the reports inbox)
+  const deepH3 = params.get('h3')
+  const flyReady = useRef(false)
+  useEffect(() => {
+    if (!deepH3 || !city || flyReady.current) return
+    flyReady.current = true
+    const t = setTimeout(() => select(deepH3, true), 800)
+    return () => clearTimeout(t)
+  }, [deepH3, city, select])
 
   const layers = useMemo(() => {
     if (!city) return []
@@ -132,6 +144,18 @@ export default function MapPage() {
           pickable: true,
           updateTriggers: { getPosition: lift },
         }),
+      showSpots &&
+        season === 'garmi' &&
+        new IconLayer<TreeSpot>({
+          id: 'spots',
+          data: spots.filter((t) => t.verdict !== 'no'),
+          getPosition: (d) => [d.lon, d.lat, lift],
+          getIcon: () => spotIcon(),
+          getSize: 22,
+          sizeUnits: 'pixels',
+          pickable: true,
+          updateTriggers: { getPosition: lift },
+        }),
       showReports &&
         new IconLayer<Report>({
           id: 'reports',
@@ -147,7 +171,7 @@ export default function MapPage() {
           },
         }),
     ].filter(Boolean) as never[]
-  }, [city, scored, byH3, season, weather, selected, kinds, showReports, showDeliveries, deliveries, seasonReports, is3d, select])
+  }, [city, scored, byH3, season, weather, selected, kinds, showReports, showDeliveries, showSpots, spots, deliveries, seasonReports, is3d, select])
 
   const getTooltip = useCallback(
     (info: PickingInfo) => {
@@ -177,6 +201,10 @@ export default function MapPage() {
       if (id === 'reports') {
         const r = o as unknown as Report
         return box(`<b>${s.map.reports}</b><br>${s.cat[r.category]}`)
+      }
+      if (id === 'spots') {
+        const t = o as unknown as TreeSpot
+        return box(`<b>${s.nav2.trees}</b><br>${t.species.map((x) => s.species[x].name).join(', ')}`)
       }
       if (id === 'deliveries') {
         const d = o as unknown as Delivery
@@ -250,6 +278,16 @@ export default function MapPage() {
           >
             {s.map.delivered} ({deliveries.length})
           </button>
+          {season === 'garmi' && (
+            <button
+              type="button"
+              aria-pressed={showSpots}
+              onClick={() => setShowSpots(!showSpots)}
+              className={`rounded-full border px-2.5 py-1 text-xs font-bold ${showSpots ? 'border-transparent bg-good text-white' : 'border-line bg-surface text-ink-2'}`}
+            >
+              {s.nav2.trees} ({spots.length})
+            </button>
+          )}
         </div>
       </div>
       <div>

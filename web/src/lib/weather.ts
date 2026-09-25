@@ -71,22 +71,35 @@ function localDate(offsetDays = 0) {
   return d.toISOString().slice(0, 10)
 }
 
-export async function fetchLive(lat: number, lon: number): Promise<WeatherSummary> {
+async function fetchForecastHourly(lat: number, lon: number, days = 4): Promise<HourlyWeather> {
   const base = `latitude=${lat}&longitude=${lon}&timezone=Asia%2FKolkata`
   const [w, aq] = await Promise.all([
-    fetch(`https://api.open-meteo.com/v1/forecast?${base}&hourly=${HOURLY}&wind_speed_unit=ms&forecast_days=3`).then(
+    fetch(`https://api.open-meteo.com/v1/forecast?${base}&hourly=${HOURLY}&wind_speed_unit=ms&forecast_days=${days}`).then(
       (r) => {
         if (!r.ok) throw new Error(`Open-Meteo ${r.status}`)
         return r.json()
       },
     ),
-    fetch(`https://air-quality-api.open-meteo.com/v1/air-quality?${base}&hourly=pm2_5&forecast_days=3`)
+    fetch(`https://air-quality-api.open-meteo.com/v1/air-quality?${base}&hourly=pm2_5&forecast_days=${Math.min(days, 5)}`)
       .then((r) => (r.ok ? r.json() : null))
       .catch(() => null),
   ])
-  const hourly: HourlyWeather = { ...w.hourly, pm2_5: aq?.hourly?.pm2_5 }
+  return { ...w.hourly, pm2_5: aq?.hourly?.pm2_5 }
+}
+
+export async function fetchLive(lat: number, lon: number): Promise<WeatherSummary> {
+  const hourly = await fetchForecastHourly(lat, lon, 3)
   const today = localDate()
-  return summarise(hourly, { source: 'live', label: 'Aaj raat / aaj (live forecast)', nightOf: today, dayOf: today })
+  return summarise(hourly, { source: 'live', label: 'live', nightOf: today, dayOf: today })
+}
+
+/** The next `n` nights (sardi) and days (garmi) from today's forecast, for alerts. */
+export async function fetchOutlook(lat: number, lon: number, n = 3): Promise<WeatherSummary[]> {
+  const hourly = await fetchForecastHourly(lat, lon, n + 1)
+  return Array.from({ length: n }, (_, i) => {
+    const d = localDate(i)
+    return summarise(hourly, { source: 'live', label: 'live', nightOf: d, dayOf: d })
+  })
 }
 
 interface ReplayFile {

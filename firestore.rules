@@ -49,5 +49,25 @@ service cloud.firestore {
       allow create: if signedIn() && str(request.resource.data.answer, 1000);
       allow delete: if signedIn() && isDemoDelete();
     }
+
+    match /spots/{id} {
+      allow read: if signedIn();
+      allow create: if signedIn()
+        && request.resource.data.verdict in ['yes', 'maybe', 'no']
+        && request.resource.data.species is list && request.resource.data.species.size() <= 5
+        && request.resource.data.lat is number && request.resource.data.lon is number
+        && (!('thumb' in request.resource.data) || str(request.resource.data.thumb, 400000));
+      allow delete: if signedIn() && isDemoDelete();
+    }
+
+    match /colonies/{id} {
+      allow read: if signedIn();
+      allow create: if signedIn()
+        && str(request.resource.data.name, 80) && request.resource.data.name.size() > 1
+        && str(request.resource.data.area, 80)
+        && request.resource.data.guards is int && request.resource.data.guards >= 0 && request.resource.data.guards <= 200
+        && (!('contact' in request.resource.data) || str(request.resource.data.contact, 80));
+      allow delete: if signedIn() && isDemoDelete();
+    }
   }
 }

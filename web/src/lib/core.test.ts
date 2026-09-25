@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest'
 import { computeLedger } from './impact'
 import { allocate, ITEMS } from './match'
 import { STRINGS } from '../i18n/strings'
+import { allowedSpecies, byId, reasonKeys, recommend, ruleVerdict } from './species'
 import { actionKey, heaterMonthlyCost, parsePulseRules, routeFor } from './policy'
 import { alaav, band, chhaya, computeNorms, exposure, nightCold, smokeTrap } from './scoring'
 import type { Cell, Delivery, HourlyWeather, Place, WeatherSummary } from './types'
@@ -175,5 +176,37 @@ describe('i18n', () => {
   it('placeholders match in both languages', () => {
     const ph = (t: string) => [...t.matchAll(/\{(\w+)\}/g)].map((m) => m[1]).sort()
     for (const [k, v] of en) expect(ph(hi.get(k)!), k).toEqual(ph(v))
+  })
+})
+
+describe('species advisor', () => {
+  const base = { wires: false, space: 'wide' as const, paved: false, water: true, crowded: false }
+
+  it('never puts a tall tree under wires, even when wires are only "not sure"', () => {
+    for (const wires of [true, null]) {
+      const picks = recommend({ ...base, wires })
+      expect(picks.length).toBeGreaterThan(0)
+      for (const id of picks) expect(byId.get(id)!.maxH).toBeLessThanOrEqual(8)
+    }
+    expect(reasonKeys({ ...base, wires: null })).toContain('wiresUnsure')
+  })
+
+  it('narrow strips and no-water spots get only fitting species', () => {
+    for (const s of allowedSpecies({ ...base, space: 'narrow', water: false })) {
+      expect(s.narrowOk).toBe(true)
+      expect(s.water).toBe('low')
+    }
+    expect(allowedSpecies({ ...base, space: 'medium' }).some((s) => s.wideOnly)).toBe(false)
+  })
+
+  it('open ground with water gets a dense shade tree first; crowded lanes prefer open crowns', () => {
+    expect(byId.get(recommend(base)[0])!.shade).toBe(3)
+    expect(byId.get(recommend({ ...base, crowded: true, wires: true })[0])!.openCrown).toBe(true)
+  })
+
+  it('verdicts', () => {
+    expect(ruleVerdict(base)).toBe('yes')
+    expect(ruleVerdict({ ...base, paved: true })).toBe('maybe')
+    expect(ruleVerdict({ ...base, space: 'narrow', paved: true, water: false })).toBe('no')
   })
 })

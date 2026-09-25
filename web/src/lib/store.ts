@@ -16,10 +16,17 @@ import {
   writeBatch,
 } from 'firebase/firestore'
 import { firebase } from './firebase'
-import type { Delivery, PulseCheck, Report } from './types'
+import type { Colony, Delivery, PulseCheck, Report, TreeSpot } from './types'
 
-export type CollectionName = 'reports' | 'deliveries' | 'pulses'
-type DocOf<C extends CollectionName> = C extends 'reports' ? Report : C extends 'deliveries' ? Delivery : PulseCheck
+export type CollectionName = 'reports' | 'deliveries' | 'pulses' | 'spots' | 'colonies'
+interface Docs {
+  reports: Report
+  deliveries: Delivery
+  pulses: PulseCheck
+  spots: TreeSpot
+  colonies: Colony
+}
+type DocOf<C extends CollectionName> = Docs[C]
 
 const LS_PREFIX = 'barahmasa:'
 const listeners = new Map<CollectionName, Set<() => void>>()
@@ -133,7 +140,7 @@ export const store = {
   /** Remove everything seeded by the demo button, leaving real submissions alone. */
   async clearDemo(): Promise<void> {
     const fb = await remote()
-    for (const c of ['reports', 'deliveries', 'pulses'] as CollectionName[]) {
+    for (const c of ['reports', 'deliveries', 'pulses', 'spots', 'colonies'] as CollectionName[]) {
       if (fb) {
         const snap = await getDocs(query(collection(fb.db, c), where('demo', '==', true)))
         await Promise.all(snap.docs.map((d) => deleteDoc(d.ref)))

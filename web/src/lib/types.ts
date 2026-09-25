@@ -175,3 +175,39 @@ export interface PulseCheck {
   ai: 'gemini' | 'rules'
   demo?: boolean
 }
+
+export type SpeciesId = 'neem' | 'karanj' | 'amaltas' | 'kachnar' | 'arjun' | 'jamun' | 'bael' | 'pilkhan' | 'khejri'
+
+/** A street spot checked for planting (Plantable Spot Finder). */
+export interface TreeSpot {
+  id: string
+  lat: number
+  lon: number
+  h3: string
+  verdict: 'yes' | 'maybe' | 'no'
+  species: SpeciesId[]
+  wires: boolean | null
+  space: 'narrow' | 'medium' | 'wide'
+  paved: boolean
+  water: boolean | null
+  /** blurred JPEG data URL */
+  thumb?: string
+  why?: string
+  whyHi?: string
+  createdAt: number
+  ai: 'gemini' | 'rules'
+  demo?: boolean
+}
+
+/** An RWA that took the Barahmasa Colony pledge. */
+export interface Colony {
+  id: string
+  name: string
+  area: string
+  lat: number
+  lon: number
+  guards: number
+  contact?: string
+  createdAt: number
+  demo?: boolean
+}
