@@ -1,4 +1,4 @@
-import { ArrowRight, Camera, HandHeart, Map, PhoneCall, Search, Send, ShieldCheck } from 'lucide-react'
+import { ArrowRight, Camera, ClipboardList, Flame, HandHeart, Map, PhoneCall, Play, Search, Send, ShieldCheck, Thermometer } from 'lucide-react'
 import { useMemo, type ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 import { BigStat, BtnLink, CityStatus, Panel, SectionTitle, TiltCard, WeatherChips } from '../components/kit'
@@ -59,7 +59,7 @@ export default function Home() {
       <section className="grid items-center gap-10 lg:grid-cols-[1.05fr_1fr]">
         <div className="anim-rise">
           <p className="inline-flex items-center gap-2 rounded-full border border-line bg-surface/70 px-3 py-1 text-sm font-bold text-accent">
-            <span className="size-2 rounded-full bg-accent" /> {s.home.kicker}
+            <span className="size-2 rounded-full bg-accent" /> {s.homev3.kicker}
           </p>
           <h1 className="mt-4 font-display text-5xl leading-[1.02] font-extrabold tracking-tight sm:text-6xl lg:text-7xl">
             <span className={season === 'garmi' ? 'text-accent' : ''}>{s.home.title1}</span>
@@ -68,17 +68,40 @@ export default function Home() {
           </h1>
           <p className="mt-5 max-w-xl text-lg leading-relaxed text-ink-2">{s.home.intro}</p>
           <div className="mt-7 flex flex-wrap gap-3">
-            <BtnLink to="/map" size="lg">
-              <Map className="size-5" aria-hidden /> {s.home.ctaMap}
+            <BtnLink to="/proof" size="lg">
+              <Play className="size-5" aria-hidden /> {s.homev3.watch}
             </BtnLink>
-            <BtnLink to="/report" size="lg" variant="soft">
-              <Camera className="size-5" aria-hidden /> {s.home.ctaReport}
+            <BtnLink to="/tonight" size="lg" variant="soft">
+              <Flame className="size-5" aria-hidden /> {s.homev3.tonight}
             </BtnLink>
           </div>
         </div>
         <div className="anim-rise [animation-delay:120ms]">
           <SeasonScene />
           <p className="mt-3 text-center text-xs text-ink-3">{s.home.tapFlip}</p>
+        </div>
+      </section>
+
+      {/* the three doctors: why Barahmasa leads with the follow-up */}
+      <section>
+        <SectionTitle>{s.homev3.doctorTitle}</SectionTitle>
+        <div className="grid gap-4 md:grid-cols-3">
+          {[
+            { Icon: Thermometer, t: s.homev3.thermometer, d: s.homev3.thermometerD, hero: false },
+            { Icon: ClipboardList, t: s.homev3.prescription, d: s.homev3.prescriptionD, hero: false },
+            { Icon: PhoneCall, t: s.homev3.doctor, d: s.homev3.doctorD, hero: true },
+          ].map(({ Icon, t, d, hero }) => (
+            <TiltCard key={t} className={`h-full rounded-3xl p-5 ${hero ? 'border-2 border-accent bg-accent-soft shadow-[0_8px_0_var(--accent-edge)]' : 'surface-3d opacity-80'}`}>
+              <Icon className={`pop size-8 ${hero ? 'text-accent' : 'text-ink-3'}`} aria-hidden />
+              <h3 className="pop mt-3 font-display text-xl font-extrabold">{t}</h3>
+              <p className="pop mt-1 text-ink-2">{d}</p>
+              {hero && (
+                <Link to="/proof" className="pop mt-4 inline-flex items-center gap-1 font-bold text-accent">
+                  {s.homev3.watch} <ArrowRight className="size-4" aria-hidden />
+                </Link>
+              )}
+            </TiltCard>
+          ))}
         </div>
       </section>
 

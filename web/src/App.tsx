@@ -1,5 +1,5 @@
 import {
-  BarChart3, BellRing, BookOpen, Camera, HandHeart, Home as HomeIcon, Inbox as InboxIcon, Map, Menu, PhoneCall, Sprout, Trophy, Users, Warehouse, X,
+  BarChart3, BellRing, BookOpen, Camera, CircleCheckBig, Flame, HandHeart, Home as HomeIcon, Inbox as InboxIcon, Map, Menu, PhoneCall, Sprout, Sun, Trophy, Users, Warehouse, X,
 } from 'lucide-react'
 import { lazy, Suspense, useEffect, useState } from 'react'
 import { NavLink, Route, Routes, useLocation } from 'react-router-dom'
@@ -23,6 +23,9 @@ const Alerts = lazy(() => import('./pages/Alerts'))
 const Trees = lazy(() => import('./pages/Trees'))
 const Colony = lazy(() => import('./pages/Colony'))
 const Cabin = lazy(() => import('./pages/Cabin'))
+const Tonight = lazy(() => import('./pages/Tonight'))
+const NodePage = lazy(() => import('./pages/NodePage'))
+const Proof = lazy(() => import('./pages/Proof'))
 
 /** Pages that live under "Team", so its tab stays lit on them. */
 const TEAM_PATHS = ['/team', '/inbox', '/alerts', '/match', '/pulse', '/colony', '/cabin']
@@ -46,14 +49,16 @@ export default function App() {
   const map = { to: '/map', label: s.nav.map, Icon: Map }
   const report = { to: '/report', label: s.nav.report, Icon: Camera }
   const trees = { to: '/trees', label: s.nav2.trees, Icon: Sprout }
+  const tonight = { to: '/tonight', label: season === 'sardi' ? s.v3nav.tonight : s.v3nav.today, Icon: season === 'sardi' ? Flame : Sun }
+  const proof = { to: '/proof', label: s.v3nav.proof, Icon: CircleCheckBig }
   const team = { to: '/team', label: s.nav2.team, Icon: Users }
   const results = { to: '/ledger', label: s.nav.results, Icon: BarChart3 }
   const how = { to: '/method', label: s.nav.how, Icon: BookOpen }
   // desktop header: public pages + one door into the team tools
-  const NAV = [home, map, report, trees, team, results, how]
+  const NAV = [home, map, tonight, proof, report, team, results, how]
   // phone menu: everything, directly
   const MENU = [
-    home, map, report, trees, team,
+    home, tonight, proof, map, report, team, trees,
     { to: '/inbox', label: s.nav2.inbox, Icon: InboxIcon },
     { to: '/alerts', label: s.nav2.alerts, Icon: BellRing },
     { to: '/match', label: s.nav.help, Icon: HandHeart },
@@ -62,7 +67,7 @@ export default function App() {
     { to: '/cabin', label: s.nav2.cabin, Icon: Warehouse },
     results, how,
   ]
-  const TABS = [home, map, report, team, results]
+  const TABS = [home, tonight, report, proof, team]
   const isActive = (to: string, navActive: boolean) => navActive || (to === '/team' && TEAM_PATHS.includes(pathname))
 
   return (
@@ -156,6 +161,9 @@ export default function App() {
             <Route path="/trees" element={<Trees />} />
             <Route path="/colony" element={<Colony />} />
             <Route path="/cabin" element={<Cabin />} />
+            <Route path="/tonight" element={<Tonight />} />
+            <Route path="/node/:id" element={<NodePage />} />
+            <Route path="/proof" element={<Proof />} />
             <Route path="*" element={<div className="p-16 text-center">{s.app.notFound}</div>} />
           </Routes>
         </Suspense>

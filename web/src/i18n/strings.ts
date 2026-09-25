@@ -226,12 +226,14 @@ const en = {
     shade_net: 'Shade net',
     water_pot: 'Water point',
     sapling: 'Tree sapling',
+    socket_fix: 'Socket + bill permission',
     heaterD: 'ISI 800 W, for 2 guards',
     warm_kitD: 'Blanket, jacket, cap, mask',
     cabinD: 'Cool in summer, warm in winter',
     shade_netD: '6×4 m, shades ~12 people',
     water_potD: 'Clay pot water, ~40 people a day',
     saplingD: 'With tree guard',
+    socket_fixD: 'For a heater that is there but not used',
     both: 'Both seasons',
   },
   match: {
@@ -325,6 +327,7 @@ const en = {
     other: 'A volunteer will call within 48 hours.',
   },
   quick: {
+    socket_fix: ['Yes, it ran all night now', 'Still no, the secretary says no'],
     heater: ['Yes, it ran all night', 'No, society says the electricity bill will be high', 'The secretary said no', 'The heater is broken'],
     warm_kit: ['Yes, got it and using it', 'Have not received it yet', 'The blanket was stolen'],
     cabin: ['Yes, it is very comfortable', 'The roof leaks, it is broken'],
@@ -334,6 +337,7 @@ const en = {
   },
   question: {
     heater: 'Did your heater run last night?',
+    socket_fix: 'Now that the socket is fixed, did the heater run last night?',
     warm_kit: 'Did you get the blanket and warm kit, and are you using it?',
     cabin: 'Is the new cabin keeping you safe from heat and cold?',
     shade_net: 'Is the shade net still up and giving shade?',
@@ -633,12 +637,14 @@ const hi: Dict = {
     shade_net: 'छाया जाल',
     water_pot: 'प्याऊ',
     sapling: 'पौधा',
+    socket_fix: 'सॉकेट + बिल की अनुमति',
     heaterD: 'ISI 800 W, 2 गार्ड के लिए',
     warm_kitD: 'कंबल, जैकेट, टोपी, मास्क',
     cabinD: 'गर्मी में ठंडा, सर्दी में गरम',
     shade_netD: '6×4 मीटर, ~12 लोगों को छाया',
     water_potD: 'मटके का पानी, रोज़ ~40 लोग',
     saplingD: 'ट्री गार्ड के साथ',
+    socket_fixD: 'जो हीटर है पर इस्तेमाल नहीं होता',
     both: 'दोनों मौसम',
   },
   match: {
@@ -732,6 +738,7 @@ const hi: Dict = {
     other: 'स्वयंसेवक 48 घंटे में कॉल करेगा।',
   },
   quick: {
+    socket_fix: ['हाँ, अब पूरी रात चला', 'अब भी नहीं, सेक्रेटरी मना करते हैं'],
     heater: ['हाँ जी, पूरी रात चला', 'नहीं, सोसाइटी कहती है बिजली का बिल ज़्यादा आएगा', 'सेक्रेटरी ने मना कर दिया', 'हीटर ख़राब हो गया'],
     warm_kit: ['हाँ मिल गया, पहन रहे हैं', 'अभी तक नहीं मिला', 'कंबल चोरी हो गया'],
     cabin: ['हाँ, बहुत आराम है', 'छत से पानी टपकता है, टूट गया'],
@@ -741,6 +748,7 @@ const hi: Dict = {
   },
   question: {
     heater: 'कल रात आपका हीटर चला था?',
+    socket_fix: 'अब सॉकेट ठीक है, तो क्या कल रात हीटर चला?',
     warm_kit: 'क्या आपको कंबल और गर्म किट मिली, और आप उसे इस्तेमाल कर रहे हैं?',
     cabin: 'क्या नया केबिन आपको गर्मी और ठंड से बचा रहा है?',
     shade_net: 'क्या छाया जाल अभी भी लगा है और छाया दे रहा है?',

@@ -26,6 +26,7 @@ export const ITEMS: Record<ItemType, ItemSpec> = {
     kinds: ['guard_post', 'shelter'], unitCostInr: 1800 },
   warm_kit: { type: 'warm_kit', season: 'sardi', covers: 1,
     kinds: ['homeless_spot', 'guard_post', 'labour_chowk', 'shelter'], unitCostInr: 1200 },
+  socket_fix: { type: 'socket_fix', season: 'sardi', covers: 2, kinds: ['guard_post'], unitCostInr: 1500 },
   cabin: { type: 'cabin', season: 'both', covers: 2,
     kinds: ['guard_post'], unitCostInr: 45000 },
   shade_net: { type: 'shade_net', season: 'garmi', covers: 12,

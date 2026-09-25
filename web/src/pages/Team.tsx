@@ -1,4 +1,4 @@
-import { ArrowRight, BarChart3, BellRing, HandHeart, Home, Inbox as InboxIcon, PhoneCall, Sprout, Trophy } from 'lucide-react'
+import { ArrowRight, BarChart3, BellRing, CircleCheckBig, Flame, HandHeart, Home, Inbox as InboxIcon, PhoneCall, Sprout, Trophy } from 'lucide-react'
 import type { ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 import { SectionTitle, TiltCard } from '../components/kit'
@@ -42,6 +42,8 @@ export default function Team() {
     <div className="space-y-6">
       <SectionTitle sub={s.team.intro}>{s.team.title}</SectionTitle>
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <Tile to="/proof" Icon={CircleCheckBig} hue="#e4571e" title={s.v3nav.proof} text={s.homev3.doctorD} />
+        <Tile to="/tonight" Icon={Flame} hue="#d03b3b" title={season === 'sardi' ? s.tonight.titleSardi : s.tonight.titleGarmi} text={season === 'sardi' ? s.tonight.introSardi : s.tonight.introGarmi} />
         <Tile to="/inbox" Icon={InboxIcon} hue="#e5484d" title={s.nav2.inbox} text={s.team.inboxD}
           badge={open > 0 && badge(f(s.team.open, { n: open }), 'var(--color-critical)')} />
         <Tile to="/alerts" Icon={BellRing} hue="#f07335" title={s.nav2.alerts} text={s.team.alertsD} />

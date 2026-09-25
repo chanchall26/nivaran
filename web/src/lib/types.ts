@@ -88,7 +88,7 @@ export interface WeatherSummary {
   hourly?: HourlyWeather
 }
 
-export type ItemType = 'heater' | 'warm_kit' | 'cabin' | 'shade_net' | 'water_pot' | 'sapling'
+export type ItemType = 'heater' | 'socket_fix' | 'warm_kit' | 'cabin' | 'shade_net' | 'water_pot' | 'sapling'
 
 export type ReportCategory =
   | 'guard_fire'
@@ -138,6 +138,8 @@ export interface Delivery {
   item: ItemType
   qty: number
   placeId?: string
+  /** Exposure Node this help was sent to, if any */
+  nodeId?: string
   h3: string
   lat: number
   lon: number

@@ -13,10 +13,10 @@ import { store } from '../lib/store'
 import type { ItemType } from '../lib/types'
 import { useApp } from '../state'
 
-const DEFAULT_UNITS: Record<ItemType, number> = { heater: 60, warm_kit: 150, cabin: 12, shade_net: 25, water_pot: 40, sapling: 300 }
-const MAX_UNITS: Record<ItemType, number> = { heater: 400, warm_kit: 400, cabin: 60, shade_net: 200, water_pot: 200, sapling: 2000 }
+const DEFAULT_UNITS: Record<ItemType, number> = { heater: 60, socket_fix: 10, warm_kit: 150, cabin: 12, shade_net: 25, water_pot: 40, sapling: 300 }
+const MAX_UNITS: Record<ItemType, number> = { heater: 400, socket_fix: 100, warm_kit: 400, cabin: 60, shade_net: 200, water_pot: 200, sapling: 2000 }
 const ITEM_ICON: Record<ItemType, typeof Flame> = {
-  heater: Flame, warm_kit: Shirt, cabin: Home, shade_net: Tent, water_pot: Droplets, sapling: Sprout,
+  heater: Flame, socket_fix: Flame, warm_kit: Shirt, cabin: Home, shade_net: Tent, water_pot: Droplets, sapling: Sprout,
 }
 
 export default function Match() {
@@ -24,7 +24,7 @@ export default function Match() {
   const { s, f, lang, num } = useI18n()
   // this season's items first, the all-season cabin last
   const seasonal = (Object.keys(ITEMS) as ItemType[])
-    .filter((t) => ITEMS[t].season === season || ITEMS[t].season === 'both')
+    .filter((t) => t !== 'socket_fix' && (ITEMS[t].season === season || ITEMS[t].season === 'both'))
     .sort((a, b) => Number(ITEMS[a].season === 'both') - Number(ITEMS[b].season === 'both'))
   const [params] = useSearchParams()
   const wanted = params.get('item') as ItemType | null

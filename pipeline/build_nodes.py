@@ -31,7 +31,8 @@ RADIUS_M = 120
 # winter: night hours [start, end], people by group, heater status
 # summer: day hours [start, end], people by group, water point present
 NODES = [
-    ("shyam-gate", "Raksha Vihar, Gate 2", "रक्षा विहार, गेट 2", 26.20899, 78.183901, "osm-anchored",
+    # gate on the colony's west edge (approximate): open to the sun, a tree 9 m away
+    ("shyam-gate", "Raksha Vihar, Gate 2", "रक्षा विहार, गेट 2", 26.209153, 78.183300, "osm-anchored",
      {"hours": [20, 8], "people": {"guard": 1}, "heater": "distributed"},
      {"hours": [8, 20], "people": {"guard": 1}, "water": False}),
     ("defence-gate", "Defence Colony gate", "डिफ़ेंस कॉलोनी गेट", 26.216211, 78.177523, "osm-anchored",
