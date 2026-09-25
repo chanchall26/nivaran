@@ -5,7 +5,7 @@ import { useEffect, useRef, useState } from 'react'
  * height above sea level small underneath. When the place changes each whole line flips once
  * (never splitting Hindi letters); reduced motion cross-fades instead (see index.css).
  */
-export function StationBoard({ hi, en, small, size = 'md' }: { hi: string; en: string; small?: string; size?: 'sm' | 'md' | 'lg' }) {
+export function StationBoard({ hi, en, small, size = 'md' }: { hi: string; en: string; small?: string; size?: 'sm' | 'wide' | 'md' | 'lg' }) {
   const key = `${hi}|${en}`
   // no flip while the page is still opening (a shared link resolves its place then)
   const [born] = useState(() => Date.now())
@@ -24,6 +24,8 @@ export function StationBoard({ hi, en, small, size = 'md' }: { hi: string; en: s
       ? { box: 'px-6 py-3 min-w-[16rem]', hi: 'text-3xl', en: 'text-2xl', small: 'text-sm' }
       : size === 'sm'
         ? { box: 'px-2.5 py-1 min-w-[8rem] max-w-[11rem]', hi: 'text-[15px]', en: 'text-[13px]', small: 'text-[10px]' }
+        : size === 'wide'
+          ? { box: 'px-3 py-1 min-w-[10rem] max-w-[19rem]', hi: 'text-[15px]', en: 'text-[14px]', small: 'text-[10px]' }
         : { box: 'px-3.5 py-1.5 min-w-[11rem] max-w-[17rem]', hi: 'text-lg', en: 'text-base', small: 'text-[11px]' }
   const anim = flip ? 'board-flip' : ''
   return (

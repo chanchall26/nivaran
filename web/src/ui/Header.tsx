@@ -61,7 +61,7 @@ export function Header({ onPlace, onMenu }: { onPlace: () => void; onMenu: () =>
   // the colour strip under the header follows today's screen (condition)
   const tint = info ? condColor(info) : '#d5dce0'
   const elev = wx?.data.elevation
-  const board = (size: 'sm' | 'md') => (
+  const board = (size: 'sm' | 'wide' | 'md') => (
     <StationBoard
       hi={place.nameHi}
       en={place.name}
@@ -150,7 +150,7 @@ export function Header({ onPlace, onMenu }: { onPlace: () => void; onMenu: () =>
   return (
     <header className="glass sticky top-0 z-40 border-b border-white/60 shadow-[0_8px_30px_-18px_rgb(76_29_149/0.45)]" style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}>
       {/* ---------- desktop / laptop: controls on top, status underneath ---------- */}
-      <div className="hidden h-[68px] items-center gap-4 px-5 lg:flex">
+      <div className="hidden h-[72px] items-center gap-4 px-5 lg:flex">
         <Link to="/" className="flex shrink-0 items-center gap-2.5" aria-label={t.app.name}>
           <Logo />
           <span className="hidden font-display text-xl leading-none font-bold xl:block">
@@ -164,7 +164,7 @@ export function Header({ onPlace, onMenu }: { onPlace: () => void; onMenu: () =>
           className="lift group flex min-w-0 items-center gap-3 rounded-2xl border border-line bg-white/85 py-1 pr-3.5 pl-1"
           aria-label={`${t.header.changePlace}: ${lang === 'hi' ? place.nameHi : place.name}`}
         >
-          {board('md')}
+          {board('wide')}
           <span className="flex items-center gap-1.5 text-sm font-semibold whitespace-nowrap text-ink">
             <Emoji name="pin" size={18} pop /> {t.header.changePlace}
           </span>
