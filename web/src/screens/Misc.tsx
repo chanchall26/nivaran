@@ -44,16 +44,16 @@ export function NeedsScreen() {
   return (
     <div className="space-y-4">
       <h1 className="font-display text-[28px] font-bold">{t.nav.needs}</h1>
-      <PanelBox title={t.needs.title}>
+      <PanelBox emoji="clipboard" title={t.needs.title}>
         <NeedsCards modes={today.modes} big needs={today.day ? needsForDay(today.modes, conditionOf(today.day, today.next)) : undefined} />
       </PanelBox>
       <div className="grid gap-4 lg:grid-cols-[1fr_2fr]">
         {tomorrow.day && (
-          <PanelBox title={t.needs.titleTomorrow}>
+          <PanelBox emoji="calendar" title={t.needs.titleTomorrow}>
             <NeedsCards modes={tomorrow.modes} needs={tomorrow.day ? needsForDay(tomorrow.modes, conditionOf(tomorrow.day, tomorrow.next)) : undefined} />
           </PanelBox>
         )}
-        <PanelBox title={t.who.title}>
+        <PanelBox emoji="people" title={t.who.title}>
           <WhoList rows={rows} plan={profile?.role === 'officer'} />
         </PanelBox>
       </div>
@@ -67,15 +67,15 @@ export function ChecksScreen() {
   return (
     <div className="space-y-4">
       <h1 className="font-display text-[28px] font-bold">{t.checks.title}</h1>
-      <PanelBox title={t.checks.title}>
+      <PanelBox emoji="check" title={t.checks.title}>
         <ChecksPanel full />
       </PanelBox>
       {help.local.length > 0 && (
-        <PanelBox title={t.checks.due}>
+        <PanelBox emoji="telephone" title={t.checks.due}>
           <DueList tasks={help.local} />
         </PanelBox>
       )}
-      <PanelBox title={t.hours.title}>
+      <PanelBox emoji="shield" title={t.hours.title}>
         <HoursPanel />
       </PanelBox>
     </div>
@@ -87,7 +87,7 @@ export function HoursScreen() {
   return (
     <div className="space-y-4">
       <h1 className="font-display text-[28px] font-bold">{t.hours.title}</h1>
-      <PanelBox title={t.hours.title}>
+      <PanelBox emoji="shield" title={t.hours.title}>
         <HoursPanel big />
       </PanelBox>
     </div>
@@ -135,7 +135,7 @@ export function AlertsScreen() {
   return (
     <div className="space-y-4">
       <h1 className="font-display text-[28px] font-bold">{t.alerts.title}</h1>
-      <PanelBox title={t.alerts.upcoming}>
+      <PanelBox emoji="bell" title={t.alerts.upcoming}>
         {!wins.length ? (
           <p className="text-muted">{t.alerts.none}</p>
         ) : (
@@ -163,7 +163,7 @@ export function AlertsScreen() {
           </ul>
         )}
       </PanelBox>
-      <PanelBox title={t.alerts.requests}>
+      <PanelBox emoji="raise_hand" title={t.alerts.requests}>
         {!requests.length ? (
           <p className="text-muted">{t.alerts.noRequests}</p>
         ) : (
@@ -194,14 +194,14 @@ export function SettingsScreen() {
   return (
     <div className="max-w-2xl space-y-4">
       <h1 className="font-display text-[28px] font-bold">{t.settings.title}</h1>
-      <PanelBox title={t.settings.language}>
+      <PanelBox emoji="globe" title={t.settings.language}>
         <div className="flex items-center gap-3">
           <LangSwitch />
           <span className="text-muted">{t.lang[lang]}</span>
         </div>
       </PanelBox>
       {profile && (
-        <PanelBox title={t.settings.profile} right={profile.demo ? <DemoTag /> : null}>
+        <PanelBox emoji="people" title={t.settings.profile} right={profile.demo ? <DemoTag /> : null}>
           <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 text-sm">
             <dt className="font-semibold text-muted">{t.header.role}</dt>
             <dd>{t.role[profile.role]}</dd>
@@ -253,7 +253,7 @@ export function SettingsScreen() {
           </button>
         </PanelBox>
       )}
-      <PanelBox title={t.settings.clear}>
+      <PanelBox emoji="tools" title={t.settings.clear}>
         <p className="text-sm text-muted">{t.settings.clearD}</p>
         <button
           type="button"

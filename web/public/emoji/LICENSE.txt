@@ -1,0 +1,4 @@
+3D emoji images in this folder are from Microsoft Fluent Emoji
+https://github.com/microsoft/fluentui-emoji
+Copyright (c) Microsoft Corporation. Licensed under the MIT License.
+Resized to 128 px for this app.

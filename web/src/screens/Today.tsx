@@ -382,7 +382,7 @@ export default function Today() {
   const airSpot = rows.find((r) => r.point.traffic === 'busy')?.point ?? null
   const [aqiAfter, setAqiAfter] = useState<[number, number] | null>(null)
   const air = day && (
-    <PanelBox title={t.air.title} right={<DemoTag label={t.src.model} />}>
+    <PanelBox emoji="leaf" title={t.air.title} right={<DemoTag label={t.src.model} />}>
       {fact && (
         <div className="mb-4 flex flex-wrap items-center gap-3 rounded-lg border border-line p-3">
           <span className="num rounded-md px-2 py-1 text-3xl font-bold" style={{ background: AQI_COLOR[aqiCategory(fact.aqi)], color: aqiCategory(fact.aqi) >= 4 ? '#fff' : '#1b2330' }}>
@@ -407,7 +407,7 @@ export default function Today() {
     </PanelBox>
   )
   const heatWhatIf = day && (info?.hz.heat ?? 0) >= 1 && (
-    <PanelBox title={t.layer.heat} sub={heatSpot ? pointName(heatSpot, lang) : undefined}>
+    <PanelBox emoji="hot_face" title={t.layer.heat} sub={heatSpot ? pointName(heatSpot, lang) : undefined}>
       <WhatIf focus="heat" day={day} point={heatSpot} />
     </PanelBox>
   )
@@ -418,6 +418,7 @@ export default function Today() {
       <div className="grid gap-4 xl:grid-cols-[3fr_2fr]">
         <MapWithCard rows={rows} />
         <PanelBox
+          emoji="people"
           title={t.who.title}
           sub={t.who.debtD}
           right={pts.kind === 'curated' ? <DemoTag label={t.src.estimated} /> : <DemoTag label={t.src.osm} />}
@@ -430,14 +431,14 @@ export default function Today() {
       {heatWhatIf}
       {!airFirst && air}
       <div className="grid gap-4 lg:grid-cols-4">
-        <PanelBox title={t.checks.title} className="lg:col-span-2">
+        <PanelBox emoji="check" title={t.checks.title} className="lg:col-span-2">
           <ChecksPanel />
         </PanelBox>
-        <PanelBox title={dayIdx === 1 ? t.needs.titleTomorrow : t.needs.title}>
+        <PanelBox emoji="clipboard" title={dayIdx === 1 ? t.needs.titleTomorrow : t.needs.title}>
           <NeedsCards modes={modes} needs={info ? needsForDay(modes, info) : undefined} />
           {cond === 'cold' && <p className="mt-3 text-sm font-semibold">{t.fire.principle}</p>}
         </PanelBox>
-        <PanelBox title={t.hours.title}>
+        <PanelBox emoji="shield" title={t.hours.title}>
           <HoursPanel />
         </PanelBox>
       </div>

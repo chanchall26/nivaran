@@ -9,6 +9,7 @@ import {
   FAIL_REASONS, needsPrecheck, precheckDone, SIGNALS, taskStore, useDb, type FailReason, type Precheck, type Signal, type Task,
 } from '../lib/tasks'
 import { ICON } from '../ui/atoms'
+import { Emoji } from '../ui/Emoji'
 import { useNow } from '../ui/Header'
 import { DueList, PanelBox, StateLine, useColdNightAt } from './panels'
 import { useHelp } from './shared'
@@ -254,8 +255,9 @@ export default function Tasks() {
             ))}
           </ul>
         ) : (
-          <div>
-            <p className="text-muted">{t.tasks.empty}</p>
+          <div className="flex flex-col items-center py-6 text-center">
+            <Emoji name="package" size={72} float />
+            <p className="mt-3 max-w-md text-muted">{t.tasks.empty}</p>
             {!tasks.length && (pts.points?.length ?? 0) > 0 && (
               <button type="button" className="btn btn-line btn-sm mt-3" onClick={seed}>
                 {t.entry.tryDemo}

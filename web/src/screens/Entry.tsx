@@ -1,12 +1,19 @@
-import { ArrowLeft, Building2, HardHat, Landmark } from 'lucide-react'
-import { useState, type ReactNode } from 'react'
-import { useLocation, useNavigate } from 'react-router-dom'
+/**
+ * Login: who are you, where do you work, a little about you. The place comes from the browser's
+ * location (after asking permission) or from a PIN code / city name. Workers never give a name.
+ * "Try demo" skips everything with a ready profile.
+ */
+import { ArrowLeft, Check, Crosshair, LoaderCircle, Lock, MapPin, Search } from 'lucide-react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useApp } from '../ctx'
 import { useI18n } from '../i18n'
-import { isPin, lookupPin } from '../lib/place'
+import { LOOK } from '../i18n/look'
+import { isPin, lookupPin, placeFromGps, placeParams, PRESETS, searchCity, withHindiName, type Place, type PresetKey } from '../lib/place'
 import { DEMO_PROFILES, type Profile, type Role, type Work } from '../lib/profile'
-import type { Shift } from '../lib/risk'
+import { AQI_COLOR, aqiCategory, type Shift } from '../lib/risk'
 import { ICON } from '../ui/atoms'
+import { Emoji, wxEmoji, type EmojiName } from '../ui/Emoji'
 import { LangSwitch } from '../ui/Header'
 import { StationBoard } from '../ui/StationBoard'
 
@@ -28,7 +35,7 @@ function Chips<T extends string>({ value, options, onChange, label }: { value: T
       <legend className="label">{label}</legend>
       <div className="flex flex-wrap gap-2">
         {options.map(([k, l]) => (
-          <button key={k} type="button" className="chip !px-3.5 !py-1.5 !text-base" aria-pressed={value === k} onClick={() => onChange(k)}>
+          <button key={k} type="button" className="chip !px-3.5 !py-1.5 !text-[15px]" aria-pressed={value === k} onClick={() => onChange(k)}>
             {l}
           </button>
         ))}
@@ -43,32 +50,222 @@ async function googleSignIn(): Promise<string | null> {
   const { GoogleAuthProvider, signInWithPopup } = await import('firebase/auth')
   const fb = firebase()
   if (!fb) return null
-  const { auth } = fb
-  const r = await signInWithPopup(auth, new GoogleAuthProvider())
+  const r = await signInWithPopup(fb.auth, new GoogleAuthProvider())
   return r.user.email
 }
 
+// ---------------------------------------------------------------------------------------------
+
+/** The colourful left side: what Barahmasa is, with live numbers for the place already known. */
+function Hero() {
+  const { t, lang, f } = useI18n()
+  const L = LOOK[lang].login
+  const { wx, place } = useApp()
+  const c = wx?.data.current
+  const air = wx?.data.air
+  const floaters: { name: EmojiName; cls: string; size: number; delay: string }[] = [
+    // a column of seasons down the right edge, clear of the text
+    { name: 'sun', cls: 'top-[11%] right-[7%]', size: 78, delay: '0s' },
+    { name: 'snowflake', cls: 'top-[29%] right-[3%]', size: 56, delay: '-1.2s' },
+    { name: 'umbrella', cls: 'top-[45%] right-[9%]', size: 62, delay: '-2.1s' },
+    { name: 'mask', cls: 'top-[62%] right-[3%]', size: 54, delay: '-0.6s' },
+    { name: 'tree', cls: 'bottom-[5%] right-[8%]', size: 70, delay: '-1.7s' },
+  ]
+  return (
+    <section className="grad-sunrise relative isolate flex flex-col justify-between overflow-hidden px-6 py-7 text-white sm:px-10 lg:min-h-dvh lg:py-10">
+      {/* light spots and floating 3D emojis */}
+      <div aria-hidden className="pointer-events-none absolute inset-0 -z-10">
+        <span className="absolute -top-24 -left-24 size-80 rounded-full bg-white/15 blur-3xl" />
+        <span className="absolute -right-20 bottom-10 size-96 rounded-full bg-sky-300/25 blur-3xl" />
+        {floaters.map((e) => (
+          <span key={e.name} className={`absolute hidden sm:block ${e.cls}`} style={{ animationDelay: e.delay }}>
+            <Emoji name={e.name} size={e.size} float slow eager />
+          </span>
+        ))}
+      </div>
+
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <span className="grid size-12 place-items-center rounded-2xl bg-white/20 shadow-lg ring-1 ring-white/40 backdrop-blur">
+            <Emoji name="sunrise" size={34} eager />
+          </span>
+          <div className="leading-tight">
+            <div className="font-display text-2xl font-bold">{t.app.name}</div>
+            <div className="text-sm text-white/85">{lang === 'hi' ? 'Barahmasa' : 'बारहमासा'}</div>
+          </div>
+        </div>
+        <div className="lg:hidden">
+          <LangSwitch />
+        </div>
+      </div>
+
+      <div className="rise my-8 max-w-xl sm:pr-24 lg:my-0 lg:max-w-[27rem] lg:pr-0 xl:max-w-[30rem]">
+        <p className="inline-flex items-center gap-2 rounded-full bg-white/20 px-3 py-1 text-sm font-semibold ring-1 ring-white/35 backdrop-blur">
+          <Emoji name="wave" size={20} eager /> {L.hello}
+        </p>
+        <h1 className="mt-4 font-display text-4xl leading-[1.08] font-extrabold sm:text-5xl lg:text-[3.2rem]">{t.app.entryLine}</h1>
+        <p className="mt-2 font-display text-xl font-semibold text-white/95">{t.app.tagline}</p>
+        <p className="mt-4 max-w-lg text-[17px] text-white/90">{L.heroSub}</p>
+        <ul className="mt-6 hidden space-y-2.5 sm:block">
+          {(
+            [
+              ['globe', L.features.live],
+              ['map', L.features.map],
+              ['check', L.features.check],
+            ] as [EmojiName, string][]
+          ).map(([e, text], i) => (
+            <li key={e} className={`rise rise-${i + 1} flex items-center gap-3 rounded-2xl bg-white/15 px-3 py-2.5 ring-1 ring-white/25 backdrop-blur`}>
+              <Emoji name={e} size={32} eager />
+              <span className="font-medium">{text}</span>
+            </li>
+          ))}
+        </ul>
+      </div>
+
+      <div className="space-y-3">
+        {c && (
+          <div className="pop-in inline-flex flex-wrap items-center gap-x-4 gap-y-2 rounded-2xl bg-white/95 px-4 py-3 text-ink shadow-xl">
+            <span className="text-xs font-semibold text-muted">{f(L.today, { place: lang === 'hi' ? place.nameHi : place.name })}</span>
+            <span className="flex items-center gap-2">
+              <Emoji name={wxEmoji(c.code, c.isDay)} size={30} />
+              <span className="num text-2xl">{Math.round(c.temp)}°</span>
+            </span>
+            {air && (
+              <span className="flex items-center gap-1.5 text-sm font-semibold">
+                <span className="size-2.5 rounded-full ring-1 ring-black/15" style={{ background: AQI_COLOR[aqiCategory(air.aqi)] }} aria-hidden />
+                {t.aqi[aqiCategory(air.aqi)]} · AQI {air.aqi}
+              </span>
+            )}
+          </div>
+        )}
+        <p className="text-sm font-semibold text-white/85">{L.pilots}</p>
+      </div>
+    </section>
+  )
+}
+
+function Steps({ step }: { step: 1 | 2 | 3 }) {
+  const { lang, f } = useI18n()
+  const L = LOOK[lang].login
+  return (
+    <div>
+      <div className="flex items-center justify-between text-sm font-semibold text-muted">
+        <span>{f(L.step, { n: step })}</span>
+        <span className="text-ink">{L.steps[step - 1]}</span>
+      </div>
+      <div className="mt-2 grid grid-cols-3 gap-1.5" aria-hidden>
+        {[1, 2, 3].map((n) => (
+          <span key={n} className={`h-1.5 rounded-full transition-all duration-500 ${n <= step ? 'grad-brand' : 'bg-line'}`} />
+        ))}
+      </div>
+    </div>
+  )
+}
+
+const ROLE_EMOJI: Record<Role, EmojiName> = { officer: 'building', partner: 'handshake', worker: 'worker' }
+const PRESET_EMOJI: Record<PresetKey, EmojiName> = { gwalior: 'city', delhi: 'office', leh: 'mountain' }
+
+type Found = { place: Place; how: 'gps' | 'pin' | 'search' | 'preset' }
+
 export default function Entry() {
   const { place, setPlace, setProfile, profile } = useApp()
-  const { t, lang } = useI18n()
+  const { t, f, lang } = useI18n()
+  const L = LOOK[lang].login
   const nav = useNavigate()
-  const { search } = useLocation()
-  const [role, setRole] = useState<Role | null>(null)
-  const [p, setP] = useState<Profile>(() => profile ?? { role: 'officer', demo: false })
+  const [step, setStep] = useState<1 | 2 | 3>(1)
+  const [role, setRole] = useState<Role | null>(profile?.demo ? null : (profile?.role ?? null))
+  const [p, setP] = useState<Profile>(() => (profile && !profile.demo ? profile : { role: 'officer', demo: false }))
+  const [found, setFound] = useState<Found | null>(null)
+  const [q, setQ] = useState('')
+  const [results, setResults] = useState<Place[] | null>(null)
+  const [busy, setBusy] = useState<'gps' | 'search' | null>(null)
+  const [err, setErr] = useState<string | null>(null)
   const [gErr, setGErr] = useState(false)
   const set = (patch: Partial<Profile>) => setP((x) => ({ ...x, ...patch }))
+  const card = useRef<HTMLDivElement>(null)
 
-  const finish = (prof: Profile) => {
+  // move focus to the top of the card on each step, for keyboard and screen reader users
+  useEffect(() => {
+    card.current?.focus({ preventScroll: true })
+  }, [step])
+
+  const go = (prof: Profile, pl: Place | null) => {
     setProfile(prof)
-    // a PIN in the profile opens that place (demo profiles keep the place already chosen)
-    if (!prof.demo && prof.pin && isPin(prof.pin) && prof.pin !== place.pin)
-      lookupPin(prof.pin).then((pl) => pl && setPlace(pl)).catch(() => {})
-    nav({ pathname: '/', search })
+    const next = pl ?? place
+    if (pl) setPlace(pl)
+    nav({ pathname: '/', search: `?${new URLSearchParams(placeParams(next))}` })
   }
-  const choose = (r: Role) => {
-    setRole(r)
-    setP((x) => ({ ...x, role: r, demo: false }))
+
+  const detect = async () => {
+    setBusy('gps')
+    setErr(null)
+    try {
+      const pl = await placeFromGps()
+      setFound({ place: pl, how: 'gps' })
+      setResults(null)
+    } catch {
+      setErr(t.picker.locErr)
+    } finally {
+      setBusy(null)
+    }
   }
+
+  // location already allowed before: find the city without another click
+  useEffect(() => {
+    if (step !== 2 || found) return
+    const perms = (navigator as Navigator & { permissions?: Permissions }).permissions
+    perms
+      ?.query({ name: 'geolocation' as PermissionName })
+      .then((s) => {
+        if (s.state === 'granted') detect()
+      })
+      .catch(() => {})
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [step])
+
+  // PIN or city search while typing
+  useEffect(() => {
+    const query = q.trim()
+    if (query.length < 2 || (/^\d+$/.test(query) && !isPin(query))) {
+      setResults(null)
+      return
+    }
+    let off = false
+    const id = setTimeout(async () => {
+      setBusy('search')
+      setErr(null)
+      try {
+        if (isPin(query)) {
+          const pl = await lookupPin(query)
+          if (off) return
+          if (pl) {
+            setFound({ place: pl, how: 'pin' })
+            setResults(null)
+          } else setErr(t.picker.pinErr)
+        } else {
+          const r = await searchCity(query)
+          if (off) return
+          setResults(r)
+          if (!r.length) setErr(t.picker.noResults)
+        }
+      } catch {
+        if (!off) setErr(navigator.onLine ? t.picker.noResults : t.picker.netErr)
+      } finally {
+        if (!off) setBusy(null)
+      }
+    }, 350)
+    return () => {
+      off = true
+      clearTimeout(id)
+    }
+  }, [q, t])
+
+  const pickResult = async (pl: Place) => {
+    setResults(null)
+    setQ('')
+    setFound({ place: await withHindiName(pl).catch(() => pl), how: 'search' })
+  }
+
   const google = async () => {
     setGErr(false)
     try {
@@ -80,134 +277,293 @@ export default function Entry() {
     }
   }
 
-  const tiles: { r: Role; title: string; sub?: string; d: string; Icon: typeof Landmark }[] = [
-    { r: 'officer', title: t.role.officer, sub: t.entry.officerSub, d: t.entry.officerD, Icon: Landmark },
-    { r: 'partner', title: t.role.partner, sub: t.entry.partnerSub, d: t.entry.partnerD, Icon: Building2 },
-    { r: 'worker', title: t.entry.workerT, d: t.entry.workerD, Icon: HardHat },
+  const roles: { r: Role; title: string; sub?: string; d: string }[] = [
+    { r: 'officer', title: t.role.officer, sub: t.entry.officerSub, d: t.entry.officerD },
+    { r: 'partner', title: t.role.partner, sub: t.entry.partnerSub, d: t.entry.partnerD },
+    { r: 'worker', title: t.entry.workerT, d: t.entry.workerD },
   ]
+  const chosen = found?.place ?? null
+  const howLine = found
+    ? found.how === 'gps'
+      ? L.detected
+      : found.how === 'pin'
+        ? f(L.fromPin, { pin: found.place.pin ?? '' })
+        : found.how === 'search'
+          ? L.fromSearch
+          : ''
+    : ''
 
   return (
-    <div className="min-h-dvh bg-mist">
-      <div className="mx-auto flex max-w-5xl flex-col items-center px-4 pt-8 pb-12 sm:pt-12">
-        <div className="mb-6 flex w-full justify-end">
+    <div className="grid min-h-dvh bg-mist lg:grid-cols-[minmax(0,5fr)_minmax(0,6fr)]">
+      <Hero />
+
+      <section className="relative flex items-start justify-center px-4 py-8 sm:px-8 lg:items-center lg:py-12">
+        <div className="absolute top-5 right-6 hidden lg:block">
           <LangSwitch />
         </div>
-        <StationBoard hi={place.nameHi} en={place.name} size="lg" />
-        <p className="mt-4 text-center text-lg">{t.app.entryLine}</p>
-        <p className="text-center text-sm text-muted">{t.app.tagline}</p>
+        <div ref={card} tabIndex={-1} className="panel glass w-full max-w-xl p-5 outline-none sm:p-8">
+          <Steps step={step} />
 
-        {!role ? (
-          <>
-            <h1 className="mt-10 mb-5 font-display text-3xl font-bold">{t.entry.title}</h1>
-            <div className="grid w-full gap-4 md:grid-cols-3">
-              {tiles.map(({ r, title, sub, d, Icon }) => (
-                <div key={r} className={`panel flex flex-col p-5 ${r === 'officer' ? 'md:row-span-1' : ''}`}>
-                  <button type="button" onClick={() => choose(r)} className="flex flex-1 flex-col items-start text-left">
-                    <Icon className="size-9" {...ICON} aria-hidden />
-                    <span className="mt-3 font-display text-2xl font-bold">{title}</span>
-                    {sub && <span className="text-sm text-muted">{sub}</span>}
-                    <span className="mt-2 text-[17px]">{d}</span>
-                  </button>
-                  <div className="mt-5 flex flex-wrap gap-2">
-                    <button type="button" className="btn btn-ink flex-1" onClick={() => choose(r)}>
-                      {t.entry.choose}
+          {/* ---------- 1. who are you ---------- */}
+          {step === 1 && (
+            <div key="s1" className="page mt-6">
+              <h2 className="font-display text-3xl font-bold">
+                {/* the app's name in gradient, wherever it sits in the sentence */}
+                {L.welcome.split(t.app.name)[0]}
+                <span className="grad-text">{t.app.name}</span>
+                {L.welcome.split(t.app.name)[1]}
+              </h2>
+              <p className="mt-1 text-muted">{L.roleHint}</p>
+              <div role="radiogroup" aria-label={t.entry.title} className="mt-5 space-y-3">
+                {roles.map(({ r, title, sub, d }, i) => {
+                  const on = role === r
+                  return (
+                    <button
+                      key={r}
+                      type="button"
+                      role="radio"
+                      aria-checked={on}
+                      onClick={() => {
+                        setRole(r)
+                        set({ role: r, demo: false })
+                      }}
+                      className={`lift rise rise-${i + 1} group relative flex w-full items-center gap-4 rounded-2xl border-2 p-3.5 text-left transition-colors sm:p-4 ${
+                        on ? 'border-[#a855f7] bg-gradient-to-r from-violet-50 to-pink-50' : 'border-line bg-white hover:border-violet-200'
+                      }`}
+                    >
+                      <span className={`grid size-16 shrink-0 place-items-center rounded-2xl ${on ? 'grad-brand' : 'bg-gradient-to-br from-violet-100 via-pink-50 to-orange-100'}`}>
+                        <Emoji name={ROLE_EMOJI[r]} size={46} pop eager />
+                      </span>
+                      <span className="min-w-0 flex-1">
+                        <span className="block font-display text-lg leading-tight font-bold">{title}</span>
+                        {sub && <span className="block text-sm text-muted">{sub}</span>}
+                        <span className="mt-0.5 block text-[15px] leading-snug">{d}</span>
+                      </span>
+                      <span
+                        aria-hidden
+                        className={`grid size-7 shrink-0 place-items-center rounded-full border-2 transition-all ${on ? 'grad-brand scale-110 border-transparent text-white' : 'border-line'}`}
+                      >
+                        {on && <Check className="size-4" strokeWidth={3} />}
+                      </span>
                     </button>
-                    <button type="button" className="btn btn-line flex-1" onClick={() => finish(DEMO_PROFILES[r])}>
-                      {t.entry.tryDemo}
+                  )
+                })}
+              </div>
+              <button type="button" className="btn btn-ink mt-6 w-full text-lg" disabled={!role} onClick={() => setStep(2)}>
+                {L.next}
+              </button>
+              <div className="mt-6 rounded-2xl bg-gradient-to-r from-orange-50 via-pink-50 to-violet-50 p-4">
+                <p className="text-sm font-semibold">{L.demoTitle}</p>
+                <div className="mt-2 flex flex-wrap gap-2">
+                  {roles.map(({ r, title }) => (
+                    <button key={r} type="button" className="chip lift !py-1.5" onClick={() => go(DEMO_PROFILES[r], null)}>
+                      <Emoji name={ROLE_EMOJI[r]} size={22} /> {title}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ---------- 2. your place ---------- */}
+          {step === 2 && (
+            <div key="s2" className="page mt-6">
+              <h2 className="flex items-center gap-2 font-display text-3xl font-bold">
+                <Emoji name="pin" size={36} float /> {L.placeTitle}
+              </h2>
+              <p className="mt-1 text-muted">{L.placeHint}</p>
+
+              {chosen ? (
+                <div className="pop-in mt-5 rounded-2xl border-2 border-[#a855f7] bg-gradient-to-br from-violet-50 via-white to-orange-50 p-4">
+                  <div className="flex items-center justify-between gap-3">
+                    <span className="text-sm font-semibold text-muted">{L.yourPlace}</span>
+                    <button type="button" className="btn btn-ghost btn-sm" onClick={() => setFound(null)}>
+                      {L.change}
                     </button>
                   </div>
+                  <div className="mt-2 flex flex-wrap items-center gap-4">
+                    <StationBoard hi={chosen.nameHi} en={chosen.name} size="md" />
+                    <div className="text-sm">
+                      {chosen.region && <div className="font-semibold">{[chosen.region, chosen.pin].filter(Boolean).join(' · ')}</div>}
+                      <span className={`mt-1 inline-block rounded-full px-2.5 py-0.5 text-xs font-bold ${chosen.pilot ? 'grad-brand text-white' : 'bg-mist text-muted'}`}>
+                        {chosen.pilot ? t.picker.pilotCity : t.picker.weatherAir}
+                      </span>
+                      {howLine && <div className="mt-1 flex items-center gap-1 text-muted"><Check className="size-4 text-[#16a34a]" strokeWidth={3} /> {howLine}</div>}
+                    </div>
+                  </div>
                 </div>
-              ))}
-            </div>
-          </>
-        ) : (
-          <form
-            className="panel mt-10 w-full max-w-xl space-y-4 p-5 sm:p-6"
-            onSubmit={(e) => {
-              e.preventDefault()
-              finish({ ...p, role })
-            }}
-          >
-            <div className="flex items-center justify-between">
-              <button type="button" className="btn btn-ghost btn-sm -ml-2" onClick={() => setRole(null)}>
-                <ArrowLeft className="size-4" {...ICON} aria-hidden /> {t.entry.back}
-              </button>
-              <button type="button" className="btn btn-line btn-sm" onClick={() => finish(DEMO_PROFILES[role])}>
-                {t.entry.tryDemo}
-              </button>
-            </div>
-            <h1 className="font-display text-2xl font-bold">{role === 'worker' ? t.entry.workerT : t.role[role]}</h1>
-
-            {role === 'officer' && (
-              <>
-                <Field label={t.form.name}>
-                  <input className="field" value={p.name ?? ''} onChange={(e) => set({ name: e.target.value })} autoComplete="name" />
-                </Field>
-                <Chips label={t.form.post} value={p.post} onChange={(v) => set({ post: v })} options={Object.entries(t.form.posts) as [NonNullable<Profile['post']>, string][]} />
-                <Chips label={t.form.dept} value={p.dept} onChange={(v) => set({ dept: v })} options={Object.entries(t.form.depts) as [NonNullable<Profile['dept']>, string][]} />
-                <Field label={t.form.city}>
-                  <input className="field" value={p.city ?? ''} onChange={(e) => set({ city: e.target.value })} placeholder="Gwalior" />
-                </Field>
-                <Field label={t.form.wards}>
-                  <input className="field" value={p.wards ?? ''} onChange={(e) => set({ wards: e.target.value })} />
-                </Field>
-                <Field label={t.form.budget}>
-                  <input className="field tabular" inputMode="numeric" value={p.budget ?? ''} onChange={(e) => set({ budget: Number(e.target.value.replace(/\D/g, '')) || undefined })} placeholder="500000" />
-                </Field>
-              </>
-            )}
-
-            {role === 'partner' && (
-              <>
-                <Chips label={t.form.orgType} value={p.orgType} onChange={(v) => set({ orgType: v })} options={Object.entries(t.form.orgTypes) as [NonNullable<Profile['orgType']>, string][]} />
-                <Field label={t.form.orgName}>
-                  <input className="field" value={p.orgName ?? ''} onChange={(e) => set({ orgName: e.target.value })} autoComplete="organization" />
-                </Field>
-                <Field label={t.form.pin}>
-                  <input className="field tabular" inputMode="numeric" maxLength={6} value={p.pin ?? ''} onChange={(e) => set({ pin: e.target.value.replace(/\D/g, '') })} placeholder="474001" />
-                </Field>
-                <Field label={t.form.count}>
-                  <input className="field tabular" inputMode="numeric" value={p.count ?? ''} onChange={(e) => set({ count: Number(e.target.value.replace(/\D/g, '')) || undefined })} />
-                </Field>
-              </>
-            )}
-
-            {role === 'worker' && (
-              <>
-                <p className="rounded-lg bg-mist px-3 py-2 font-semibold">{t.entry.noName}</p>
-                <Chips label={`${t.form.work} (${t.entry.optional})`} value={p.work} onChange={(v) => set({ work: v })} options={Object.entries(t.form.works) as [Work, string][]} />
-                <Chips label={`${t.form.shift} (${t.entry.optional})`} value={p.shift} onChange={(v) => set({ shift: v })} options={Object.entries(t.form.shifts) as [Shift, string][]} />
-                <Field label={t.form.pin} optional>
-                  <input className="field tabular" inputMode="numeric" maxLength={6} value={p.pin ?? ''} onChange={(e) => set({ pin: e.target.value.replace(/\D/g, '') })} placeholder="474001" />
-                </Field>
-                <div>
-                  <span className="label">{t.form.language}</span>
-                  <LangSwitch />
-                </div>
-              </>
-            )}
-
-            <button type="submit" className="btn btn-ink w-full text-lg">
-              {t.entry.continue}
-            </button>
-            {role !== 'worker' && (
-              <div className="border-t border-line pt-4">
-                {p.email ? (
-                  <p className="text-sm font-semibold">{t.entry.signedIn.replace('{email}', p.email)}</p>
-                ) : (
-                  <button type="button" className="btn btn-line w-full" onClick={google}>
-                    <GoogleG /> {t.entry.google}
+              ) : (
+                <div className="mt-5 space-y-4">
+                  <button type="button" onClick={detect} disabled={busy === 'gps'} className="lift group flex w-full items-center gap-4 rounded-2xl p-4 text-left text-white grad-monsoon shadow-lg">
+                    <span className="grid size-14 shrink-0 place-items-center rounded-2xl bg-white/20 ring-1 ring-white/40">
+                      {busy === 'gps' ? <LoaderCircle className="size-7 animate-spin" {...ICON} aria-hidden /> : <Crosshair className="size-7" {...ICON} aria-hidden />}
+                    </span>
+                    <span>
+                      <span className="block font-display text-lg font-bold">{busy === 'gps' ? L.detecting : L.detect}</span>
+                      <span className="block text-sm text-white/90">{L.allowNote}</span>
+                    </span>
                   </button>
-                )}
-                {gErr && <p className="mt-2 text-sm text-muted">{t.entry.googleOff}</p>}
+
+                  <div className="flex items-center gap-3 text-sm font-semibold text-muted" aria-hidden>
+                    <span className="h-px flex-1 bg-line" /> {L.or} <span className="h-px flex-1 bg-line" />
+                  </div>
+
+                  <label className="relative block">
+                    <span className="sr-only">{L.type}</span>
+                    <Search className="pointer-events-none absolute top-1/2 left-3.5 size-5 -translate-y-1/2 text-muted" {...ICON} aria-hidden />
+                    <input
+                      className="field !pl-11 text-[17px]"
+                      value={q}
+                      onChange={(e) => setQ(e.target.value)}
+                      placeholder={L.type}
+                      autoComplete="off"
+                      inputMode="search"
+                      enterKeyHint="search"
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' && results?.[0]) {
+                          e.preventDefault()
+                          pickResult(results[0])
+                        }
+                      }}
+                    />
+                    {busy === 'search' && <LoaderCircle className="absolute top-1/2 right-3.5 size-5 -translate-y-1/2 animate-spin text-muted" {...ICON} aria-hidden />}
+                  </label>
+
+                  {results && results.length > 0 && (
+                    <ul className="pop-in overflow-hidden rounded-2xl border border-line bg-white">
+                      {results.map((r) => (
+                        <li key={`${r.lat},${r.lon},${r.name}`}>
+                          <button type="button" onClick={() => pickResult(r)} className="flex w-full items-center gap-3 px-3 py-2.5 text-left hover:bg-violet-50">
+                            <MapPin className="size-5 shrink-0 text-[#7c3aed]" {...ICON} aria-hidden />
+                            <span className="min-w-0 flex-1">
+                              <span className="block font-semibold">{lang === 'hi' ? r.nameHi : r.name}</span>
+                              {r.region && <span className="block text-sm text-muted">{r.region}</span>}
+                            </span>
+                            <span className={`rounded-full px-2 py-0.5 text-xs font-bold ${r.pilot ? 'grad-brand text-white' : 'bg-mist text-muted'}`}>
+                              {r.pilot ? t.picker.pilotCity : t.picker.weatherAir}
+                            </span>
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+
+                  <div>
+                    <p className="text-sm font-semibold text-muted">{L.quick}</p>
+                    <div className="mt-2 grid grid-cols-3 gap-2">
+                      {(Object.keys(PRESETS) as PresetKey[]).map((k) => (
+                        <button
+                          key={k}
+                          type="button"
+                          onClick={() => setFound({ place: PRESETS[k], how: 'preset' })}
+                          className="lift flex flex-col items-center gap-1 rounded-2xl border border-line bg-white px-2 py-3 text-center"
+                        >
+                          <Emoji name={PRESET_EMOJI[k]} size={40} pop />
+                          <span className="text-sm leading-tight font-semibold">{k === 'leh' ? t.picker.lehDemo : lang === 'hi' ? PRESETS[k].nameHi.split(',').pop() : PRESETS[k].name.split(',').pop()}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              <div aria-live="polite">{err && <p className="mt-4 rounded-xl bg-[#fdecee] px-3 py-2 text-sm font-medium text-[#8a1424]">{err}</p>}</div>
+
+              <div className="mt-6 flex gap-3">
+                <button type="button" className="btn btn-line" onClick={() => setStep(1)}>
+                  <ArrowLeft className="size-4" {...ICON} aria-hidden /> {L.back}
+                </button>
+                <button type="button" className="btn btn-ink flex-1 text-lg" disabled={!chosen} onClick={() => setStep(3)}>
+                  {L.next}
+                </button>
               </div>
-            )}
-            <p className="text-center text-xs text-muted" lang={lang}>
-              {t.app.tagline}
-            </p>
-          </form>
-        )}
-      </div>
+              {!chosen && <p className="mt-2 text-center text-xs text-muted">{L.choosePlace}</p>}
+            </div>
+          )}
+
+          {/* ---------- 3. about you ---------- */}
+          {step === 3 && role && (
+            <form
+              key="s3"
+              className="page mt-6 space-y-4"
+              onSubmit={(e) => {
+                e.preventDefault()
+                go({ ...p, role, demo: false, pin: role !== 'officer' ? (p.pin ?? chosen?.pin) : p.pin }, chosen)
+              }}
+            >
+              <h2 className="flex items-center gap-2 font-display text-3xl font-bold">
+                <Emoji name={ROLE_EMOJI[role]} size={40} float /> {L.aboutTitle}
+              </h2>
+              <p className="-mt-2 text-muted">{role === 'worker' ? L.aboutWorker : L.aboutOfficer}</p>
+
+              {role === 'officer' && (
+                <>
+                  <Field label={t.form.name}>
+                    <input className="field" value={p.name ?? ''} onChange={(e) => set({ name: e.target.value })} autoComplete="name" />
+                  </Field>
+                  <Chips label={t.form.post} value={p.post} onChange={(v) => set({ post: v })} options={Object.entries(t.form.posts) as [NonNullable<Profile['post']>, string][]} />
+                  <Chips label={t.form.dept} value={p.dept} onChange={(v) => set({ dept: v })} options={Object.entries(t.form.depts) as [NonNullable<Profile['dept']>, string][]} />
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <Field label={t.form.wards}>
+                      <input className="field" value={p.wards ?? ''} onChange={(e) => set({ wards: e.target.value })} />
+                    </Field>
+                    <Field label={t.form.budget}>
+                      <input className="field tabular" inputMode="numeric" value={p.budget ?? ''} onChange={(e) => set({ budget: Number(e.target.value.replace(/\D/g, '')) || undefined })} placeholder="500000" />
+                    </Field>
+                  </div>
+                </>
+              )}
+
+              {role === 'partner' && (
+                <>
+                  <Chips label={t.form.orgType} value={p.orgType} onChange={(v) => set({ orgType: v })} options={Object.entries(t.form.orgTypes) as [NonNullable<Profile['orgType']>, string][]} />
+                  <Field label={t.form.orgName}>
+                    <input className="field" value={p.orgName ?? ''} onChange={(e) => set({ orgName: e.target.value })} autoComplete="organization" />
+                  </Field>
+                  <Field label={t.form.count}>
+                    <input className="field tabular" inputMode="numeric" value={p.count ?? ''} onChange={(e) => set({ count: Number(e.target.value.replace(/\D/g, '')) || undefined })} />
+                  </Field>
+                </>
+              )}
+
+              {role === 'worker' && (
+                <>
+                  <p className="flex items-center gap-2 rounded-2xl bg-gradient-to-r from-emerald-50 to-teal-50 px-3 py-2.5 font-semibold">
+                    <Lock className="size-4 text-[#0d9488]" {...ICON} aria-hidden /> {t.entry.noName}
+                  </p>
+                  <Chips label={`${t.form.work} (${t.entry.optional})`} value={p.work} onChange={(v) => set({ work: v })} options={Object.entries(t.form.works) as [Work, string][]} />
+                  <Chips label={`${t.form.shift} (${t.entry.optional})`} value={p.shift} onChange={(v) => set({ shift: v })} options={Object.entries(t.form.shifts) as [Shift, string][]} />
+                </>
+              )}
+
+              <div className="flex gap-3 pt-1">
+                <button type="button" className="btn btn-line" onClick={() => setStep(2)}>
+                  <ArrowLeft className="size-4" {...ICON} aria-hidden /> {L.back}
+                </button>
+                <button type="submit" className="btn btn-ink flex-1 text-lg">
+                  <Emoji name="rocket" size={24} /> {L.start}
+                </button>
+              </div>
+
+              {role !== 'worker' && (
+                <div className="border-t border-line pt-4">
+                  {p.email ? (
+                    <p className="text-sm font-semibold">{t.entry.signedIn.replace('{email}', p.email)}</p>
+                  ) : (
+                    <button type="button" className="btn btn-line w-full" onClick={google}>
+                      <GoogleG /> {t.entry.google}
+                    </button>
+                  )}
+                  {gErr && <p className="mt-2 text-sm text-muted">{t.entry.googleOff}</p>}
+                </div>
+              )}
+              <p className="flex items-center justify-center gap-1.5 text-center text-xs text-muted">
+                <Lock className="size-3.5" {...ICON} aria-hidden /> {L.private}
+              </p>
+            </form>
+          )}
+        </div>
+      </section>
     </div>
   )
 }

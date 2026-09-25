@@ -4,9 +4,10 @@ import { Link } from 'react-router-dom'
 import { useApp, useDay } from '../ctx'
 import { useI18n } from '../i18n'
 import { ago, clockDate, clockTime, istToday, longDate } from '../lib/ist'
-import { aqiCategory, condColor, conditionOf, rituOf } from '../lib/risk'
+import { AQI_COLOR, aqiCategory, condColor, conditionOf, rituOf } from '../lib/risk'
 import { modeChips } from './Condition'
-import { AqiDot, ICON, Skel, Src, useWxText, WxIcon } from './atoms'
+import { AqiDot, ICON, Skel, Src, useWxText } from './atoms'
+import { Emoji, wxEmoji, type EmojiName } from './Emoji'
 import { StationBoard } from './StationBoard'
 
 export function useNow(every = 30_000) {
@@ -20,25 +21,24 @@ export function useNow(every = 30_000) {
 
 function Logo() {
   return (
-    <svg viewBox="0 0 32 32" className="size-8 shrink-0" aria-hidden>
-      <circle cx="16" cy="16" r="15" fill="#1B2330" />
-      <path d="M16 1a15 15 0 0 1 0 30z" fill="#E8590C" />
-      <path d="M16 1a15 15 0 0 0 0 30z" fill="#3D6FD9" />
-      <circle cx="16" cy="16" r="6" fill="#F7C600" stroke="#1B2330" strokeWidth="2" />
-    </svg>
+    <span className="grad-sunrise grid size-10 shrink-0 place-items-center rounded-2xl shadow-[0_8px_18px_-8px_rgb(219_39_119/0.8)] ring-1 ring-white/50">
+      <Emoji name="sunrise" size={28} eager />
+    </span>
   )
 }
+
+const ROLE_EMOJI: Record<string, EmojiName> = { officer: 'building', partner: 'handshake', worker: 'worker' }
 
 export function LangSwitch() {
   const { lang, setLang } = useI18n()
   return (
     <button
       type="button"
-      className="btn btn-line btn-sm min-w-[4.5rem] font-bold"
+      className="btn btn-line btn-sm min-w-[4.5rem] gap-1.5 font-bold"
       onClick={() => setLang(lang === 'en' ? 'hi' : 'en')}
       aria-label={lang === 'en' ? 'हिंदी में बदलें' : 'Switch to English'}
     >
-      {lang === 'en' ? 'हिंदी' : 'EN'}
+      <Emoji name="globe" size={18} /> {lang === 'en' ? 'हिंदी' : 'EN'}
     </button>
   )
 }
@@ -110,16 +110,19 @@ export function Header({ onPlace, onMenu }: { onPlace: () => void; onMenu: () =>
   ) : null
 
   return (
-    <header className="sticky top-0 z-40 border-b border-line bg-paper" style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}>
+    <header className="glass sticky top-0 z-40 border-b border-white/60 shadow-[0_8px_30px_-18px_rgb(76_29_149/0.45)]" style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}>
       {/* ---------- desktop / laptop ---------- */}
-      <div className="hidden items-center gap-3 px-4 py-2 lg:flex">
-        <Link to="/" className="flex items-center gap-2" aria-label={t.app.name}>
+      <div className="hidden items-center gap-2.5 px-4 py-2 lg:flex">
+        <Link to="/" className="flex items-center gap-2.5" aria-label={t.app.name}>
           <Logo />
+          <span className="hidden font-display text-lg leading-none font-bold 2xl:block">
+            <span className="grad-text">{t.app.name}</span>
+          </span>
         </Link>
         {board('md')}
         <div className="flex flex-col items-start gap-1">
-          <button type="button" className="btn btn-line btn-sm" onClick={onPlace}>
-            <PinIcon /> {t.header.changePlace}
+          <button type="button" className="btn btn-line btn-sm whitespace-nowrap" onClick={onPlace}>
+            <Emoji name="pin" size={18} pop /> {t.header.changePlace}
           </button>
           <span className="pl-1">{source(false)}</span>
         </div>
@@ -127,16 +130,16 @@ export function Header({ onPlace, onMenu }: { onPlace: () => void; onMenu: () =>
         <div className="mx-auto flex flex-col items-center px-2 text-center">
           <span className="num text-[28px] font-bold">{timeMain}</span>
           <span className="text-xs text-muted">{timeSub}</span>
-          <span className="-mb-1 hidden xl:block">{updated}</span>
+          <span className="-mb-1 hidden 2xl:block">{updated}</span>
         </div>
 
         <div className="flex items-center gap-2">
           {c ? (
             <Src kind="live">
-              <span className="flex items-center gap-2 rounded-full border border-line px-3 py-1">
-                <WxIcon code={c.code} isDay={c.isDay} className="size-5" />
-                <span className="num text-xl font-bold">{Math.round(c.temp)}°</span>
-                <span className="flex flex-col text-xs leading-tight">
+              <span className="lift flex items-center gap-2 rounded-2xl bg-gradient-to-br from-sky-50 to-violet-50 px-3 py-1 ring-1 ring-sky-100">
+                <Emoji name={wxEmoji(c.code, c.isDay)} size={34} float slow />
+                <span className="num text-2xl">{Math.round(c.temp)}°</span>
+                <span className="flex flex-col text-xs leading-tight whitespace-nowrap">
                   <span className="font-semibold">{f(t.header.feels, { t: Math.round(c.feels) })}</span>
                   <span className="text-muted">{wxText(day?.code ?? c.code)}</span>
                 </span>
@@ -148,9 +151,13 @@ export function Header({ onPlace, onMenu }: { onPlace: () => void; onMenu: () =>
           {wx ? (
             air ? (
               <Src text={t.header.aqiTip}>
-                <span className="flex items-center gap-2 rounded-full border border-line px-3 py-1">
+                <span
+                  className="lift flex items-center gap-2 rounded-2xl px-3 py-1.5 ring-1 ring-black/5"
+                  style={{ background: `linear-gradient(135deg, ${AQI_COLOR[aqiCategory(air.aqi)]}33, #ffffff)` }}
+                >
+                  <Emoji name={air.aqi > 200 ? 'mask' : 'leaf'} size={26} />
                   <AqiDot aqi={air.aqi} />
-                  <span className="flex flex-col text-xs leading-tight">
+                  <span className="flex flex-col text-xs leading-tight whitespace-nowrap">
                     <span className="font-semibold">{f(t.header.air, { cat: t.aqi[aqiCategory(air.aqi)] })}</span>
                     <span className="text-muted">{f(t.header.aqiLine, { aqi: air.aqi, pm: Math.round(air.pm25) })}</span>
                   </span>
@@ -162,7 +169,7 @@ export function Header({ onPlace, onMenu }: { onPlace: () => void; onMenu: () =>
           ) : (
             (failed ? null : <Skel className="h-10 w-36 rounded-full" />)
           )}
-          <span className="hidden flex-col items-start gap-0.5 xl:flex">
+          <span className="hidden flex-col items-start gap-0.5 2xl:flex">
             <span className="text-xs font-semibold text-muted">{t.ritu[rituOf(month)]}</span>
             {modeChip}
           </span>
@@ -171,15 +178,16 @@ export function Header({ onPlace, onMenu }: { onPlace: () => void; onMenu: () =>
         <div className="flex items-center gap-1">
           <LangSwitch />
           {profile && (
-            <Link to="/settings" className="chip !py-1 font-semibold" title={t.header.role}>
-              {t.role[profile.role]}
+            <Link to="/settings" className="chip lift !py-1 font-semibold" title={t.header.role}>
+              <Emoji name={ROLE_EMOJI[profile.role] ?? 'people'} size={20} pop /> {t.role[profile.role]}
             </Link>
           )}
         </div>
       </div>
 
       {/* laptop-width second line: season + updated (hidden on very wide screens where it fits above) */}
-      <div className="hidden items-center gap-3 border-t border-line/60 px-4 py-1 lg:flex xl:hidden">
+      <div className="hidden items-center gap-3 border-t border-white/70 px-4 py-1 lg:flex 2xl:hidden">
+        <Emoji name="leaf" size={18} />
         <span className="text-xs font-semibold text-muted">{t.ritu[rituOf(month)]}</span>
         {modeChip}
         <span className="ml-auto">{updated}</span>
@@ -196,8 +204,8 @@ export function Header({ onPlace, onMenu }: { onPlace: () => void; onMenu: () =>
             {c ? (
               <Src kind="live">
                 <span className="flex items-center gap-1">
-                  <WxIcon code={c.code} isDay={c.isDay} className="size-5" />
-                  <span className="num text-2xl font-bold">{Math.round(c.temp)}°</span>
+                  <Emoji name={wxEmoji(c.code, c.isDay)} size={28} float slow />
+                  <span className="num text-2xl">{Math.round(c.temp)}°</span>
                 </span>
               </Src>
             ) : (
@@ -224,9 +232,9 @@ export function Header({ onPlace, onMenu }: { onPlace: () => void; onMenu: () =>
         </div>
       </div>
 
-      <div aria-hidden className="h-1 w-full" style={{ background: tint }} />
+      <div aria-hidden className="h-1 w-full" style={{ background: `linear-gradient(90deg, ${tint}, ${tint}cc 60%, #c026d3aa)` }} />
       {wx?.stale && (
-        <div role="status" className="flex items-center justify-center gap-2 bg-ink px-3 py-1.5 text-center text-sm text-white">
+        <div role="status" className="flex items-center justify-center gap-2 bg-gradient-to-r from-[#1e1b4b] to-[#4c1d95] px-3 py-1.5 text-center text-sm text-white">
           <WifiOff className="size-4" {...ICON} aria-hidden />
           {f(typeof navigator !== 'undefined' && !navigator.onLine ? t.header.offline : t.header.refreshFail, {
             time: `${clockTime(new Date(wx.savedAt), lang)}, ${clockDate(new Date(wx.savedAt), lang)}`,
@@ -234,14 +242,5 @@ export function Header({ onPlace, onMenu }: { onPlace: () => void; onMenu: () =>
         </div>
       )}
     </header>
-  )
-}
-
-function PinIcon() {
-  return (
-    <svg viewBox="0 0 24 24" className="size-4" fill="none" stroke="currentColor" strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-      <path d="M20 10c0 4.99-5.54 10.19-7.4 11.8a1 1 0 0 1-1.2 0C9.54 20.19 4 14.99 4 10a8 8 0 0 1 16 0" />
-      <circle cx="12" cy="10" r="3" />
-    </svg>
   )
 }

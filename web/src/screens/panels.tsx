@@ -10,6 +10,7 @@ import { clockDate, hourLabel } from '../lib/ist'
 import { coldLevel, LEVEL_COLOR, needsFor, nightHours, type Burning, type Mode, type Need } from '../lib/risk'
 import { FAIL_REASONS, type Check, type Task } from '../lib/tasks'
 import { DemoTag, ICON, LEVEL_TEXT, SectionHead, Src } from '../ui/atoms'
+import type { EmojiName } from '../ui/Emoji'
 import { useNow } from '../ui/Header'
 import { pct, pointName, useHelp, usePeople, type Row } from './shared'
 
@@ -487,10 +488,12 @@ export function DueList({ tasks }: { tasks: Task[] }) {
   )
 }
 
-export function PanelBox({ title, right, children, className, sub }: { title: string; right?: React.ReactNode; children: React.ReactNode; className?: string; sub?: React.ReactNode }) {
+export function PanelBox({
+  title, right, children, className, sub, emoji,
+}: { title: string; right?: React.ReactNode; children: React.ReactNode; className?: string; sub?: React.ReactNode; emoji?: EmojiName }) {
   return (
     <section className={`panel p-4 sm:p-5 ${className ?? ''}`}>
-      <SectionHead right={right} sub={sub}>
+      <SectionHead right={right} sub={sub} emoji={emoji}>
         {title}
       </SectionHead>
       {children}

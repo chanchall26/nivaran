@@ -1,13 +1,14 @@
-import { Megaphone, Navigation, Phone, Square, Volume2 } from 'lucide-react'
+import { Navigation, Square, Volume2 } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useApp, useDay } from '../ctx'
 import { useI18n } from '../i18n'
 import { km } from '../lib/place'
-import { conditionOf, dayLevel, hourLevel, inShift, LEVEL_COLOR, type Shift } from '../lib/risk'
+import { conditionOf, dayLevel, hourLevel, inShift, type Shift } from '../lib/risk'
 import { taskStore, type AskNeed } from '../lib/tasks'
 import { ICON, Skel, Src } from '../ui/atoms'
 import { DayStrip } from '../ui/DayStrip'
+import { COND_EMOJI, Emoji } from '../ui/Emoji'
 import { useLinkTo } from './panels'
 import { pointName, useNowHour } from './shared'
 import { DayTabs, ShiftSwitch } from './Today'
@@ -94,16 +95,31 @@ export function WorkerToday() {
     : cond === 'double' ? `${t.worker.advice.heat} ${t.worker.advice.smoky}`
     : cond === 'air' ? t.worker.advice.smoky
     : cond === 'cold' ? t.worker.advice.cold
+    : cond === 'rain' ? t.worker.advice.rain
     : t.worker.advice[modes[0]]
   const headline = f(dayIdx === 0 ? t.worker.todayOutside : t.worker.tomorrowOutside, { level: t.level[level] })
   const dark = level < 3
+  // level colours as gradients; ink text on green, yellow and orange, white on red (AA)
+  const LEVEL_GRAD = [
+    'linear-gradient(135deg, #4ade80 0%, #2dd4bf 100%)',
+    'linear-gradient(135deg, #fbbf24 0%, #fde68a 100%)',
+    'linear-gradient(135deg, #fb923c 0%, #fbbf24 100%)',
+    'linear-gradient(135deg, #b91c1c 0%, #be123c 100%)',
+  ]
   return (
     <div className="space-y-4">
       <div className="flex justify-end">
         <DayTabs />
       </div>
-      <section className="rounded-xl p-5 sm:p-7" style={{ background: LEVEL_COLOR[level], color: dark ? '#1b2330' : '#fff' }}>
-        <h1 className="font-display text-3xl leading-tight font-bold sm:text-4xl">{headline}</h1>
+      <section
+        className="rise relative isolate overflow-hidden rounded-[26px] p-5 shadow-[0_18px_40px_-20px_rgb(30_27_75/0.55)] sm:p-7"
+        style={{ background: LEVEL_GRAD[level], color: dark ? '#1e1b4b' : '#fff' }}
+      >
+        <span aria-hidden className="pointer-events-none absolute -top-16 -right-12 -z-10 size-56 rounded-full bg-white/25 blur-2xl" />
+        <span aria-hidden className="absolute top-4 right-4 sm:top-6 sm:right-6">
+          <Emoji name={COND_EMOJI[cond]} size={72} float eager />
+        </span>
+        <h1 className="plain pr-20 font-display text-3xl leading-tight font-extrabold sm:text-4xl">{headline}</h1>
         <div className="mt-3 flex items-end gap-3">
           <Src kind="live">
             <span className="num text-[64px] font-bold">{feels}°</span>
@@ -126,11 +142,11 @@ export function WorkerToday() {
 
       <NearList limit={3} />
 
-      <Link to={to('/ask')} className="btn btn-ink w-full !min-h-14 text-xl">
-        <Megaphone className="size-6" {...ICON} aria-hidden /> {t.worker.ask}
+      <Link to={to('/ask')} className="btn btn-ink w-full !min-h-16 !rounded-2xl text-xl">
+        <Emoji name="megaphone" size={34} pop /> {t.worker.ask}
       </Link>
-      <p className="flex items-center justify-center gap-2 text-center font-semibold">
-        <Phone className="size-4" {...ICON} aria-hidden /> {t.worker.emergency}
+      <p className="flex items-center justify-center gap-2 rounded-2xl bg-white/80 px-3 py-2 text-center font-semibold ring-1 ring-line">
+        <Emoji name="ambulance" size={28} /> {t.worker.emergency}
       </p>
     </div>
   )

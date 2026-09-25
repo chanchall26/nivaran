@@ -9,6 +9,7 @@ import { loadSummerDay } from '../lib/snapshot'
 import { hedgeWhatIf, plantSites, shadeWhatIf, speciesFor, windbreakWhatIf, type Cover, type PlantKind, type PlantSite } from '../lib/plant'
 import { climateOf, nightHours, plantingNow } from '../lib/risk'
 import { DemoTag, ICON, Skel, Src } from '../ui/atoms'
+import { Emoji } from '../ui/Emoji'
 import { DayStrip } from '../ui/DayStrip'
 import { PointsMap, type MapMarker } from '../ui/PointsMap'
 import { Sheet } from '../ui/Sheet'
@@ -220,10 +221,17 @@ export default function Plant() {
     <div className="space-y-4">
       <h1 className="font-display text-[28px] font-bold">{t.plant.title}</h1>
       <p
-        className="flex items-center gap-2 rounded-xl px-4 py-3 font-semibold text-white"
-        style={{ background: climate === 'cold_desert' ? '#2f5bb8' : now ? '#157a45' : '#4f5363' }}
+        className="rise flex items-center gap-3 rounded-2xl px-4 py-3 font-semibold text-white shadow-[0_14px_30px_-18px_rgb(30_27_75/0.6)]"
+        style={{
+          background:
+            climate === 'cold_desert'
+              ? 'linear-gradient(120deg, #1d4ed8, #4338ca)'
+              : now
+                ? 'linear-gradient(120deg, #15803d, #0f766e)'
+                : 'linear-gradient(120deg, #475569, #4f5363)',
+        }}
       >
-        <Sprout className="size-5 shrink-0" {...ICON} aria-hidden />
+        <Emoji name={climate === 'cold_desert' ? 'snowflake' : 'seedling'} size={34} float />
         {climate === 'cold_desert' ? (now ? t.plant.seasonNow : t.plant.seasonCold) : now ? t.plant.seasonNow : t.plant.seasonPlains}
       </p>
       <p className="max-w-3xl text-muted">{t.plant.intro}</p>
@@ -239,6 +247,7 @@ export default function Plant() {
           </ul>
         </div>
         <PanelBox
+          emoji="seedling"
           title={t.plant.title}
           sub={t.plant.pick}
           right={<DemoTag label={t.src.estimated} />}

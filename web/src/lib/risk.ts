@@ -182,11 +182,14 @@ export function trendOf(days: Day[]): Trend | null {
  * What the whole screen is about today. The worst hazard wins; heat and bad air together are
  * "Double risk". Air wins a tie with cold (a smoggy winter night is about the smoke).
  */
-export type Condition = 'mild' | 'warm' | 'hot' | 'air' | 'cold' | 'double'
+export type Condition = 'mild' | 'warm' | 'hot' | 'air' | 'cold' | 'double' | 'rain'
 export type Hazard = 'heat' | 'cold' | 'air'
 export const COND_COLOR: Record<Condition, string> = {
-  mild: '#1E9E5A', warm: '#E0B000', hot: '#D7263D', air: '#F07F13', cold: '#3D6FD9', double: '#D7263D',
+  mild: '#1E9E5A', warm: '#E0B000', hot: '#D7263D', air: '#F07F13', cold: '#3D6FD9', double: '#D7263D', rain: '#3B4CCA',
 }
+
+/** Rain likely: a 60% chance in some hour, or 5 mm over the day (the Rain mode rule). */
+export const rainLikely = (d: Pick<Day, 'rainProbMax' | 'rainSum'>) => (d.rainProbMax ?? 0) >= 60 || d.rainSum >= 5
 
 export function airLevel(aqi: number | null | undefined): Level {
   if (aqi == null) return 0
@@ -212,8 +215,8 @@ export function hazardsOf(d: Day, next?: Day): Record<Hazard, Level> {
 
 export interface ConditionInfo {
   cond: Condition
-  /** the hazards behind it, worst first; the rest that are also at "Get ready" or worse */
-  also: Hazard[]
+  /** the other hazards at "Get ready" or worse, worst first, and rain when it is not the screen itself */
+  also: (Hazard | 'rain')[]
   hz: Record<Hazard, Level>
 }
 
@@ -225,10 +228,13 @@ export function conditionOf(d: Day, next?: Day): ConditionInfo {
   const serious = (['air', 'cold', 'heat'] as Hazard[]).filter((k) => hz[k] >= 2).sort((a, b) => hz[b] - hz[a])
   if (hz.heat >= 2 && hz.air >= 2) return { cond: 'double', also: serious.filter((k) => k === 'cold'), hz }
   const top = serious[0]
-  const rest = serious.slice(1)
+  const wet = rainLikely(d)
+  const rest: (Hazard | 'rain')[] = [...serious.slice(1), ...(wet ? (['rain'] as const) : [])]
   if (top === 'air') return { cond: 'air', also: rest, hz }
   if (top === 'cold') return { cond: 'cold', also: rest, hz }
   if (top === 'heat') return { cond: 'hot', also: rest, hz }
+  // rain sits below the serious hazards and above a warm or mild day
+  if (wet) return { cond: 'rain', also: hz.heat === 1 ? ['heat'] : [], hz }
   return { cond: hz.heat === 1 ? 'warm' : 'mild', also: [], hz }
 }
 
@@ -260,6 +266,8 @@ function longestRun(hours: Hour[], hit: (h: Hour) => boolean): Span | null {
 export const heatSpan = (d: Day, min: Level = 2) => longestRun(d.hours, (h) => heatLevel(h.feels) >= min)
 /** Night hours at this cold level or worse: "10 pm to 6 am". */
 export const coldSpan = (d: Day, next?: Day, min: Level = 2) => longestRun(nightHours(d, next), (h) => coldLevel(h.feels) >= min)
+/** Hours with a real chance of rain (40%+) or 0.5 mm+: "Rain likely from 2 pm to 8 pm". */
+export const rainSpan = (d: Day) => longestRun(d.hours, (h) => (h.rainProb ?? 0) >= 40 || h.rain >= 0.5)
 /** The 3 hours with the worst air today. */
 export function worstAirSpan(d: Day): Span | null {
   const hs = d.hours.filter((h) => h.aqi != null)
@@ -369,6 +377,7 @@ export function modesForDay(modes: Mode[], info: Pick<ConditionInfo, 'cond'>): M
   if ((c === 'warm' || c === 'hot' || c === 'double') && !m.includes('heat') && !m.includes('humid')) m.unshift(c === 'warm' ? 'humid' : 'heat')
   if ((c === 'air' || c === 'double') && !m.includes('smoky')) m.unshift('smoky')
   if (c === 'cold' && !m.includes('cold')) m.unshift('cold')
+  if (c === 'rain' && !m.includes('rain')) m.unshift('rain')
   return m.length ? m : ['mild']
 }
 export const needsForDay = (modes: Mode[], info: Pick<ConditionInfo, 'cond'>): Need[] => needsFor(modesForDay(modes, info))

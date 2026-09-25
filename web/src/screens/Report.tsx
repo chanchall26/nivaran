@@ -134,7 +134,7 @@ export default function Report() {
             <p className="text-muted">{t.report.none}</p>
           ) : (
             <div className="grid gap-4 lg:grid-cols-2">
-              <PanelBox title={t.report.peh}>
+              <PanelBox emoji="bar_chart" title={t.report.peh}>
                 <PehBlock title={monthName(month)} p={monthly.peh} />
                 <p className="mt-2 text-xs text-muted">{t.hours.note}</p>
               </PanelBox>

@@ -4,6 +4,7 @@ import { useI18n } from '../i18n'
 import { longDate } from '../lib/ist'
 import { AQI_COLOR, aqiCategory, LEVEL_COLOR, type Level } from '../lib/risk'
 import { useApp } from '../ctx'
+import { Emoji, type EmojiName } from './Emoji'
 
 export const ICON = { strokeWidth: 1.75 } as const
 
@@ -132,12 +133,19 @@ export function Skel({ className }: { className?: string }) {
   return <span aria-hidden className={`skel block ${className ?? ''}`} />
 }
 
-export function SectionHead({ children, right, sub }: { children: ReactNode; right?: ReactNode; sub?: ReactNode }) {
+export function SectionHead({ children, right, sub, emoji }: { children: ReactNode; right?: ReactNode; sub?: ReactNode; emoji?: EmojiName }) {
   return (
-    <div className="mb-3 flex flex-wrap items-end justify-between gap-2">
-      <div className="min-w-0">
-        <h2 className="font-display text-xl leading-tight font-bold">{children}</h2>
-        {sub && <p className="text-sm text-muted">{sub}</p>}
+    <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
+      <div className="flex min-w-0 items-center gap-3">
+        {emoji && (
+          <span className="grid size-11 shrink-0 place-items-center rounded-2xl bg-gradient-to-br from-violet-100 via-pink-50 to-orange-100 shadow-inner">
+            <Emoji name={emoji} size={30} pop />
+          </span>
+        )}
+        <div className="min-w-0">
+          <h2 className="font-display text-xl leading-tight font-bold">{children}</h2>
+          {sub ? <p className="text-sm text-muted">{sub}</p> : <span aria-hidden className="mt-1 block h-1 w-10 rounded-full grad-brand" />}
+        </div>
       </div>
       {right}
     </div>

@@ -257,6 +257,14 @@ describe('condition screens', () => {
     expect(c.also).toEqual(['cold'])
     expect(worstAirSpan(d)?.from).toBe(18)
   })
+  it('rain likely (60% chance or 5 mm) is its own screen, below heat, air and cold, above warm and mild', () => {
+    const wet = day({ rainProbMax: 96, rainSum: 35 }, hours((h) => ({ feels: 26, rainProb: h >= 14 && h < 20 ? 90 : 20 })))
+    expect(conditionOf(wet).cond).toBe('rain')
+    const warmWet = day({ rainProbMax: 70, rainSum: 3 }, hours((h) => ({ feels: h >= 12 && h < 16 ? 34 : 27 })))
+    expect(conditionOf(warmWet)).toMatchObject({ cond: 'rain', also: ['heat'] })
+    const coldWet = day({ rainProbMax: 80, rainSum: 8 }, hours((h) => ({ feels: h >= 20 || h < 8 ? 4 : 14 })))
+    expect(conditionOf(coldWet)).toMatchObject({ cond: 'cold', also: ['rain'] })
+  })
   it('heat and bad air together are Double risk', () => {
     expect(conditionOf(day({ aqi: 268 }, hours((h) => ({ feels: h >= 12 && h < 17 ? 43.7 : 33 })))).cond).toBe('double')
   })
