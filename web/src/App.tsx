@@ -13,7 +13,6 @@ const Today = lazy(() => import('./screens/Today'))
 const Schemes = lazy(() => import('./screens/Schemes'))
 const Tasks = lazy(() => import('./screens/Tasks'))
 const Report = lazy(() => import('./screens/Report'))
-const Plant = lazy(() => import('./screens/Plant'))
 const WorkerToday = lazy(() => import('./screens/Worker').then((m) => ({ default: m.WorkerToday })))
 const NearScreen = lazy(() => import('./screens/Worker').then((m) => ({ default: m.NearScreen })))
 const AskScreen = lazy(() => import('./screens/Worker').then((m) => ({ default: m.AskScreen })))
@@ -26,6 +25,8 @@ const AlertsScreen = lazy(() => misc().then((m) => ({ default: m.AlertsScreen })
 const SettingsScreen = lazy(() => misc().then((m) => ({ default: m.SettingsScreen })))
 const SourcesScreen = lazy(() => misc().then((m) => ({ default: m.SourcesScreen })))
 const NotFound = lazy(() => misc().then((m) => ({ default: m.NotFound })))
+// standalone test route for Track 4 (hotspot fusion UI); not part of the real navigation yet
+const HotspotLab = lazy(() => import('./screens/HotspotLab'))
 
 function Loading() {
   return (
@@ -68,7 +69,7 @@ export default function App() {
   }, [wx])
 
   if (pathname === '/welcome') return <Entry />
-  if (!profile && pathname !== '/sources') return <Navigate to={{ pathname: '/welcome', search }} replace />
+  if (!profile && pathname !== '/sources' && pathname !== '/hotspot-lab') return <Navigate to={{ pathname: '/welcome', search }} replace />
   const worker = profile?.role === 'worker'
 
   return (
@@ -96,10 +97,10 @@ export default function App() {
               <Route path="/settings" element={<SettingsScreen />} />
               <Route path="/tasks" element={<Tasks />} />
               <Route path="/report" element={<Report />} />
-              <Route path="/plant" element={<Plant />} />
               <Route path="/near" element={<NearScreen />} />
               <Route path="/ask" element={<AskScreen />} />
               <Route path="/sources" element={<SourcesScreen />} />
+              <Route path="/hotspot-lab" element={<HotspotLab />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
             </div>

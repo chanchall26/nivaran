@@ -5,9 +5,9 @@
 
 const en = {
   app: {
-    name: 'Barahmasa',
-    tagline: 'Shade in summer, warmth in winter.',
-    entryLine: 'Safe work outside, every season.',
+    name: 'Nivaran',
+    tagline: 'Find the source. Stop the smoke.',
+    entryLine: 'Pollution ka jasoos, har shehar ke liye.',
     loading: 'Loading…',
     tryAgain: 'Try again',
     close: 'Close',
@@ -221,6 +221,9 @@ const en = {
     language: 'Language',
   },
   today: {
+    investigationTitle: 'Pollution check: {place}, today',
+    investigationTitleTomorrow: 'Pollution check: {place}, tomorrow',
+    investigationSub: 'What the air looks like right now',
     title: 'Today outside in {place}',
     titleTomorrow: 'Tomorrow outside in {place}',
     tabToday: 'Today',
@@ -516,7 +519,7 @@ const en = {
     share: 'Share on WhatsApp',
     requests: 'Help asked by workers',
     noRequests: 'No requests yet.',
-    msg: 'Barahmasa alert for {place}: {level} on {day}, {from} to {to}. Feels like {t}°. {advice}',
+    msg: 'Nivaran alert for {place}: {level} on {day}, {from} to {to}. Feels like {t}°. {advice}',
     window: '{day}, {from} to {to}',
   },
   plant: {
@@ -626,7 +629,7 @@ const en = {
     fire: 'Fire risk: {level}',
     danger: 'Outside: {level} from {from} to {to}',
     sun: 'In the sun from {from} to {to}',
-    line: 'The same gate needs warmth in December and shade in May. That is why it is called Barahmasa: all twelve months.',
+    line: 'The same gate needs warmth in December and shade in May. That is why it is called Nivaran: a fix for every season.',
     pick: 'Place',
   },
   shade: {
@@ -713,6 +716,37 @@ const en = {
     airSize: 'Air: a bigger circle is a busier road (smoke and dust). A flame marks fires lit for warmth.',
     heatSize: 'Heat: colour is the worst heat for the people there; a bigger circle is more people out in the day.',
   },
+  hotspot: {
+    title: 'Pollution hotspots',
+    intro: 'Places where the air is worse than nearby. Tap a spot to see why we think so.',
+    map: { title: 'Hotspot map', empty: 'No hotspots to show yet.' },
+    source: {
+      title: 'What is making the smoke',
+      'crop-burning': 'Crop burning',
+      'brick-kiln': 'Brick kiln',
+      vehicle: 'Vehicles',
+      industrial: 'Factory',
+      'waste-burning': 'Waste burning',
+      unknown: 'Not sure yet',
+    },
+    severity: { title: 'How bad', low: 'Low', medium: 'Medium', high: 'High' },
+    status: { active: 'Being watched', confirmed: 'Confirmed', resolved: 'Cleared up' },
+    confidence: {
+      title: 'How sure are we',
+      score: 'Score: {score} out of 100',
+      why: 'Why this score',
+      wind: 'Wind direction',
+      pmRatio: 'Dirty air here vs nearby',
+      photo: 'Photo check',
+      firms: 'Satellite fire point',
+    },
+    feed: {
+      title: 'Agent feed',
+      note: 'Three area teams share only a short summary with each other — never a raw photo or a person\'s data. This is a demo of the pattern; it can plug into real Flower federated learning later.',
+      empty: 'No messages yet.',
+      sent: '{from} told {to}: {count} hotspots, average score {score}, mostly {source}.',
+    },
+  },
   lang: { en: 'English', hi: 'हिंदी' },
 }
 
@@ -720,9 +754,9 @@ export type Dict = typeof en
 
 const hi: Dict = {
   app: {
-    name: 'बारहमासा',
-    tagline: 'गर्मी में छाया, सर्दी में गरमाहट',
-    entryLine: 'बाहर काम, हर मौसम में सुरक्षित।',
+    name: 'निवारण',
+    tagline: 'स्रोत पकड़ो। धुआं रोको।',
+    entryLine: 'हर शहर के लिए, प्रदूषण का जासूस।',
     loading: 'लोड हो रहा है…',
     tryAgain: 'फिर से कोशिश करें',
     close: 'बंद करें',
@@ -936,6 +970,9 @@ const hi: Dict = {
     language: 'भाषा',
   },
   today: {
+    investigationTitle: '{place} की हवा की जांच, आज',
+    investigationTitleTomorrow: '{place} की हवा की जांच, कल',
+    investigationSub: 'अभी हवा कैसी है',
     title: '{place} में आज बाहर कैसा है',
     titleTomorrow: '{place} में कल बाहर कैसा रहेगा',
     tabToday: 'आज',
@@ -1231,7 +1268,7 @@ const hi: Dict = {
     share: 'WhatsApp पर भेजें',
     requests: 'कामगारों ने मदद मांगी',
     noRequests: 'अभी कोई मांग नहीं।',
-    msg: 'बारहमासा चेतावनी, {place}: {day} को {from} से {to} तक {level}। महसूस होगा {t}°। {advice}',
+    msg: 'निवारण चेतावनी, {place}: {day} को {from} से {to} तक {level}। महसूस होगा {t}°। {advice}',
     window: '{day}, {from} से {to}',
   },
   plant: {
@@ -1341,7 +1378,7 @@ const hi: Dict = {
     fire: 'आग का खतरा: {level}',
     danger: 'बाहर: {from} से {to} तक {level}',
     sun: '{from} से {to} तक धूप में',
-    line: 'वही गेट दिसंबर में गरमाहट मांगता है और मई में छाया। इसीलिए नाम बारहमासा है: बारह महीने।',
+    line: 'वही गेट दिसंबर में गरमाहट मांगता है और मई में छाया। इसीलिए नाम निवारण है: हर मौसम का इलाज।',
     pick: 'जगह',
   },
   shade: {
@@ -1427,6 +1464,37 @@ const hi: Dict = {
     legend: 'रंग = आज बाहर रहने वालों के लिए खतरा',
     airSize: 'हवा: बड़ा गोला मतलब ज़्यादा व्यस्त सड़क (धुआं और धूल)। आग का निशान गरमाहट के लिए जली आग दिखाता है।',
     heatSize: 'गर्मी: रंग वहां के लोगों के लिए सबसे ज़्यादा गर्मी है; बड़ा गोला मतलब दिन में ज़्यादा लोग बाहर।',
+  },
+  hotspot: {
+    title: 'प्रदूषण के हॉटस्पॉट',
+    intro: 'वो जगहें जहां हवा आसपास से ज़्यादा गंदी है। किसी जगह पर टैप करें, वजह देखें।',
+    map: { title: 'हॉटस्पॉट नक्शा', empty: 'अभी दिखाने के लिए कोई हॉटस्पॉट नहीं है।' },
+    source: {
+      title: 'धुआं कहां से आ रहा है',
+      'crop-burning': 'फसल जलाना',
+      'brick-kiln': 'भट्टा (ईंट)',
+      vehicle: 'गाड़ियां',
+      industrial: 'फैक्ट्री',
+      'waste-burning': 'कचरा जलाना',
+      unknown: 'अभी साफ़ नहीं',
+    },
+    severity: { title: 'कितना खराब', low: 'कम', medium: 'मध्यम', high: 'ज़्यादा' },
+    status: { active: 'नज़र रखी जा रही है', confirmed: 'पक्का हुआ', resolved: 'ठीक हो गया' },
+    confidence: {
+      title: 'हमें कितना यकीन है',
+      score: 'स्कोर: 100 में से {score}',
+      why: 'यह स्कोर क्यों',
+      wind: 'हवा की दिशा',
+      pmRatio: 'यहां की हवा आसपास से कितनी गंदी',
+      photo: 'फोटो की जांच',
+      firms: 'सैटेलाइट आग बिंदु',
+    },
+    feed: {
+      title: 'एजेंट फ़ीड',
+      note: 'तीन इलाके की टीमें एक-दूसरे को सिर्फ़ एक छोटा सा सार भेजती हैं — कभी असली फोटो या किसी की जानकारी नहीं। यह पैटर्न का डेमो है; आगे इसे असली Flower फ़ेडरेटेड लर्निंग से जोड़ा जा सकता है।',
+      empty: 'अभी कोई संदेश नहीं है।',
+      sent: '{from} ने {to} को बताया: {count} हॉटस्पॉट, औसत स्कोर {score}, ज़्यादातर {source}।',
+    },
   },
   lang: { en: 'English', hi: 'हिंदी' },
 }
