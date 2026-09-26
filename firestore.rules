@@ -69,5 +69,39 @@ service cloud.firestore {
         && (!('contact' in request.resource.data) || str(request.resource.data.contact, 80));
       allow delete: if signedIn() && isDemoDelete();
     }
+
+    // Nivaran pollution-hotspot pipeline (additive). `sourceType` mirrors the enum used by the
+    // analyzePhoto/draftAlert Cloud Functions in functions/src — keep the two lists in sync.
+    function sourceType() {
+      return ['crop_burning', 'brick_kiln', 'garbage_burning', 'industrial_smoke',
+              'vehicle_exhaust', 'construction_dust', 'other'];
+    }
+
+    // One citizen photo report, analyzed by the analyzePhoto Cloud Function client-side before
+    // the doc is created (the function itself never writes to Firestore).
+    match /evidence/{id} {
+      allow read: if signedIn();
+      allow create: if signedIn()
+        && request.resource.data.lat is number && request.resource.data.lon is number
+        && request.resource.data.sourceType in sourceType()
+        && request.resource.data.severity is int
+        && request.resource.data.severity >= 0 && request.resource.data.severity <= 5
+        && request.resource.data.confidence is number
+        && request.resource.data.confidence >= 0 && request.resource.data.confidence <= 1
+        && (!('thumb' in request.resource.data) || str(request.resource.data.thumb, 400000))
+        && (!('note' in request.resource.data) || str(request.resource.data.note, 500));
+      allow delete: if signedIn() && isDemoDelete();
+    }
+
+    // Aggregated pollution hotspots (grouped evidence) and the simulated federated-alert feed.
+    // Both are written by trusted backend code (Cloud Functions / Admin SDK, which bypasses
+    // these rules) — clients only ever read them, never write directly.
+    match /hotspots/{id} {
+      allow read: if signedIn();
+    }
+
+    match /signals/{id} {
+      allow read: if signedIn();
+    }
   }
 }
