@@ -3,18 +3,19 @@
  * location (after asking permission) or from a PIN code / city name. Workers never give a name.
  * "Try demo" skips everything with a ready profile.
  */
-import { ArrowLeft, Check, Crosshair, LoaderCircle, Lock, MapPin, Search } from 'lucide-react'
+import { ArrowLeft, Check, Crosshair, LoaderCircle, Lock, MapPin } from 'lucide-react'
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useApp } from '../ctx'
 import { useI18n } from '../i18n'
 import { LOOK } from '../i18n/look'
-import { isPin, lookupPin, placeFromGps, placeParams, PRESETS, searchCity, withHindiName, type Place, type PresetKey } from '../lib/place'
+import { placeFromGps, placeParams, type Place } from '../lib/place'
 import { DEMO_PROFILES, type Profile, type Role, type Work } from '../lib/profile'
-import { AQI_COLOR, aqiCategory, type Shift } from '../lib/risk'
+import { type Shift } from '../lib/risk'
 import { ICON } from '../ui/atoms'
-import { Emoji, wxEmoji, type EmojiName } from '../ui/Emoji'
+import { Emoji, type EmojiName } from '../ui/Emoji'
 import { LangSwitch } from '../ui/Header'
+import { PlaceMap } from '../ui/PlaceMap'
 import { StationBoard } from '../ui/StationBoard'
 
 function Field({ label, children, optional }: { label: string; children: ReactNode; optional?: boolean }) {
@@ -58,11 +59,8 @@ async function googleSignIn(): Promise<string | null> {
 
 /** The colourful left side: what Nivaran is, with live numbers for the place already known. */
 function Hero() {
-  const { t, lang, f } = useI18n()
+  const { t, lang } = useI18n()
   const L = LOOK[lang].login
-  const { wx, place } = useApp()
-  const c = wx?.data.current
-  const air = wx?.data.air
   const floaters: { name: EmojiName; cls: string; size: number; delay: string }[] = [
     // a column of pollution-investigation icons down the right edge, clear of the text
     { name: 'satellite', cls: 'top-[11%] right-[7%]', size: 78, delay: '0s' },
@@ -122,23 +120,6 @@ function Hero() {
         </ul>
       </div>
 
-      <div className="space-y-3">
-        {c && (
-          <div className="pop-in inline-flex flex-wrap items-center gap-x-4 gap-y-2 rounded-2xl border border-white/20 bg-[#06152d]/85 px-4 py-3 text-white shadow-xl backdrop-blur">
-            <span className="text-xs font-semibold text-muted">{f(L.today, { place: lang === 'hi' ? place.nameHi : place.name })}</span>
-            <span className="flex items-center gap-2">
-              <Emoji name={wxEmoji(c.code, c.isDay)} size={30} />
-              <span className="num text-2xl">{Math.round(c.temp)}°</span>
-            </span>
-            {air && (
-              <span className="flex items-center gap-1.5 text-sm font-semibold">
-                <span className="size-2.5 rounded-full ring-1 ring-black/15" style={{ background: AQI_COLOR[aqiCategory(air.aqi)] }} aria-hidden />
-                {t.aqi[aqiCategory(air.aqi)]} · AQI {air.aqi}
-              </span>
-            )}
-          </div>
-        )}
-      </div>
     </section>
   )
 }
@@ -162,9 +143,6 @@ function Steps({ step }: { step: 1 | 2 | 3 }) {
 }
 
 const ROLE_EMOJI: Record<Role, EmojiName> = { officer: 'building', partner: 'handshake', worker: 'worker' }
-const PRESET_EMOJI: Record<PresetKey, EmojiName> = { gwalior: 'city', delhi: 'office', leh: 'mountain' }
-
-type Found = { place: Place; how: 'gps' | 'pin' | 'search' | 'preset' }
 
 export default function Entry() {
   const { place, setPlace, setProfile, profile } = useApp()
@@ -174,10 +152,8 @@ export default function Entry() {
   const [step, setStep] = useState<1 | 2 | 3>(1)
   const [role, setRole] = useState<Role | null>(profile?.demo ? null : (profile?.role ?? null))
   const [p, setP] = useState<Profile>(() => (profile && !profile.demo ? profile : { role: 'officer', demo: false }))
-  const [found, setFound] = useState<Found | null>(null)
-  const [q, setQ] = useState('')
-  const [results, setResults] = useState<Place[] | null>(null)
-  const [busy, setBusy] = useState<'gps' | 'search' | null>(null)
+  const [chosen, setChosen] = useState<Place | null>(null)
+  const [busy, setBusy] = useState<'gps' | null>(null)
   const [err, setErr] = useState<string | null>(null)
   const [gErr, setGErr] = useState(false)
   const set = (patch: Partial<Profile>) => setP((x) => ({ ...x, ...patch }))
@@ -200,8 +176,7 @@ export default function Entry() {
     setErr(null)
     try {
       const pl = await placeFromGps()
-      setFound({ place: pl, how: 'gps' })
-      setResults(null)
+      setChosen(pl)
     } catch {
       setErr(t.picker.locErr)
     } finally {
@@ -211,7 +186,7 @@ export default function Entry() {
 
   // location already allowed before: find the city without another click
   useEffect(() => {
-    if (step !== 2 || found) return
+    if (step !== 2 || chosen) return
     const perms = (navigator as Navigator & { permissions?: Permissions }).permissions
     perms
       ?.query({ name: 'geolocation' as PermissionName })
@@ -221,49 +196,6 @@ export default function Entry() {
       .catch(() => {})
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [step])
-
-  // PIN or city search while typing
-  useEffect(() => {
-    const query = q.trim()
-    if (query.length < 2 || (/^\d+$/.test(query) && !isPin(query))) {
-      setResults(null)
-      return
-    }
-    let off = false
-    const id = setTimeout(async () => {
-      setBusy('search')
-      setErr(null)
-      try {
-        if (isPin(query)) {
-          const pl = await lookupPin(query)
-          if (off) return
-          if (pl) {
-            setFound({ place: pl, how: 'pin' })
-            setResults(null)
-          } else setErr(t.picker.pinErr)
-        } else {
-          const r = await searchCity(query)
-          if (off) return
-          setResults(r)
-          if (!r.length) setErr(t.picker.noResults)
-        }
-      } catch {
-        if (!off) setErr(navigator.onLine ? t.picker.noResults : t.picker.netErr)
-      } finally {
-        if (!off) setBusy(null)
-      }
-    }, 350)
-    return () => {
-      off = true
-      clearTimeout(id)
-    }
-  }, [q, t])
-
-  const pickResult = async (pl: Place) => {
-    setResults(null)
-    setQ('')
-    setFound({ place: await withHindiName(pl).catch(() => pl), how: 'search' })
-  }
 
   const google = async () => {
     setGErr(false)
@@ -281,16 +213,13 @@ export default function Entry() {
     { r: 'partner', title: t.role.partner, sub: t.entry.partnerSub, d: t.entry.partnerD },
     { r: 'worker', title: t.entry.workerT, d: t.entry.workerD },
   ]
-  const chosen = found?.place ?? null
-  const howLine = found
-    ? found.how === 'gps'
+  const howLine = !chosen
+    ? ''
+    : chosen.source === 'gps'
       ? L.detected
-      : found.how === 'pin'
-        ? f(L.fromPin, { pin: found.place.pin ?? '' })
-        : found.how === 'search'
-          ? L.fromSearch
-          : ''
-    : ''
+      : chosen.source === 'pin'
+        ? f(L.fromPin, { pin: chosen.pin ?? '' })
+        : L.fromSearch
 
   return (
     <div className="grid min-h-dvh bg-mist lg:grid-cols-[minmax(0,5fr)_minmax(0,6fr)]">
@@ -376,7 +305,7 @@ export default function Entry() {
                 <div className="pop-in mt-5 rounded-2xl border-2 border-[#22c55e]/60 bg-[#06152d] p-4">
                   <div className="flex items-center justify-between gap-3">
                     <span className="text-sm font-semibold text-muted">{L.yourPlace}</span>
-                    <button type="button" className="btn btn-ghost btn-sm" onClick={() => setFound(null)}>
+                    <button type="button" className="btn btn-ghost btn-sm" onClick={() => setChosen(null)}>
                       {L.change}
                     </button>
                   </div>
@@ -392,8 +321,13 @@ export default function Entry() {
                   </div>
                 </div>
               ) : (
-                <div className="mt-5 space-y-4">
-                  <button type="button" onClick={detect} disabled={busy === 'gps'} className="lift group flex w-full items-center gap-4 rounded-2xl p-4 text-left text-white grad-monsoon shadow-lg">
+                <div className="mt-5 grid gap-4 sm:grid-cols-2">
+                  <button
+                    type="button"
+                    onClick={detect}
+                    disabled={busy === 'gps'}
+                    className="lift group flex flex-col items-center gap-3 rounded-2xl p-5 text-center text-white grad-monsoon shadow-lg"
+                  >
                     <span className="grid size-14 shrink-0 place-items-center rounded-2xl bg-white/20 ring-1 ring-white/40">
                       {busy === 'gps' ? <LoaderCircle className="size-7 animate-spin" {...ICON} aria-hidden /> : <Crosshair className="size-7" {...ICON} aria-hidden />}
                     </span>
@@ -403,66 +337,19 @@ export default function Entry() {
                     </span>
                   </button>
 
-                  <div className="flex items-center gap-3 text-sm font-semibold text-muted" aria-hidden>
-                    <span className="h-px flex-1 bg-line" /> {L.or} <span className="h-px flex-1 bg-line" />
+                  <div className="flex flex-col items-center gap-3 rounded-2xl border border-line bg-[#06152d] p-5 text-center">
+                    <span className="grid size-14 shrink-0 place-items-center rounded-2xl bg-[#0e2344]">
+                      <MapPin className="size-7 text-[#4ade80]" {...ICON} aria-hidden />
+                    </span>
+                    <span className="block font-display text-lg font-bold">{L.chooseMap}</span>
                   </div>
+                </div>
+              )}
 
-                  <label className="relative block">
-                    <span className="sr-only">{L.type}</span>
-                    <Search className="pointer-events-none absolute top-1/2 left-3.5 size-5 -translate-y-1/2 text-muted" {...ICON} aria-hidden />
-                    <input
-                      className="field !pl-11 text-[17px]"
-                      value={q}
-                      onChange={(e) => setQ(e.target.value)}
-                      placeholder={L.type}
-                      autoComplete="off"
-                      inputMode="search"
-                      enterKeyHint="search"
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter' && results?.[0]) {
-                          e.preventDefault()
-                          pickResult(results[0])
-                        }
-                      }}
-                    />
-                    {busy === 'search' && <LoaderCircle className="absolute top-1/2 right-3.5 size-5 -translate-y-1/2 animate-spin text-muted" {...ICON} aria-hidden />}
-                  </label>
-
-                  {results && results.length > 0 && (
-                    <ul className="pop-in overflow-hidden rounded-2xl border border-line bg-[#06152d]">
-                      {results.map((r) => (
-                        <li key={`${r.lat},${r.lon},${r.name}`}>
-                          <button type="button" onClick={() => pickResult(r)} className="flex w-full items-center gap-3 px-3 py-2.5 text-left hover:bg-white/5">
-                            <MapPin className="size-5 shrink-0 text-[#4ade80]" {...ICON} aria-hidden />
-                            <span className="min-w-0 flex-1">
-                              <span className="block font-semibold">{lang === 'hi' ? r.nameHi : r.name}</span>
-                              {r.region && <span className="block text-sm text-muted">{r.region}</span>}
-                            </span>
-                            <span className={`rounded-full px-2 py-0.5 text-xs font-bold ${r.pilot ? 'bg-[#15803d] text-white' : 'bg-[#16325c] text-[#c7d3ea]'}`}>
-                              {r.pilot ? t.picker.pilotCity : t.picker.weatherAir}
-                            </span>
-                          </button>
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-
-                  <div>
-                    <p className="text-sm font-semibold text-muted">{L.quick}</p>
-                    <div className="mt-2 grid grid-cols-3 gap-2">
-                      {(Object.keys(PRESETS) as PresetKey[]).map((k) => (
-                        <button
-                          key={k}
-                          type="button"
-                          onClick={() => setFound({ place: PRESETS[k], how: 'preset' })}
-                          className="lift flex flex-col items-center gap-1 rounded-2xl border border-line bg-[#06152d] px-2 py-3 text-center"
-                        >
-                          <Emoji name={PRESET_EMOJI[k]} size={40} pop />
-                          <span className="text-sm leading-tight font-semibold">{k === 'leh' ? t.picker.lehDemo : lang === 'hi' ? PRESETS[k].nameHi.split(',').pop() : PRESETS[k].name.split(',').pop()}</span>
-                        </button>
-                      ))}
-                    </div>
-                  </div>
+              {!chosen && (
+                <div className="mt-4">
+                  <PlaceMap onPick={setChosen} />
+                  <p className="mt-2 text-center text-sm text-muted">{L.tapMap}</p>
                 </div>
               )}
 
