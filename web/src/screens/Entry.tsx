@@ -70,7 +70,7 @@ function Hero() {
     { name: 'fog', cls: 'bottom-[5%] right-[8%]', size: 70, delay: '-1.7s' },
   ]
   return (
-    <section className="grad-sunrise relative isolate flex flex-col justify-between overflow-hidden px-6 py-7 text-white sm:px-10 lg:min-h-dvh lg:py-10">
+    <section className="grad-sunrise relative isolate flex flex-col justify-start gap-6 overflow-hidden px-6 py-7 text-white sm:px-10 lg:h-full lg:gap-10 lg:py-10">
       {/* light spots and floating 3D emojis */}
       <div aria-hidden className="pointer-events-none absolute inset-0 -z-10">
         <span className="absolute -top-24 -left-24 size-80 rounded-full bg-white/15 blur-3xl" />
@@ -97,14 +97,14 @@ function Hero() {
         </div>
       </div>
 
-      <div className="rise my-8 max-w-xl sm:pr-24 lg:my-0 lg:max-w-[27rem] lg:pr-0 xl:max-w-[30rem]">
+      <div className="rise max-w-xl sm:pr-24 lg:max-w-[27rem] lg:pr-0 xl:max-w-[30rem]">
         <p className="inline-flex items-center gap-2 rounded-full bg-white/20 px-3 py-1 text-sm font-semibold ring-1 ring-white/35 backdrop-blur">
           <Emoji name="wave" size={20} eager /> {L.hello}
         </p>
-        <h1 className="mt-4 font-display text-4xl leading-[1.08] font-extrabold sm:text-5xl lg:text-[3.2rem]">{t.app.entryLine}</h1>
+        <h1 className="mt-4 font-display text-4xl leading-[1.08] font-extrabold sm:text-5xl lg:text-[2.7rem]">{t.app.entryLine}</h1>
         <p className="mt-2 font-display text-xl font-semibold text-white/95">{t.app.tagline}</p>
         <p className="mt-4 max-w-lg text-[17px] text-white/90">{L.heroSub}</p>
-        <ul className="mt-6 hidden space-y-2.5 sm:block">
+        <ul className="mt-5 hidden space-y-2 sm:block">
           {(
             [
               ['globe', L.features.live],
@@ -203,7 +203,8 @@ export default function Entry() {
       const email = await googleSignIn()
       if (!email) throw new Error('off')
       set({ email, name: p.name || email.split('@')[0] })
-    } catch {
+    } catch (err) {
+      console.error('Google sign-in failed', err)
       setGErr(true)
     }
   }
@@ -222,27 +223,27 @@ export default function Entry() {
         : L.fromSearch
 
   return (
-    <div className="grid min-h-dvh bg-mist lg:grid-cols-[minmax(0,5fr)_minmax(0,6fr)]">
+    <div className="grid min-h-dvh bg-mist lg:h-dvh lg:grid-cols-[minmax(0,5fr)_minmax(0,6fr)] lg:overflow-hidden">
       <Hero />
 
-      <section className="relative flex items-start justify-center px-4 py-8 sm:px-8 lg:items-center lg:py-12">
+      <section className="relative flex items-start justify-center px-4 py-8 sm:px-8 lg:h-full lg:items-center lg:overflow-y-auto lg:py-12">
         <div className="absolute top-5 right-6 hidden lg:block">
           <LangSwitch />
         </div>
-        <div ref={card} tabIndex={-1} className="panel glass w-full max-w-xl p-5 outline-none sm:p-8">
+        <div ref={card} tabIndex={-1} className="panel glass w-full max-w-xl p-5 outline-none sm:p-8 lg:p-6">
           <Steps step={step} />
 
           {/* ---------- 1. who are you ---------- */}
           {step === 1 && (
-            <div key="s1" className="page mt-6">
-              <h2 className="font-display text-3xl font-bold">
+            <div key="s1" className="page mt-4 lg:mt-3">
+              <h2 className="font-display text-2xl font-bold lg:text-xl">
                 {/* the app's name in gradient, wherever it sits in the sentence */}
                 {L.welcome.split(t.app.name)[0]}
                 <span className="grad-text">{t.app.name}</span>
                 {L.welcome.split(t.app.name)[1]}
               </h2>
-              <p className="mt-1 text-muted">{L.roleHint}</p>
-              <div role="radiogroup" aria-label={t.entry.title} className="mt-5 space-y-3">
+              <p className="mt-1 text-sm text-muted lg:text-xs">{L.roleHint}</p>
+              <div role="radiogroup" aria-label={t.entry.title} className="mt-3 space-y-2 lg:space-y-1.5">
                 {roles.map(({ r, title, sub, d }, i) => {
                   const on = role === r
                   return (
@@ -255,21 +256,21 @@ export default function Entry() {
                         setRole(r)
                         set({ role: r, demo: false })
                       }}
-                      className={`lift rise rise-${i + 1} group relative flex w-full items-center gap-4 rounded-2xl border-2 p-3.5 text-left transition-colors sm:p-4 ${
+                      className={`lift rise rise-${i + 1} group relative flex w-full items-center gap-3 rounded-2xl border-2 p-3 text-left transition-colors lg:gap-3 lg:p-2.5 ${
                         on ? 'border-[#22c55e]/70 bg-[#0b3a2a]' : 'border-line bg-[#06152d] hover:border-[#2f5a9a]'
                       }`}
                     >
-                      <span className={`grid size-16 shrink-0 place-items-center rounded-2xl ${on ? 'grad-brand' : 'bg-[#0e2344]'}`}>
-                        <Emoji name={ROLE_EMOJI[r]} size={46} pop eager />
+                      <span className={`grid size-12 shrink-0 place-items-center rounded-2xl lg:size-11 ${on ? 'grad-brand' : 'bg-[#0e2344]'}`}>
+                        <Emoji name={ROLE_EMOJI[r]} size={34} pop eager />
                       </span>
                       <span className="min-w-0 flex-1">
-                        <span className="block font-display text-lg leading-tight font-bold">{title}</span>
-                        {sub && <span className="block text-sm text-muted">{sub}</span>}
-                        <span className="mt-0.5 block text-[15px] leading-snug">{d}</span>
+                        <span className="block font-display text-base leading-tight font-bold lg:text-[15px]">{title}</span>
+                        {sub && <span className="block text-xs text-muted">{sub}</span>}
+                        <span className="mt-0.5 block text-[13px] leading-snug lg:hidden">{d}</span>
                       </span>
                       <span
                         aria-hidden
-                        className={`grid size-7 shrink-0 place-items-center rounded-full border-2 transition-all ${on ? 'grad-brand scale-110 border-transparent text-white' : 'border-line'}`}
+                        className={`grid size-6 shrink-0 place-items-center rounded-full border-2 transition-all ${on ? 'grad-brand scale-110 border-transparent text-white' : 'border-line'}`}
                       >
                         {on && <Check className="size-4" strokeWidth={3} />}
                       </span>
@@ -277,15 +278,29 @@ export default function Entry() {
                   )
                 })}
               </div>
-              <button type="button" className="btn btn-ink mt-6 w-full text-lg" disabled={!role} onClick={() => setStep(2)}>
-                {L.next}
+              <button type="button" className="btn btn-ink mt-4 w-full lg:mt-3 lg:!min-h-9 lg:text-sm" disabled={!role} onClick={() => setStep(2)}>
+                {t.entry.continue}
               </button>
-              <div className="mt-6 rounded-2xl border border-line bg-[#06152d] p-4">
-                <p className="text-sm font-semibold">{L.demoTitle}</p>
+
+              {role !== 'worker' && (
+                <div className="mt-3 rounded-2xl border border-line bg-[#06152d] p-3 lg:p-2.5">
+                  {p.email ? (
+                    <p className="text-sm font-semibold">{t.entry.signedIn.replace('{email}', p.email)}</p>
+                  ) : (
+                    <button type="button" className="btn btn-line w-full lg:!min-h-9 lg:text-sm" onClick={google}>
+                      <GoogleG /> {t.entry.google}
+                    </button>
+                  )}
+                  {gErr && <p className="mt-2 text-sm text-muted">{t.entry.googleOff}</p>}
+                </div>
+              )}
+
+              <div className="mt-3 rounded-2xl border border-line bg-[#06152d] p-3 lg:p-2.5">
+                <p className="text-xs font-semibold lg:text-[11px]">{L.demoTitle}</p>
                 <div className="mt-2 flex flex-wrap gap-2">
                   {roles.map(({ r, title }) => (
-                    <button key={r} type="button" className="chip lift !py-1.5" onClick={() => go(DEMO_PROFILES[r], null)}>
-                      <Emoji name={ROLE_EMOJI[r]} size={22} /> {title}
+                    <button key={r} type="button" className="chip lift !py-1 lg:!text-xs" onClick={() => go(DEMO_PROFILES[r], null)}>
+                      <Emoji name={ROLE_EMOJI[r]} size={18} /> {title}
                     </button>
                   ))}
                 </div>
