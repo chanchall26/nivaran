@@ -3,14 +3,13 @@
 const en = {
   login: {
     hello: 'Namaste!',
-    welcome: 'Welcome to Barahmasa',
-    heroSub: 'Heat, cold, rain and bad air. See who is at risk today, send the right help, and check that it really worked.',
+    welcome: 'Welcome to Nivaran',
+    heroSub: 'Find the hidden source of pollution, see where it will spread, and alert the right authority before it is too late.',
     features: {
       live: 'Live weather and Indian AQI for any place in India',
       map: 'Who needs help today, on one map',
       check: 'Help that is checked by a call, not just handed out',
     },
-    pilots: 'Pilot cities: Gwalior, Delhi, Leh',
     today: 'Right now in {place}',
     step: 'Step {n} of 3',
     steps: ['Who are you?', 'Your place', 'About you'],
@@ -73,14 +72,13 @@ export type LookDict = typeof en
 const hi: LookDict = {
   login: {
     hello: 'नमस्ते!',
-    welcome: 'बारहमासा में आपका स्वागत है',
-    heroSub: 'गर्मी, ठंड, बारिश और खराब हवा। देखें आज किसे खतरा है, सही मदद भेजें, और जांचें कि मदद सच में काम आई।',
+    welcome: 'निवारण में आपका स्वागत है',
+    heroSub: 'प्रदूषण का छुपा स्रोत पकड़ें, देखें वह कहां तक फैलेगा, और सही विभाग को समय पर सूचित करें।',
     features: {
       live: 'भारत की किसी भी जगह का लाइव मौसम और भारतीय AQI',
       map: 'आज किसे मदद चाहिए, एक ही नक्शे पर',
       check: 'मदद सिर्फ़ बांटी नहीं जाती, कॉल करके जांची जाती है',
     },
-    pilots: 'पायलट शहर: ग्वालियर, दिल्ली, लेह',
     today: '{place} में अभी',
     step: 'कदम {n} / 3',
     steps: ['आप कौन हैं?', 'आपकी जगह', 'आपके बारे में'],

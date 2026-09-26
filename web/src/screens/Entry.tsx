@@ -138,7 +138,6 @@ function Hero() {
             )}
           </div>
         )}
-        <p className="text-sm font-semibold text-white/85">{L.pilots}</p>
       </div>
     </section>
   )
