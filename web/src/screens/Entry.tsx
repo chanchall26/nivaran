@@ -56,7 +56,7 @@ async function googleSignIn(): Promise<string | null> {
 
 // ---------------------------------------------------------------------------------------------
 
-/** The colourful left side: what Barahmasa is, with live numbers for the place already known. */
+/** The colourful left side: what Nivaran is, with live numbers for the place already known. */
 function Hero() {
   const { t, lang, f } = useI18n()
   const L = LOOK[lang].login
@@ -64,12 +64,12 @@ function Hero() {
   const c = wx?.data.current
   const air = wx?.data.air
   const floaters: { name: EmojiName; cls: string; size: number; delay: string }[] = [
-    // a column of seasons down the right edge, clear of the text
-    { name: 'sun', cls: 'top-[11%] right-[7%]', size: 78, delay: '0s' },
-    { name: 'snowflake', cls: 'top-[29%] right-[3%]', size: 56, delay: '-1.2s' },
-    { name: 'umbrella', cls: 'top-[45%] right-[9%]', size: 62, delay: '-2.1s' },
+    // a column of pollution-investigation icons down the right edge, clear of the text
+    { name: 'satellite', cls: 'top-[11%] right-[7%]', size: 78, delay: '0s' },
+    { name: 'fire', cls: 'top-[29%] right-[3%]', size: 56, delay: '-1.2s' },
+    { name: 'search', cls: 'top-[45%] right-[9%]', size: 62, delay: '-2.1s' },
     { name: 'mask', cls: 'top-[62%] right-[3%]', size: 54, delay: '-0.6s' },
-    { name: 'tree', cls: 'bottom-[5%] right-[8%]', size: 70, delay: '-1.7s' },
+    { name: 'fog', cls: 'bottom-[5%] right-[8%]', size: 70, delay: '-1.7s' },
   ]
   return (
     <section className="grad-sunrise relative isolate flex flex-col justify-between overflow-hidden px-6 py-7 text-white sm:px-10 lg:min-h-dvh lg:py-10">
@@ -91,7 +91,7 @@ function Hero() {
           </span>
           <div className="leading-tight">
             <div className="font-display text-2xl font-bold">{t.app.name}</div>
-            <div className="text-sm text-white/85">{lang === 'hi' ? 'Barahmasa' : 'बारहमासा'}</div>
+            <div className="text-sm text-white/85">{lang === 'hi' ? 'Nivaran' : 'निवारण'}</div>
           </div>
         </div>
         <div className="lg:hidden">

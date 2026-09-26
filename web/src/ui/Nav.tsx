@@ -1,6 +1,6 @@
 import {
   Bell, CalendarDays, ChevronDown, CircleCheckBig, ClipboardList, Database, FileText, House, Landmark, Map, MapPin, MessageSquareText,
-  MoreHorizontal, Package, RefreshCw, Settings, ShieldCheck, Sprout, UserRound, type LucideIcon,
+  MoreHorizontal, Package, RefreshCw, Settings, ShieldCheck, UserRound, type LucideIcon,
 } from 'lucide-react'
 import { useState } from 'react'
 import { NavLink, useLocation, useNavigate } from 'react-router-dom'
@@ -26,7 +26,6 @@ export function useNavItems(role: Role): Item[] {
   const map = { to: '/map', label: t.nav.map, Icon: Map }
   const settings = { to: '/settings', label: t.nav.settings, Icon: Settings }
   const checks = { to: '/checks', label: t.nav.checks, Icon: CircleCheckBig }
-  const plant = { to: '/plant', label: t.nav.plant, Icon: Sprout }
   const report = { to: '/report', label: t.nav.report, Icon: FileText }
   if (role === 'officer')
     return [
@@ -35,12 +34,11 @@ export function useNavItems(role: Role): Item[] {
       { to: '/schemes', label: t.nav.schemes, Icon: Landmark },
       checks,
       { to: '/hours', label: t.nav.hours, Icon: ShieldCheck },
-      plant,
       report,
       { to: '/alerts', label: t.nav.alerts, Icon: Bell },
       settings,
     ]
-  if (role === 'partner') return [today, { to: '/tasks', label: t.nav.tasks, Icon: Package }, checks, map, report, plant, settings]
+  if (role === 'partner') return [today, { to: '/tasks', label: t.nav.tasks, Icon: Package }, checks, map, report, settings]
   return [today, { to: '/near', label: t.nav.near, Icon: MapPin }, { to: '/ask', label: t.nav.ask, Icon: MessageSquareText }, settings]
 }
 
@@ -183,7 +181,7 @@ export function Sidebar() {
       </div>
       {/* the worker looking at the city, from the design */}
       <div aria-hidden className="relative h-[210px] shrink-0 overflow-hidden">
-        <img src="/art/worker-scene.png" alt="" className="absolute inset-x-0 bottom-0 w-full object-cover object-top" draggable={false} />
+        <img src={`${import.meta.env.BASE_URL}art/worker-scene.png`} alt="" className="absolute inset-x-0 bottom-0 w-full object-cover object-top" draggable={false} />
         <div className="absolute inset-x-0 top-0 h-16 bg-gradient-to-b from-[#001229] to-transparent" />
       </div>
     </nav>

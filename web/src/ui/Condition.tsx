@@ -1,9 +1,7 @@
-import { Link, useLocation } from 'react-router-dom'
-import { useApp } from '../ctx'
 import { useI18n } from '../i18n'
 import { hourLabel, weekday } from '../lib/ist'
 import {
-  climateOf, COND_COLOR, coldSpan, dayLevel, heatSpan, LEVEL_COLOR, MODE_TINT, plantingNow, rainSpan, worstAirSpan,
+  COND_COLOR, coldSpan, dayLevel, heatSpan, LEVEL_COLOR, MODE_TINT, rainSpan, worstAirSpan,
   type Condition, type ConditionInfo, type Day, type Mode, type Need, type Span,
 } from '../lib/risk'
 import { COND_EMOJI, Emoji, wxEmoji } from './Emoji'
@@ -54,17 +52,12 @@ export function spanOf(info: ConditionInfo, day: Day, next?: Day): Span | null {
 
 export function ConditionBanner({ info, day, next }: { info: ConditionInfo; day: Day; next?: Day }) {
   const { t, f, lang } = useI18n()
-  const { place, wx, startDate } = useApp()
-  const { search } = useLocation()
   const c = info.cond
   const span = spanOf(info, day, next)
   // the brief's sentence first, then when (the hours come from the forecast)
   const hours = c === 'mild' ? '' : span ? f(t.cond.line[c], { from: hourLabel(span.from, lang), to: hourLabel(span.to, lang) }) : t.cond.noSpan
   const veryPoor = c === 'air' && info.hz.air >= 3
   const ink = c === 'warm' || (c === 'air' && !veryPoor)
-  const climate = climateOf(wx?.data.elevation, place.pilot)
-  const month = Number((day.date || startDate).slice(5, 7))
-  const plantOk = plantingNow(month, climate)
   const bg = c === 'double' && info.hz.air >= 3 ? 'linear-gradient(100deg, #b91c1c 0 50%, #7a1020 50% 100%)' : veryPoor ? VERY_POOR : BG[c]
   return (
     <section
@@ -88,20 +81,7 @@ export function ConditionBanner({ info, day, next }: { info: ConditionInfo; day:
             <p className="mt-1 text-sm font-semibold opacity-90">{f(t.cond.also, { what: info.also.map((h) => t.cond.hazard[h]).join(', ') })}</p>
           )}
         </div>
-        {(c === 'mild' || c === 'warm' || c === 'rain') && plantOk && (
-          <Link
-            to={{ pathname: '/plant', search }}
-            className="lift flex items-center gap-2 rounded-full bg-white px-3.5 py-2 text-sm font-bold text-[#157a45] shadow-lg"
-          >
-            <Emoji name="seedling" size={22} pop /> {t.cond.plantNow} · {t.cond.seePlant}
-          </Link>
-        )}
       </div>
-      {c === 'cold' && climate === 'cold_desert' && !plantOk && (
-        <p className="mt-3 flex items-center gap-2 text-sm font-semibold">
-          <Emoji name="seedling" size={22} /> {t.cond.plantLater}
-        </p>
-      )}
       {COND_NEEDS[c].length > 0 && (
         <div className="mt-4 flex flex-wrap items-center gap-2">
           <span className="text-sm font-bold">{t.cond.doNow}:</span>
