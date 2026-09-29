@@ -6,7 +6,7 @@ An AI-powered pollution investigation platform for Indian cities. It combines ci
 
 > **Status: mid-rebuild.** This repo shipped earlier as **Barahmasa**, a heat/cold safety app for outdoor workers. We are turning it into Nivaran for a Clean Air & Climate Resilience hackathon track. The old heat/cold features (schemes, protected hours, where-to-plant, Shade Clock) are still live in the app and still work — the new pollution features are being added alongside them, not instead of them, until the pivot is complete. See `IMPLEMENTATION_PLAN.md` for the full target design (some of it, like real inter-state agents, is roadmap, not built yet — see "What's real vs simulated" below).
 
-Live: **https://barahmasa-gwalior.web.app** *(Firebase project is still named `barahmasa-gwalior`; will move as part of the rename)*. Pilot: Gwalior (474001), with any Indian place supported via PIN/GPS.
+Live: **(https://api.simption.com/hello/welcome?pin=474001)** 
 
 ## What you can do
 
